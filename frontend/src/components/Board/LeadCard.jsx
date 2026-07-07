@@ -1,4 +1,4 @@
-const STATUS_BADGE = {
+export const STATUS_BADGE = {
   'In-Process': 'badge-blue',
   'Customer is taking longer time to close': 'badge-amber',
   'Customer is closing in next week': 'badge-sky',
@@ -6,7 +6,7 @@ const STATUS_BADGE = {
   'Dropped enquiry': 'badge-red',
 };
 
-const STATUS_LABEL = {
+export const STATUS_LABEL = {
   'In-Process': 'In Process',
   'Customer is taking longer time to close': 'Taking Longer',
   'Customer is closing in next week': 'Closing Soon',

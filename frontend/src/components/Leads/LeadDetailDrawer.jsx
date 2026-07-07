@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { STATUS_BADGE, STATUS_LABEL } from '../Board/LeadCard';
+import Section from '../Section';
 
 const SOFTWARE_OPTIONS = ['Courier Software', 'ERP Accounts Software', 'Customised Software'];
 const STATUS_OPTIONS = [
@@ -15,17 +16,6 @@ function initials(name) {
   if (!name) return '?';
   const words = name.trim().split(/\s+/);
   return ((words[0]?.[0] || '') + (words[1]?.[0] || '')).toUpperCase();
-}
-
-function Section({ icon, title, children }) {
-  return (
-    <div className="card" style={{ padding: '14px 16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10 }}>
-        <span style={{ fontSize: 13 }}>{icon}</span>{title}
-      </div>
-      {children}
-    </div>
-  );
 }
 
 export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {

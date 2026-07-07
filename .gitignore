@@ -1,0 +1,7 @@
+node_modules/
+backend/leads.db
+backend/$stage/
+backend/server_test.log
+frontend/dist/
+.env
+frontend/src.zip

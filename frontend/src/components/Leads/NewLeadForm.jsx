@@ -25,6 +25,9 @@ export default function NewLeadForm() {
     contact_person: '',
     contact_no: '',
     email: '',
+    address: '',
+    city: '',
+    state: '',
     required_software: SOFTWARE_OPTIONS[0],
     customer_description: '',
     committed_to_customer: '',
@@ -33,11 +36,13 @@ export default function NewLeadForm() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [locations, setLocations] = useState({ cities: [], states: [] });
 
   useEffect(() => {
     api.nextEnquiryId().then(({ enquiry_id }) => {
       setForm(f => ({ ...f, enquiry_id }));
     });
+    api.getLocations().then(setLocations);
   }, []);
 
   function set(field) {
@@ -99,8 +104,32 @@ export default function NewLeadForm() {
                 <label>Email</label>
                 <input type="email" className="form-control" placeholder="email@example.com" value={form.email} onChange={set('email')} />
               </div>
+              <div className="form-group">
+                <label>Address</label>
+                <textarea className="form-control" placeholder="Street, area, landmark…"
+                  value={form.address} onChange={set('address')} rows={2} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="form-group">
+                  <label>City</label>
+                  <input className="form-control" list="city-options" placeholder="Enter or pick city"
+                    value={form.city} onChange={set('city')} />
+                </div>
+                <div className="form-group">
+                  <label>State</label>
+                  <input className="form-control" list="state-options" placeholder="Enter or pick state"
+                    value={form.state} onChange={set('state')} />
+                </div>
+              </div>
             </div>
           </Section>
+
+          <datalist id="city-options">
+            {locations.cities.map(c => <option key={c} value={c} />)}
+          </datalist>
+          <datalist id="state-options">
+            {locations.states.map(s => <option key={s} value={s} />)}
+          </datalist>
 
           <Section icon="📋" title="Requirement">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

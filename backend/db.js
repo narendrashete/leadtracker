@@ -39,6 +39,9 @@ async function getDb() {
       contact_person TEXT,
       contact_no TEXT,
       email TEXT,
+      address TEXT,
+      city TEXT,
+      state TEXT,
       required_software TEXT,
       customer_description TEXT,
       committed_to_customer TEXT,
@@ -47,6 +50,12 @@ async function getDb() {
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
+  // Existing databases predate the address/city/state columns — add them if missing.
+  for (const col of ['address', 'city', 'state']) {
+    try {
+      _db.run(`ALTER TABLE leads ADD COLUMN ${col} TEXT`);
+    } catch { /* column already exists */ }
+  }
   _db.run(`
     CREATE TABLE IF NOT EXISTS followups (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

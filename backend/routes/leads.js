@@ -22,6 +22,18 @@ router.get('/next-enquiry-id', (req, res) => {
   res.json({ enquiry_id: computeNextEnquiryId() });
 });
 
+// Distinct city/state values seen so far, for autocomplete on the lead forms.
+// No separate master-data table — the list is derived from existing leads.
+router.get('/meta/locations', (req, res) => {
+  const cities = query(
+    `SELECT DISTINCT city FROM leads WHERE city IS NOT NULL AND trim(city) != '' ORDER BY city COLLATE NOCASE`
+  ).map(r => r.city);
+  const states = query(
+    `SELECT DISTINCT state FROM leads WHERE state IS NOT NULL AND trim(state) != '' ORDER BY state COLLATE NOCASE`
+  ).map(r => r.state);
+  res.json({ cities, states });
+});
+
 router.get('/', (req, res) => {
   const leads = query(`
     SELECT l.*, COUNT(f.id) AS followup_count
@@ -37,6 +49,7 @@ router.post('/', (req, res, next) => {
   try {
     const {
       date, company_name, contact_person, contact_no, email,
+      address, city, state,
       required_software, customer_description, committed_to_customer,
       next_followup_date, status
     } = req.body;
@@ -58,10 +71,12 @@ router.post('/', (req, res, next) => {
         id = run(
           `INSERT INTO leads
             (enquiry_id, date, company_name, contact_person, contact_no, email,
+             address, city, state,
              required_software, customer_description, committed_to_customer,
              next_followup_date, status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           [enquiry_id, safeDate, company_name, contact_person, contact_no, email,
+           address, city, state,
            required_software, customer_description, committed_to_customer,
            next_followup_date, safeStatus]
         );
@@ -96,6 +111,7 @@ router.put('/:id', (req, res, next) => {
 
     const {
       date, company_name, contact_person, contact_no, email,
+      address, city, state,
       required_software, customer_description, committed_to_customer,
       next_followup_date, status
     } = req.body;
@@ -103,10 +119,12 @@ router.put('/:id', (req, res, next) => {
     run(
       `UPDATE leads SET
         date=?, company_name=?, contact_person=?, contact_no=?, email=?,
+        address=?, city=?, state=?,
         required_software=?, customer_description=?, committed_to_customer=?,
         next_followup_date=?, status=?
        WHERE id=?`,
       [date, company_name, contact_person, contact_no, email,
+       address, city, state,
        required_software, customer_description, committed_to_customer,
        next_followup_date, status, req.params.id]
     );

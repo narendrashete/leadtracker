@@ -43,6 +43,7 @@ export const api = {
   createLead:   (data)   => request('/leads',     { method: 'POST', body: JSON.stringify(data) }),
   updateLead:   (id, d)  => request(`/leads/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
   nextEnquiryId: ()      => request('/leads/next-enquiry-id'),
+  getLocations:  ()      => request('/leads/meta/locations'),
 
   // Followups
   getFollowups:   (lead_id) => request(`/followups?lead_id=${lead_id}`),

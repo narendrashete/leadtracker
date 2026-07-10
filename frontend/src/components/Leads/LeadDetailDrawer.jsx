@@ -23,12 +23,14 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState('details'); // 'details' | 'followups'
+  const [locations, setLocations] = useState({ cities: [], states: [] });
 
   useEffect(() => {
     api.getLead(leadId).then(data => {
       setLead(data);
       setForm({ ...data });
     });
+    api.getLocations().then(setLocations);
   }, [leadId]);
 
   function set(field) {
@@ -163,8 +165,29 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
                     <label>Email</label>
                     <input type="email" className="form-control" value={form.email || ''} onChange={set('email')} />
                   </div>
+                  <div className="form-group">
+                    <label>Address</label>
+                    <textarea className="form-control" rows={2} value={form.address || ''} onChange={set('address')} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="form-group">
+                      <label>City</label>
+                      <input className="form-control" list="city-options" value={form.city || ''} onChange={set('city')} />
+                    </div>
+                    <div className="form-group">
+                      <label>State</label>
+                      <input className="form-control" list="state-options" value={form.state || ''} onChange={set('state')} />
+                    </div>
+                  </div>
                 </div>
               </Section>
+
+              <datalist id="city-options">
+                {locations.cities.map(c => <option key={c} value={c} />)}
+              </datalist>
+              <datalist id="state-options">
+                {locations.states.map(s => <option key={s} value={s} />)}
+              </datalist>
 
               <Section icon="📋" title="Requirement">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

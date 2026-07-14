@@ -19,7 +19,7 @@ cd backend  && npm install && node server.js       # API + built UI on :3001
 cd frontend && npm install && npm run dev           # Vite dev server on :5173 (hot reload)
 ```
 Open http://localhost:5173 (dev) or http://localhost:3001 (serves the production build).
-Default login: `admin` / `Prime@#2026`.
+Default login: `admin` / `admin123` (or the value of `ADMIN_SEED_PASSWORD` if set — see `backend/db.js`).
 
 ## Build for production
 ```

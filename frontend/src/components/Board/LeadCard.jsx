@@ -55,6 +55,11 @@ export default function LeadCard({ lead, onClick }) {
         </div>
       )}
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, color: 'var(--text-muted)', fontSize: 12 }}>
+        {lead.date && <span>🗓️ {lead.date}</span>}
+        {lead.city && <span>📍 {lead.city}</span>}
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
         {lead.required_software && (
           <span style={{

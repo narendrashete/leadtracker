@@ -27,8 +27,10 @@ export default function PipelineBoard() {
 
   useEffect(() => { load(); }, []);
 
+  const sortedLeads = [...leads].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
   const grouped = COLUMNS.reduce((acc, col) => {
-    acc[col] = leads.filter(l => getColumn(l) === col);
+    acc[col] = sortedLeads.filter(l => getColumn(l) === col);
     return acc;
   }, {});
 

@@ -578,10 +578,22 @@ function marksOn(key){
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
 /* ---------------- shared store ---------------- */
+function cloneDays(days){
+  var out={};
+  if(!days || typeof days!=="object") return out;
+  Object.keys(days).forEach(function(k){
+    out[k] = Array.isArray(days[k]) ? days[k].slice() : [];
+  });
+  return out;
+}
+function cloneMembers(list){
+  if(!Array.isArray(list)) return [];
+  return list.map(function(m){ return {id:m.id, en:m.en, mr:m.mr||"", color:m.color}; });
+}
 function localMarksKey(){ return "md.marks."+S.groupId+"."+ymKey(); }
 function loadLocalMarks(){
   var raw = ls(localMarksKey());
-  S.marks = raw ? (JSON.parse(raw)||{}) : {};
+  S.marks = raw ? cloneDays(JSON.parse(raw)) : {};
 }
 function saveLocalMarks(){ lsSet(localMarksKey(), JSON.stringify(S.marks)); }
 
@@ -593,7 +605,7 @@ function subscribeMonth(){
   unsubMarks = ref.onSnapshot(function(snap){
     monthDocExists = snap.exists;
     var data = snap.exists ? (snap.data()||{}) : {};
-    S.marks = data.days && typeof data.days==="object" ? data.days : {};
+    S.marks = cloneDays(data.days);
     render();
   }, function(){ /* listener died; the page keeps its last view */ });
 }
@@ -950,7 +962,7 @@ if(window.claude && window.claude.use){
       snap.docs.forEach(function(doc){
         var v=doc.data()||{};
         if(!Array.isArray(v.members)) return;
-        list.push({id:doc.id, order:v.order||99, name_en:v.name_en||doc.id, name_mr:v.name_mr||"", members:v.members});
+        list.push({id:doc.id, order:v.order||99, name_en:v.name_en||doc.id, name_mr:v.name_mr||"", members:cloneMembers(v.members)});
       });
       if(!list.length) { render(); return; }
       S.groups=list;

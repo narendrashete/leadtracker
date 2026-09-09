@@ -183,6 +183,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-09** — Self-hosted the shared calendar so the link is public: new public
+  `/api/calendar` routes and a `/calendar/<share-code>` page route in the Express app, with
+  `calendar_spaces` / `calendar_groups` / `calendar_marks` tables added to `leads.db`. The
+  share code is printed at startup. The page detects whether it is running on the server or
+  as a Claude Artifact and uses the matching store.
+- **2026-09-09** — Fixed marks being dropped after the first one in the calendar page:
+  snapshot data from the Artifact store is frozen, and it was being mutated in place.
 - **2026-09-09** — Added `mokla-divas/index.html`: a standalone shared availability calendar
   for the Funda and Thigdam friend groups (English/Marathi, one page, no backend — published
   as a Claude Artifact whose `db` capability holds the shared marks). Not part of the Lead

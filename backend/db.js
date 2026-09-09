@@ -7,6 +7,30 @@ const DB_PATH = path.join(__dirname, 'leads.db');
 
 let _db = null;
 
+// Initial rosters for the shared availability calendar. Seeded once; after that
+// the groups are edited in the app, so changing this has no effect on a live DB.
+const CALENDAR_SEED_GROUPS = [
+  {
+    group_key: 'funda', name_en: 'Funda', name_mr: 'फंडा', sort_order: 1,
+    members: [
+      { id: 'narendra', en: 'Narendra', mr: 'नरेंद्र', color: '#E4572E' },
+      { id: 'vivek',    en: 'Vivek',    mr: 'विवेक',   color: '#2E86AB' },
+      { id: 'prasad',   en: 'Prasad',   mr: 'प्रसाद',  color: '#5E8C3F' },
+      { id: 'bhushan',  en: 'Bhushan',  mr: 'भूषण',    color: '#8E5BD8' },
+      { id: 'mishal',   en: 'Mishal',   mr: 'मिशाल',   color: '#D9A404' },
+      { id: 'pant',     en: 'Pant',     mr: 'पंत',     color: '#C42A67' }
+    ]
+  },
+  {
+    group_key: 'thigdam', name_en: 'Thigdam', name_mr: 'ठिगडम', sort_order: 2,
+    members: [
+      { id: 'narendra',  en: 'Narendra',  mr: 'नरेंद्र',   color: '#E4572E' },
+      { id: 'siddharth', en: 'Siddharth', mr: 'सिद्धार्थ', color: '#2E86AB' },
+      { id: 'riyaz',     en: 'Riyaz',     mr: 'रियाझ',     color: '#5E8C3F' }
+    ]
+  }
+];
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
@@ -74,6 +98,57 @@ async function getDb() {
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
+
+  // Shared availability calendar (mokla-divas). Public, code-gated, independent
+  // of the lead pipeline — it shares this database file only for storage.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS calendar_spaces (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      share_code TEXT UNIQUE NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS calendar_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_key TEXT UNIQUE NOT NULL,
+      name_en TEXT NOT NULL,
+      name_mr TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 99,
+      members TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS calendar_marks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_key TEXT NOT NULL,
+      mark_date TEXT NOT NULL,
+      member_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  // Integrity, not speed: one friend can only be marked once per date.
+  try {
+    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_marks_unique
+             ON calendar_marks (group_key, mark_date, member_id)`);
+  } catch { /* index already exists */ }
+
+  // One share code per install; it is what makes the public link unguessable.
+  if (query(`SELECT id FROM calendar_spaces`).length === 0) {
+    const code = process.env.CALENDAR_SHARE_CODE || crypto.randomBytes(6).toString('hex');
+    _db.run(`INSERT INTO calendar_spaces (share_code) VALUES (?)`, [code]);
+  }
+
+  if (query(`SELECT id FROM calendar_groups`).length === 0) {
+    for (const g of CALENDAR_SEED_GROUPS) {
+      _db.run(
+        `INSERT INTO calendar_groups (group_key, name_en, name_mr, sort_order, members)
+         VALUES (?,?,?,?,?)`,
+        [g.group_key, g.name_en, g.name_mr, g.sort_order, JSON.stringify(g.members)]
+      );
+    }
+  }
 
   // Seed admin if not exists
   const existing = query(`SELECT id FROM users WHERE username = 'admin'`);

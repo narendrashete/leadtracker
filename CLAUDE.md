@@ -21,9 +21,11 @@ Browser (React SPA, Vite build)
    ▼
 Express (backend/server.js)
    ├── /api/auth      (public)
+   ├── /api/calendar  (public — share-code gated)
    ├── /api/leads     (requireAuth)
    ├── /api/followups (requireAuth)
    ├── /api/users     (requireAuth + requireAdmin)
+   ├── /calendar/<code>  (public — serves mokla-divas/index.html)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -46,7 +48,7 @@ backend/
   server.js            Express app — API mount, static frontend, SPA fallback, error handler
   db.js                sql.js init/schema, query()/run() helpers, save-on-write, admin seed
   auth.js              in-memory session store + requireAuth/requireAdmin middleware
-  routes/               leads.js, followups.js, auth.js, users.js
+  routes/               leads.js, followups.js, auth.js, users.js, calendar.js
   leads.db             the entire database (git-ignored)
 frontend/src/
   api.js               fetch wrapper — adds Bearer token, unwraps { error } bodies, 401→login
@@ -60,8 +62,35 @@ frontend/src/
     Admin/               UserManagement
     Layout/              Sidebar
   App.jsx               routes + auth gate
+mokla-divas/
+  index.html           Mokla Divas — the shared availability calendar. One self-contained
+                       file, no build step, no React. Served at /calendar/<share-code>.
 start.bat               local one-click launcher (runs the production build)
 ```
+
+## Mokla Divas (shared availability calendar)
+A second, unrelated app that shares this repo and this Express process for storage only. It
+has no coupling to leads, follow-ups, or users, and nothing in the Lead Tracker SPA links to
+it. Friends of the owner open `/calendar/<share-code>`, pick their name from a combo, and
+block the dates they are busy; dates with no colour are open for the whole group.
+- **Deliberately unauthenticated.** It is the only public write API in the project. The
+  random `share_code` in the path is the entire gate — there are no accounts, because the
+  point is that friends without logins can use it. `routes/calendar.js` therefore validates
+  everything itself: date/month/key formats by regex, colours as hex, names trimmed and
+  length-capped, member ids re-derived server-side rather than trusted, six friends per
+  group, twenty groups per install.
+- **Tables:** `calendar_spaces` (the share code), `calendar_groups` (roster as a JSON
+  `members` column), `calendar_marks` (one row per group + date + friend). The unique index
+  on `calendar_marks` is an integrity constraint, not a performance index.
+- The share code is generated on first run (or taken from `CALENDAR_SHARE_CODE`) and printed
+  at startup — `pm2 logs leadtracker` shows it.
+- The page is also published as a Claude Artifact, where it talks to that runtime's document
+  store instead. One file serves both: `server.js` injects `window.__CAL__` when it serves
+  the page, and the page uses the REST API when that is present. Keep both paths working
+  when editing it — it has no build step, so edit `mokla-divas/index.html` directly.
+- The `api.js` rule below is about the React SPA. This page cannot import it (it is not part
+  of the Vite build), so it has its own three-line `fetch` wrapper that unwraps `{ error }`
+  the same way.
 
 ## Coding Standards
 - Functional React components with hooks only — no class components.
@@ -119,6 +148,9 @@ start.bat               local one-click launcher (runs the production build)
 - The master `admin` account (username `admin`) can never be reset or deleted — enforced
   server-side in `routes/users.js`, not just hidden in the UI. Preserve this invariant in any
   user-management change.
+- The calendar API at `/api/calendar` is public by design and must stay scoped to the
+  `calendar_*` tables. Never widen it to read or write leads, follow-ups, or users, and never
+  add an endpoint there that returns the share code — knowing the code is what grants access.
 - `ADMIN_SEED_PASSWORD` env var seeds the initial admin password on first run; if unset it
   falls back to a dev-only default (`admin123`) with a console warning — production must set
   this env var (or rotate the password immediately after first deploy).
@@ -161,6 +193,11 @@ pm2 reload leadtracker
 "
 ```
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
+The calendar page needs no build step (it is plain HTML, not part of the Vite bundle), so a
+`git pull` + `pm2 reload` is enough to ship a change to it. To find the shared calendar link
+after a deploy, run `pm2 logs leadtracker --lines 40` and look for `Shared calendar link:`.
+Set `CALENDAR_SHARE_CODE` before first run to choose the code yourself; changing it later has
+no effect, since the code is stored in the database once.
 
 ## Pipeline Column Logic (don't duplicate — reuse)
 Derived, never stored, in `getColumn()` (`frontend/src/components/Board/PipelineBoard.jsx`):

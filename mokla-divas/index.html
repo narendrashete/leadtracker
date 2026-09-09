@@ -527,10 +527,13 @@ var S = {
   m: now.getMonth(),
   marks: {},
   db: null,
+  api: (window.__CAL__ && window.__CAL__.api) || null,
   ready: false
 };
 var unsubMarks = null;
 var monthDocExists = false;
+var pollTimer = null;
+var pendingWrites = 0;
 
 function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -590,6 +593,27 @@ function cloneMembers(list){
   if(!Array.isArray(list)) return [];
   return list.map(function(m){ return {id:m.id, en:m.en, mr:m.mr||"", color:m.color}; });
 }
+/* Same contract as the rest of the project: a JSON body, errors as {error}. */
+function readJson(r){
+  return r.json().catch(function(){ return {}; }).then(function(j){
+    if(!r.ok) throw new Error((j && j.error) || ("HTTP "+r.status));
+    return j;
+  });
+}
+function apiGet(path){ return fetch(S.api+path,{headers:{Accept:"application/json"}}).then(readJson); }
+function apiSend(method,path,body){
+  return fetch(S.api+path,{
+    method:method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+  }).then(readJson);
+}
+function applyGroups(list){
+  if(!list || !list.length) return;
+  S.groups = list.map(function(g){
+    return {id:g.id, order:g.order||99, name_en:g.name_en||g.id, name_mr:g.name_mr||"", members:cloneMembers(g.members)};
+  });
+  if(!S.groups.some(function(g){ return g.id===S.groupId; })) S.groupId=S.groups[0].id;
+  S.me = ls("md.me."+S.groupId) || null;
+}
 function localMarksKey(){ return "md.marks."+S.groupId+"."+ymKey(); }
 function loadLocalMarks(){
   var raw = ls(localMarksKey());
@@ -597,8 +621,27 @@ function loadLocalMarks(){
 }
 function saveLocalMarks(){ lsSet(localMarksKey(), JSON.stringify(S.marks)); }
 
+function fetchMonth(){
+  var forGroup=S.groupId, forMonth=ymKey();
+  return apiGet("/marks?group="+encodeURIComponent(forGroup)+"&month="+encodeURIComponent(forMonth))
+    .then(function(j){
+      // Ignore a reply for a month the viewer has already navigated away from,
+      // and never let a poll overwrite an edit that has not landed yet.
+      if(forGroup!==S.groupId || forMonth!==ymKey() || pendingWrites>0) return;
+      S.marks = cloneDays(j.days);
+      render();
+    })
+    .catch(function(){});
+}
 function subscribeMonth(){
   if(unsubMarks){ unsubMarks(); unsubMarks=null; }
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+  if(S.api){
+    S.marks={}; render();
+    fetchMonth();
+    pollTimer=setInterval(function(){ if(!document.hidden) fetchMonth(); }, 20000);
+    return;
+  }
   if(!S.db){ loadLocalMarks(); render(); return; }
   monthDocExists=false;
   var ref = S.db.doc("marks/"+markDocId());
@@ -610,9 +653,21 @@ function subscribeMonth(){
   }, function(){ /* listener died; the page keeps its last view */ });
 }
 
-function writeDay(key, ids){
+function writeDay(key, ids, memberId, busy){
   S.marks[key] = ids;
   render();
+  if(S.api){
+    pendingWrites++;
+    apiSend("POST","/marks",{group:S.groupId, date:key, member_id:memberId, busy:!!busy})
+      .then(function(j){ S.marks[j.date] = (j.members||[]).slice(); })
+      .catch(function(){ pendingWrites--; fetchMonth(); pendingWrites++; })
+      .then(function(){
+        pendingWrites--;
+        render();
+        if(openDate!=null) drawSheet();
+      });
+    return;
+  }
   if(!S.db){ saveLocalMarks(); return; }
   var ref = S.db.doc("marks/"+markDocId());
   var patch = {}; patch[key] = ids;
@@ -624,6 +679,12 @@ function writeDay(key, ids){
 }
 
 function saveGroup(g){
+  if(S.api){
+    apiSend("PUT","/groups/"+encodeURIComponent(g.id),{members:g.members})
+      .then(function(j){ applyGroups(j.groups); render(); drawManage(); })
+      .catch(function(){ fetchGroups(); });
+    return;
+  }
   if(!S.db) return;
   S.db.doc("groups/"+g.id).set({
     id:g.id, order:g.order||99, name_en:g.name_en, name_mr:g.name_mr||"", members:g.members
@@ -647,7 +708,7 @@ function renderChrome(){
   $("tapHint").textContent=t("tap");
   $("footA").textContent=t("footA"); $("footB").textContent=t("footB"); $("footC").textContent=t("footC");
   var off=$("offline");
-  if(S.ready && !S.db){ off.hidden=false; off.textContent=t("offline"); } else { off.hidden=true; }
+  if(S.ready && !S.db && !S.api){ off.hidden=false; off.textContent=t("offline"); } else { off.hidden=true; }
 }
 
 function renderSelects(){
@@ -836,9 +897,9 @@ function drawSheet(){
 function toggleDay(key){
   if(!S.me) return;
   var cur=(S.marks[key]||[]).slice();
-  var i=cur.indexOf(S.me);
+  var i=cur.indexOf(S.me), busy=(i===-1);
   if(i>-1) cur.splice(i,1); else cur.push(S.me);
-  writeDay(key,cur);
+  writeDay(key,cur,S.me,busy);
   drawSheet();
 }
 
@@ -909,6 +970,19 @@ function removeMember(gid,mid){
   saveGroup(g); render(); drawManage();
 }
 function addGroup(name){
+  var isMrName=/[ऀ-ॿ]/.test(name);
+  if(S.api){
+    apiSend("POST","/groups",{name_en:name, name_mr:isMrName?name:""})
+      .then(function(j){
+        S.groupId = j.group_key;
+        lsSet("md.group", S.groupId);
+        applyGroups(j.groups);
+        S.me=null;
+        subscribeMonth(); render(); drawManage();
+      })
+      .catch(function(){});
+    return;
+  }
   var id=slug(name), n=1, base=id;
   while(S.groups.some(function(g){return g.id===id;})){ id=base+"-"+(++n); }
   var isMr=/[ऀ-ॿ]/.test(name);
@@ -950,8 +1024,16 @@ S.me = ls("md.me."+S.groupId) || null;
 loadLocalMarks();
 render();
 
-/* Light up the shared store when the viewer grants it. */
-if(window.claude && window.claude.use){
+function fetchGroups(){
+  return apiGet("/groups").then(function(j){ applyGroups(j.groups); render(); }).catch(function(){});
+}
+
+/* Self-hosted build: the server injects an API base. */
+if(S.api){
+  S.ready=true;
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) fetchMonth(); });
+  fetchGroups().then(function(){ subscribeMonth(); });
+} else if(window.claude && window.claude.use){
   window.claude.use("db").then(function(db){
     S.ready=true;
     if(!db){ render(); return; }

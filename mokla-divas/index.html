@@ -1,0 +1,967 @@
+<title>Mokla Divas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Mukta:wght@300;400;600;700&family=Khand:wght@500;600;700&display=swap">
+<style>
+/* ---------- tokens: light is the base, both dark states redefine only tokens ---------- */
+:root{
+  --paper:#EFEDE4;
+  --card:#FBFAF5;
+  --card-2:#F5F3EA;
+  --ink:#1B1917;
+  --ink-2:#56514A;
+  --ink-3:#8B8478;
+  --rule:#D9D4C6;
+  --rule-strong:#BEB7A5;
+  --red:#B93A2B;
+  --red-soft:#F3E2DC;
+  --saffron:#D98A16;
+  --free:#3B7A5C;
+  --free-soft:#E1EDE5;
+  --fill-alpha:0.28;
+  --shadow-sheet:0 24px 60px -18px rgba(27,25,23,.42), 0 2px 8px rgba(27,25,23,.10);
+  --shadow-card:0 1px 2px rgba(27,25,23,.06);
+  --focus:#1B1917;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141310;
+    --card:#1E1D18;
+    --card-2:#25231D;
+    --ink:#F1EEE4;
+    --ink-2:#B3ADA0;
+    --ink-3:#7B756A;
+    --rule:#34322A;
+    --rule-strong:#4A473C;
+    --red:#E7705F;
+    --red-soft:#3A231E;
+    --saffron:#EDA63C;
+    --free:#6CBE95;
+    --free-soft:#1D2C24;
+    --fill-alpha:0.38;
+    --shadow-sheet:0 26px 70px -20px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.5);
+    --shadow-card:0 1px 2px rgba(0,0,0,.35);
+    --focus:#F1EEE4;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141310;
+  --card:#1E1D18;
+  --card-2:#25231D;
+  --ink:#F1EEE4;
+  --ink-2:#B3ADA0;
+  --ink-3:#7B756A;
+  --rule:#34322A;
+  --rule-strong:#4A473C;
+  --red:#E7705F;
+  --red-soft:#3A231E;
+  --saffron:#EDA63C;
+  --free:#6CBE95;
+  --free-soft:#1D2C24;
+  --fill-alpha:0.38;
+  --shadow-sheet:0 26px 70px -20px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.5);
+  --shadow-card:0 1px 2px rgba(0,0,0,.35);
+  --focus:#F1EEE4;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Mukta","Noto Sans Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.45;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:14px 12px 56px}
+@media(min-width:760px){ .wrap{padding:26px 24px 72px} }
+
+/* ---------- masthead ---------- */
+.masthead{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+  padding-bottom:10px;border-bottom:2px solid var(--ink);
+}
+.brand{display:flex;flex-direction:column;gap:1px;min-width:0}
+.brand h1{
+  margin:0;font-family:"Rozha One",Georgia,serif;font-weight:400;
+  font-size:clamp(28px,7.5vw,42px);line-height:1;letter-spacing:-.01em;
+  text-wrap:balance;
+}
+.brand .sub{
+  font-size:11px;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--ink-3);font-weight:600;
+}
+.brand .sub.mr{text-transform:none;letter-spacing:.02em}
+.langswitch{display:flex;border:1px solid var(--rule-strong);border-radius:999px;overflow:hidden;flex:none;background:var(--card)}
+.langswitch button{
+  font:inherit;font-size:12px;font-weight:600;padding:6px 12px;border:0;cursor:pointer;
+  background:transparent;color:var(--ink-2);
+}
+.langswitch button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- controls ---------- */
+.controls{
+  display:grid;gap:8px;margin-top:14px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+@media(min-width:640px){ .controls{grid-template-columns:1.2fr 1.2fr 1fr .8fr auto} }
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{
+  font-size:10px;text-transform:uppercase;letter-spacing:.13em;font-weight:700;color:var(--ink-3);
+}
+.field label.mr{text-transform:none;letter-spacing:.02em;font-size:11px}
+select,.btn{
+  font:inherit;font-size:14px;color:var(--ink);background:var(--card);
+  border:1px solid var(--rule-strong);border-radius:8px;padding:8px 10px;
+  width:100%;cursor:pointer;box-shadow:var(--shadow-card);
+  appearance:none;-webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  padding-right:28px;
+}
+.btn{background-image:none;padding-right:10px;text-align:center;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:var(--ink-2)}
+.controls .field.today{justify-content:flex-end;grid-column:1/-1}
+@media(min-width:640px){ .controls .field.today{grid-column:auto} }
+:where(select,button,[tabindex]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* ---------- roster ---------- */
+.roster{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);
+}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid var(--rule-strong);border-radius:999px;
+  padding:4px 11px 4px 5px;background:var(--card);font-size:13px;line-height:1.2;
+}
+.chip .sw{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.chip .n{font-weight:600}
+.chip .c{color:var(--ink-3);font-size:11px;font-variant-numeric:tabular-nums}
+.chip.is-me{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.chip.is-me .n::after{content:"•";margin-left:6px;color:var(--ink-3)}
+.roster .manage{
+  margin-left:auto;font-size:12px;font-weight:600;background:none;border:0;
+  color:var(--ink-2);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px;
+}
+
+/* ---------- free-day readout: the actual answer the page exists to give ---------- */
+.readout{
+  margin-top:14px;border:1px solid var(--rule);border-left:3px solid var(--free);
+  background:var(--card);border-radius:4px;padding:11px 13px;
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;
+}
+.readout .big{
+  font-family:"Khand",sans-serif;font-weight:700;font-size:26px;line-height:1;
+  color:var(--free);font-variant-numeric:tabular-nums;
+}
+.readout .lbl{font-size:12px;color:var(--ink-2);font-weight:600}
+.readout .dates{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+.readout .dates b{
+  font-family:"Khand",sans-serif;font-weight:600;font-size:14px;
+  background:var(--free-soft);color:var(--free);border-radius:4px;padding:1px 7px;
+  font-variant-numeric:tabular-nums;
+}
+.readout .none{font-size:13px;color:var(--ink-2)}
+
+/* ---------- grid ---------- */
+.monthline{
+  display:flex;align-items:baseline;gap:10px;margin:20px 0 8px;
+}
+.monthline h2{
+  margin:0;font-family:"Rozha One",Georgia,serif;font-weight:400;
+  font-size:clamp(22px,5vw,30px);line-height:1.05;
+}
+.monthline .yr{font-family:"Khand",sans-serif;font-weight:600;font-size:20px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.monthline .hint{margin-left:auto;font-size:11px;color:var(--ink-3);text-align:right}
+
+.dow{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
+  border-bottom:1.5px solid var(--ink);padding-bottom:5px;margin-bottom:3px;
+}
+.dow span{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);text-align:center;overflow:hidden;
+}
+.dow span.mr{letter-spacing:0;text-transform:none;font-size:12px}
+.dow span.sun{color:var(--red)}
+
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+@media(min-width:640px){ .grid,.dow{gap:6px} }
+
+.cell{
+  position:relative;overflow:hidden;
+  aspect-ratio:1/1.12;
+  background:var(--card);border:1px solid var(--rule);border-radius:5px;
+  padding:4px 4px 9px;
+  display:flex;flex-direction:column;align-items:flex-start;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;
+  transition:transform .13s ease, box-shadow .13s ease, border-color .13s ease;
+}
+@media(min-width:640px){ .cell{aspect-ratio:1/.92;padding:6px 7px 12px} }
+.cell:hover{transform:translateY(-2px);box-shadow:var(--shadow-card);border-color:var(--rule-strong);z-index:1}
+.cell:active{transform:translateY(0)}
+.cell.pad{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cell.pad *{opacity:.22}
+.cell .dn{
+  font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);line-height:1;position:relative;z-index:2;
+}
+.cell.mr .dn{letter-spacing:0;text-transform:none;font-size:11px}
+.cell.sun .dn{color:var(--red)}
+.cell .num{
+  font-family:"Khand",sans-serif;font-weight:600;
+  font-size:clamp(19px,5.6vw,27px);line-height:1;margin-top:1px;
+  font-variant-numeric:tabular-nums;position:relative;z-index:2;
+}
+.cell.sun .num,.cell.fest .num{color:var(--red)}
+.cell .fest{
+  font-size:9px;line-height:1.15;color:var(--red);font-weight:600;
+  margin-top:2px;position:relative;z-index:2;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  overflow-wrap:anywhere;
+}
+@media(min-width:640px){ .cell .fest{font-size:10.5px} }
+.cell.mr .fest{font-size:10px}
+.cell .festdot{
+  display:none;width:5px;height:5px;border-radius:50%;background:var(--red);
+  margin-top:3px;position:relative;z-index:2;flex:none;
+}
+@media(max-width:519px){
+  .cell .fest{display:none}
+  .cell .festdot{display:block}
+}
+.cell .tint{position:absolute;inset:0;z-index:0;opacity:var(--fill-alpha);pointer-events:none}
+.cell .strip{position:absolute;left:0;right:0;bottom:0;height:6px;z-index:2;pointer-events:none}
+.cell .mine{
+  position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;
+  z-index:3;box-shadow:0 0 0 2px var(--card);
+}
+.cell.today{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.cell.today .num::after{
+  content:"";display:block;height:2px;background:var(--ink);margin-top:1px;border-radius:2px;
+}
+
+/* ---------- day sheet ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:40;background:rgba(20,19,16,.55);
+  backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  animation:fade .16s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:400px;max-height:88vh;overflow-y:auto;
+  background:var(--card);border:1px solid var(--rule-strong);border-radius:12px;
+  box-shadow:var(--shadow-sheet);
+  animation:rise .2s cubic-bezier(.2,.8,.3,1);
+  position:relative;
+}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .scrim,.sheet{animation:none}
+  .cell{transition:none}
+  .cell:hover{transform:none}
+}
+.sheet .top{padding:18px 18px 14px;border-bottom:1px solid var(--rule);position:relative;overflow:hidden}
+.sheet .top .tint{position:absolute;inset:0;opacity:var(--fill-alpha);z-index:0}
+.sheet .top>*{position:relative;z-index:1}
+.sheet .dn{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.sheet.mr .dn{letter-spacing:.02em;text-transform:none;font-size:14px}
+.sheet .dn.sun{color:var(--red)}
+.sheet .num{font-family:"Khand",sans-serif;font-weight:700;font-size:64px;line-height:.9;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.sheet .my{font-family:"Khand",sans-serif;font-weight:500;font-size:17px;color:var(--ink-2);margin-top:2px}
+.sheet .fests{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.sheet .fests b{
+  font-size:12px;font-weight:600;background:var(--red-soft);color:var(--red);
+  border-radius:999px;padding:3px 10px;
+}
+.sheet .body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px}
+.sheet h3{
+  margin:0;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+}
+.sheet.mr h3{letter-spacing:.02em;text-transform:none;font-size:12px}
+.who{display:flex;flex-direction:column;gap:5px}
+.who .row{display:flex;align-items:center;gap:9px;font-size:14px}
+.who .row .sw{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.who .row .tag{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:600}
+.who .clear{font-size:13px;color:var(--free);font-weight:600}
+.act{
+  font:inherit;font-size:15px;font-weight:700;padding:13px 16px;border-radius:9px;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;width:100%;
+}
+.act.on{background:transparent;color:var(--ink)}
+.act.on .lead{color:var(--red)}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.act .sub{display:block;font-size:11px;font-weight:500;opacity:.7;margin-top:1px}
+.sheet .close{
+  position:absolute;top:10px;right:10px;z-index:3;
+  width:30px;height:30px;border-radius:50%;border:1px solid var(--rule-strong);
+  background:var(--card);color:var(--ink-2);font-size:17px;line-height:1;cursor:pointer;
+}
+
+/* ---------- manage ---------- */
+.mg{display:flex;flex-direction:column;gap:14px;padding:18px}
+.mg .grp{border:1px solid var(--rule);border-radius:8px;padding:11px 12px;background:var(--card-2)}
+.mg .grp h4{margin:0 0 8px;font-family:"Rozha One",Georgia,serif;font-weight:400;font-size:19px}
+.mg .mem{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px}
+.mg .mem .sw{width:13px;height:13px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.mg .mem .rm{margin-left:auto;background:none;border:0;color:var(--ink-3);cursor:pointer;font-size:16px;padding:0 4px}
+.mg .add{display:flex;gap:6px;margin-top:9px}
+.mg input[type=text]{
+  font:inherit;font-size:14px;flex:1;min-width:0;padding:7px 9px;border-radius:7px;
+  border:1px solid var(--rule-strong);background:var(--card);color:var(--ink);
+}
+.mg input[type=color]{width:38px;height:35px;padding:2px;border:1px solid var(--rule-strong);border-radius:7px;background:var(--card);cursor:pointer;flex:none}
+.mg .go{font:inherit;font-weight:700;font-size:13px;padding:7px 13px;border-radius:7px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;flex:none}
+.mg .go:disabled{opacity:.4;cursor:not-allowed}
+.mg .full{font-size:12px;color:var(--ink-3);margin-top:8px}
+.mg .newgrp{border-top:1px dashed var(--rule-strong);padding-top:13px}
+
+/* ---------- footer ---------- */
+.foot{
+  margin-top:28px;padding-top:14px;border-top:1px solid var(--rule);
+  font-size:11.5px;line-height:1.6;color:var(--ink-3);
+  display:flex;flex-direction:column;gap:4px;
+}
+.foot .k{color:var(--ink-2);font-weight:600}
+.offline{
+  margin-top:12px;font-size:12px;padding:8px 11px;border-radius:6px;
+  background:var(--red-soft);color:var(--red);font-weight:600;
+}
+[hidden]{display:none !important}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand">
+      <h1 id="brandName">Mokla Divas</h1>
+      <div class="sub" id="brandSub">Shared availability · pick a date everyone is free</div>
+    </div>
+    <div class="langswitch" role="group" aria-label="Language">
+      <button type="button" id="langEn" aria-pressed="true">EN</button>
+      <button type="button" id="langMr" aria-pressed="false">मराठी</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="field"><label for="selGroup" id="lblGroup">Group</label><select id="selGroup"></select></div>
+    <div class="field"><label for="selMe" id="lblMe">Your name</label><select id="selMe"></select></div>
+    <div class="field"><label for="selMonth" id="lblMonth">Month</label><select id="selMonth"></select></div>
+    <div class="field"><label for="selYear" id="lblYear">Year</label><select id="selYear"></select></div>
+    <div class="field today"><button type="button" class="btn" id="btnToday">Today</button></div>
+  </div>
+
+  <div class="roster" id="roster"></div>
+
+  <div class="readout" id="readout"></div>
+
+  <div class="monthline">
+    <h2 id="monthName">September</h2>
+    <span class="yr" id="yearName">2026</span>
+    <span class="hint" id="tapHint">Tap a date to open it</span>
+  </div>
+
+  <div class="dow" id="dow"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="offline" id="offline" hidden></div>
+
+  <footer class="foot">
+    <div><span class="k" id="footA">A colour on a date means that friend is busy.</span> <span id="footB">Dates with no colour at all are open for the whole group.</span></div>
+    <div id="footC">Festival dates follow the common Indian panchang and are listed for 2026–2027.</div>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="scrim" id="mgScrim" hidden><div class="sheet" id="mgSheet" role="dialog" aria-modal="true"></div></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- config ---------------- */
+var MAX_MEMBERS = 6;
+var PALETTE = ["#E4572E","#2E86AB","#5E8C3F","#8E5BD8","#D9A404","#C42A67"];
+
+/* Offline / first-run roster. The live roster comes from the shared store. */
+var DEFAULT_GROUPS = [
+  {id:"funda", order:1, name_en:"Funda", name_mr:"फंडा", members:[
+    {id:"narendra", en:"Narendra", mr:"नरेंद्र", color:"#E4572E"},
+    {id:"vivek",    en:"Vivek",    mr:"विवेक",  color:"#2E86AB"},
+    {id:"prasad",   en:"Prasad",   mr:"प्रसाद", color:"#5E8C3F"},
+    {id:"bhushan",  en:"Bhushan",  mr:"भूषण",   color:"#8E5BD8"},
+    {id:"mishal",   en:"Mishal",   mr:"मिशाल",  color:"#D9A404"},
+    {id:"pant",     en:"Pant",     mr:"पंत",    color:"#C42A67"}
+  ]},
+  {id:"thigdam", order:2, name_en:"Thigdam", name_mr:"ठिगडम", members:[
+    {id:"narendra",  en:"Narendra",  mr:"नरेंद्र",  color:"#E4572E"},
+    {id:"siddharth", en:"Siddharth", mr:"सिद्धार्थ", color:"#2E86AB"},
+    {id:"riyaz",     en:"Riyaz",     mr:"रियाझ",    color:"#5E8C3F"}
+  ]}
+];
+
+var MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var MONTHS_MR = ["जानेवारी","फेब्रुवारी","मार्च","एप्रिल","मे","जून","जुलै","ऑगस्ट","सप्टेंबर","ऑक्टोबर","नोव्हेंबर","डिसेंबर"];
+var DOW_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var DOW_MR = ["रवि","सोम","मंगळ","बुध","गुरु","शुक्र","शनि"];
+var DOWL_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var DOWL_MR = ["रविवार","सोमवार","मंगळवार","बुधवार","गुरुवार","शुक्रवार","शनिवार"];
+
+/* Festivals that fall on the same civil date every year. */
+var FEST_FIXED = {
+  "01-01":[["New Year","नववर्ष दिन"]],
+  "01-26":[["Republic Day","प्रजासत्ताक दिन"]],
+  "04-14":[["Ambedkar Jayanti","आंबेडकर जयंती"]],
+  "05-01":[["Maharashtra Day","महाराष्ट्र दिन"]],
+  "08-15":[["Independence Day","स्वातंत्र्य दिन"]],
+  "10-02":[["Gandhi Jayanti","गांधी जयंती"]],
+  "11-14":[["Children's Day","बालदिन"]],
+  "12-25":[["Christmas","नाताळ"]]
+};
+
+/* Lunar / movable festivals, per year, per the common Indian panchang. */
+var FEST_DATED = {
+  "2026-01-14":[["Makar Sankranti","मकर संक्रांत"]],
+  "2026-02-15":[["Maha Shivaratri","महाशिवरात्री"]],
+  "2026-03-03":[["Holi Paurnima","होळी पौर्णिमा"]],
+  "2026-03-04":[["Dhulivandan","धुलिवंदन"]],
+  "2026-03-19":[["Gudi Padwa","गुढीपाडवा"]],
+  "2026-03-20":[["Ramzan Eid","रमजान ईद"]],
+  "2026-03-26":[["Ram Navami","राम नवमी"]],
+  "2026-04-01":[["Hanuman Jayanti","हनुमान जयंती"]],
+  "2026-04-03":[["Good Friday","गुड फ्रायडे"]],
+  "2026-04-19":[["Akshaya Tritiya","अक्षय्य तृतीया"]],
+  "2026-05-01":[["Buddha Purnima","बुद्ध पौर्णिमा"]],
+  "2026-05-27":[["Bakri Eid","बकरी ईद"]],
+  "2026-08-28":[["Raksha Bandhan","रक्षाबंधन"]],
+  "2026-09-04":[["Krishna Janmashtami","कृष्ण जन्माष्टमी"]],
+  "2026-09-14":[["Ganesh Chaturthi","गणेश चतुर्थी"]],
+  "2026-09-25":[["Anant Chaturdashi","अनंत चतुर्दशी"]],
+  "2026-10-11":[["Ghatasthapana","घटस्थापना"]],
+  "2026-10-20":[["Dasara","दसरा"]],
+  "2026-11-05":[["Vasubaras","वसुबारस"]],
+  "2026-11-07":[["Narak Chaturdashi","नरक चतुर्दशी"]],
+  "2026-11-08":[["Lakshmi Pujan","लक्ष्मीपूजन"]],
+  "2026-11-10":[["Diwali Padwa","बलिप्रतिपदा"]],
+  "2026-11-11":[["Bhaubeej","भाऊबीज"]],
+  "2026-11-24":[["Guru Nanak Jayanti","गुरु नानक जयंती"]],
+  "2027-01-14":[["Makar Sankranti","मकर संक्रांत"]],
+  "2027-03-06":[["Maha Shivaratri","महाशिवरात्री"]],
+  "2027-03-21":[["Holi Paurnima","होळी पौर्णिमा"]],
+  "2027-03-22":[["Dhulivandan","धुलिवंदन"]],
+  "2027-03-26":[["Good Friday","गुड फ्रायडे"]],
+  "2027-04-07":[["Gudi Padwa","गुढीपाडवा"]],
+  "2027-04-15":[["Ram Navami","राम नवमी"]],
+  "2027-04-21":[["Hanuman Jayanti","हनुमान जयंती"]],
+  "2027-05-20":[["Buddha Purnima","बुद्ध पौर्णिमा"]],
+  "2027-08-17":[["Raksha Bandhan","रक्षाबंधन"]],
+  "2027-08-25":[["Krishna Janmashtami","कृष्ण जन्माष्टमी"]],
+  "2027-09-04":[["Ganesh Chaturthi","गणेश चतुर्थी"]],
+  "2027-09-15":[["Anant Chaturdashi","अनंत चतुर्दशी"]],
+  "2027-09-30":[["Ghatasthapana","घटस्थापना"]],
+  "2027-10-09":[["Dasara","दसरा"]],
+  "2027-10-29":[["Lakshmi Pujan","लक्ष्मीपूजन"]],
+  "2027-10-31":[["Bhaubeej","भाऊबीज"]]
+};
+
+var T = {
+  en:{
+    brand:"Mokla Divas",
+    sub:"Shared availability · pick a date everyone is free",
+    group:"Group", me:"Your name", month:"Month", year:"Year", today:"Today",
+    pickName:"— choose your name —",
+    manage:"Manage groups",
+    freeOne:"day nobody has blocked", freeMany:"days nobody has blocked",
+    noneFree:"Every date this month is blocked by someone.",
+    tap:"Tap a date to open it",
+    busy:"Not available", allFree:"Everyone is free this day",
+    markOn:"I'm not available", markOff:"I am available again",
+    markOnSub:"Adds your colour to this date", markOffSub:"Removes your colour from this date",
+    needName:"Choose your name above first",
+    close:"Close",
+    footA:"A colour on a date means that friend is busy.",
+    footB:"Dates with no colour at all are open for the whole group.",
+    footC:"Festival dates follow the common Indian panchang and are listed for 2026–2027.",
+    mgTitle:"Groups & friends",
+    addFriend:"Add friend", friendName:"Friend's name", newGroup:"New group", groupName:"Group name", create:"Create",
+    full:"Six friends is the maximum for a group.",
+    you:"you",
+    offline:"Working offline — your marks are saved on this device only."
+  },
+  mr:{
+    brand:"मोकळा दिवस",
+    sub:"गटाची उपलब्धता · सर्वांना मोकळा दिवस शोधा",
+    group:"गट", me:"तुमचे नाव", month:"महिना", year:"वर्ष", today:"आज",
+    pickName:"— तुमचे नाव निवडा —",
+    manage:"गट व्यवस्थापन",
+    freeOne:"दिवस पूर्ण मोकळा", freeMany:"दिवस पूर्ण मोकळे",
+    noneFree:"या महिन्यात पूर्ण मोकळा दिवस नाही.",
+    tap:"तारीख उघडण्यासाठी त्यावर टॉप करा",
+    busy:"अनुपलब्ध", allFree:"या दिवशी सर्वजण मोकळे आहेत",
+    markOn:"मी उपलब्ध नाही", markOff:"मी पुन्हा उपलब्ध आहे",
+    markOnSub:"या तारखेला तुमचा रंग लागेल",
+    markOffSub:"या तारखेवरून तुमचा रंग काढला जाईल",
+    needName:"प्रथम वर तुमचे नाव निवडा",
+    close:"बंद करा",
+    footA:"तारखेवरील रंग म्हणजे तो मित्र त्या दिवशी व्यग्र आहे.",
+    footB:"ज्या तारखेवर एकही रंग नाही ती सर्व गटासाठी मोकळी आहे.",
+    footC:"सणाच्या तारखा प्रचलित पंचांगानुसार आहेत — २०२६–२०२७.",
+    mgTitle:"गट आणि मित्र",
+    addFriend:"मित्र जोडा", friendName:"मित्राचे नाव",
+    newGroup:"नवीन गट", groupName:"गटाचे नाव", create:"तयार करा",
+    full:"एका गटात जास्तीत जास्त सहा मित्र.",
+    you:"तुम्ही",
+    offline:"ऑफलाईन — तुमच्या खुणा फक्त या डिव्हाईसवर साठवल्या जातील."
+  }
+};
+
+/* ---------------- state ---------------- */
+var now = new Date();
+var S = {
+  lang: ls("md.lang") || "en",
+  groups: DEFAULT_GROUPS.map(cloneGroup),
+  groupId: ls("md.group") || DEFAULT_GROUPS[0].id,
+  me: null,
+  y: now.getFullYear(),
+  m: now.getMonth(),
+  marks: {},
+  db: null,
+  ready: false
+};
+var unsubMarks = null;
+var monthDocExists = false;
+
+function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function cloneGroup(g){ return {id:g.id,order:g.order,name_en:g.name_en,name_mr:g.name_mr,members:g.members.map(function(m){return {id:m.id,en:m.en,mr:m.mr,color:m.color};})}; }
+function t(k){ return T[S.lang][k]; }
+function pad2(n){ return n<10 ? "0"+n : ""+n; }
+function ymKey(){ return S.y+"-"+pad2(S.m+1); }
+function dateKey(y,m,d){ return y+"-"+pad2(m+1)+"-"+pad2(d); }
+function markDocId(){ return S.groupId+"__"+ymKey(); }
+function group(){ for(var i=0;i<S.groups.length;i++){ if(S.groups[i].id===S.groupId) return S.groups[i]; } return S.groups[0]; }
+function member(id){ var g=group(); for(var i=0;i<g.members.length;i++){ if(g.members[i].id===id) return g.members[i]; } return null; }
+function mName(m){ return (S.lang==="mr" && m.mr) ? m.mr : m.en; }
+function gName(g){ return (S.lang==="mr" && g.name_mr) ? g.name_mr : g.name_en; }
+function slug(s){
+  var out = s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  return out || ("g"+Date.now().toString(36));
+}
+function rgba(hex,a){
+  var h=hex.replace("#","");
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var n=parseInt(h,16);
+  return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";
+}
+function splitGradient(colors, alpha){
+  if(!colors.length) return "";
+  var n=colors.length, stops=[];
+  for(var i=0;i<n;i++){
+    var c = alpha==null ? colors[i] : rgba(colors[i],alpha);
+    stops.push(c+" "+(i*100/n).toFixed(4)+"% "+((i+1)*100/n).toFixed(4)+"%");
+  }
+  return "linear-gradient(90deg,"+stops.join(",")+")";
+}
+function festsFor(y,m,d){
+  var out=[], mmdd=pad2(m+1)+"-"+pad2(d), full=dateKey(y,m,d);
+  if(FEST_DATED[full]) out=out.concat(FEST_DATED[full]);
+  if(FEST_FIXED[mmdd]) out=out.concat(FEST_FIXED[mmdd]);
+  return out.map(function(p){ return S.lang==="mr" ? p[1] : p[0]; });
+}
+function marksOn(key){
+  var raw = S.marks[key] || [];
+  var g = group(), out = [];
+  for(var i=0;i<g.members.length;i++){ if(raw.indexOf(g.members[i].id)>-1) out.push(g.members[i]); }
+  return out;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* ---------------- shared store ---------------- */
+function localMarksKey(){ return "md.marks."+S.groupId+"."+ymKey(); }
+function loadLocalMarks(){
+  var raw = ls(localMarksKey());
+  S.marks = raw ? (JSON.parse(raw)||{}) : {};
+}
+function saveLocalMarks(){ lsSet(localMarksKey(), JSON.stringify(S.marks)); }
+
+function subscribeMonth(){
+  if(unsubMarks){ unsubMarks(); unsubMarks=null; }
+  if(!S.db){ loadLocalMarks(); render(); return; }
+  monthDocExists=false;
+  var ref = S.db.doc("marks/"+markDocId());
+  unsubMarks = ref.onSnapshot(function(snap){
+    monthDocExists = snap.exists;
+    var data = snap.exists ? (snap.data()||{}) : {};
+    S.marks = data.days && typeof data.days==="object" ? data.days : {};
+    render();
+  }, function(){ /* listener died; the page keeps its last view */ });
+}
+
+function writeDay(key, ids){
+  S.marks[key] = ids;
+  render();
+  if(!S.db){ saveLocalMarks(); return; }
+  var ref = S.db.doc("marks/"+markDocId());
+  var patch = {}; patch[key] = ids;
+  var body = {days:patch};
+  var p = monthDocExists ? ref.update(body) : ref.set({days:S.marks, group:S.groupId, month:ymKey()});
+  p.then(function(){ monthDocExists=true; }).catch(function(){
+    return ref.set({days:S.marks, group:S.groupId, month:ymKey()}).then(function(){ monthDocExists=true; }).catch(function(){});
+  });
+}
+
+function saveGroup(g){
+  if(!S.db) return;
+  S.db.doc("groups/"+g.id).set({
+    id:g.id, order:g.order||99, name_en:g.name_en, name_mr:g.name_mr||"", members:g.members
+  }).catch(function(){});
+}
+
+/* ---------------- rendering ---------------- */
+var $ = function(id){ return document.getElementById(id); };
+
+function renderChrome(){
+  document.documentElement.lang = S.lang==="mr" ? "mr" : "en";
+  $("brandName").textContent = t("brand");
+  $("brandSub").textContent = t("sub");
+  $("brandSub").className = "sub" + (S.lang==="mr" ? " mr" : "");
+  $("langEn").setAttribute("aria-pressed", S.lang==="en");
+  $("langMr").setAttribute("aria-pressed", S.lang==="mr");
+  $("lblGroup").textContent=t("group");
+  $("lblMe").textContent=t("me"); $("lblMonth").textContent=t("month"); $("lblYear").textContent=t("year");
+  ["lblGroup","lblMe","lblMonth","lblYear"].forEach(function(id){ $(id).className = S.lang==="mr" ? "mr" : ""; });
+  $("btnToday").textContent=t("today");
+  $("tapHint").textContent=t("tap");
+  $("footA").textContent=t("footA"); $("footB").textContent=t("footB"); $("footC").textContent=t("footC");
+  var off=$("offline");
+  if(S.ready && !S.db){ off.hidden=false; off.textContent=t("offline"); } else { off.hidden=true; }
+}
+
+function renderSelects(){
+  var sg=$("selGroup"); sg.innerHTML="";
+  S.groups.forEach(function(g){
+    var o=document.createElement("option"); o.value=g.id; o.textContent=gName(g);
+    if(g.id===S.groupId) o.selected=true; sg.appendChild(o);
+  });
+  var sm=$("selMe"); sm.innerHTML="";
+  var o0=document.createElement("option"); o0.value=""; o0.textContent=t("pickName"); sm.appendChild(o0);
+  group().members.forEach(function(m){
+    var o=document.createElement("option"); o.value=m.id; o.textContent=mName(m);
+    if(m.id===S.me) o.selected=true; sm.appendChild(o);
+  });
+  var mo=$("selMonth"); mo.innerHTML="";
+  (S.lang==="mr"?MONTHS_MR:MONTHS_EN).forEach(function(n,i){
+    var o=document.createElement("option"); o.value=i; o.textContent=n;
+    if(i===S.m) o.selected=true; mo.appendChild(o);
+  });
+  var yr=$("selYear"); yr.innerHTML="";
+  for(var y=now.getFullYear()-1; y<=now.getFullYear()+4; y++){
+    var o=document.createElement("option"); o.value=y; o.textContent=y;
+    if(y===S.y) o.selected=true; yr.appendChild(o);
+  }
+}
+
+function renderRoster(){
+  var g=group(), host=$("roster"); host.innerHTML="";
+  var counts={};
+  Object.keys(S.marks).forEach(function(k){
+    if(k.slice(0,7)!==ymKey()) return;
+    (S.marks[k]||[]).forEach(function(id){ counts[id]=(counts[id]||0)+1; });
+  });
+  g.members.forEach(function(m){
+    var b=document.createElement("button");
+    b.type="button"; b.className="chip"+(m.id===S.me?" is-me":"");
+    b.innerHTML='<span class="sw" style="background:'+m.color+'"></span><span class="n">'+esc(mName(m))+'</span>'+
+                (counts[m.id]?'<span class="c">'+counts[m.id]+'</span>':'');
+    b.title = mName(m);
+    b.addEventListener("click", function(){ setMe(m.id===S.me?"":m.id); });
+    host.appendChild(b);
+  });
+  var mg=document.createElement("button");
+  mg.type="button"; mg.className="manage"; mg.textContent=t("manage");
+  mg.addEventListener("click", openManage);
+  host.appendChild(mg);
+}
+
+function renderReadout(){
+  var dim=new Date(S.y,S.m+1,0).getDate(), free=[];
+  for(var d=1; d<=dim; d++){
+    if(marksOn(dateKey(S.y,S.m,d)).length===0) free.push(d);
+  }
+  var host=$("readout");
+  if(!free.length){ host.innerHTML='<span class="none">'+esc(t("noneFree"))+'</span>'; return; }
+  var chips = free.slice(0,14).map(function(d){ return "<b>"+d+"</b>"; }).join("");
+  if(free.length>14) chips += '<b>+'+(free.length-14)+'</b>';
+  host.innerHTML = '<span class="big">'+free.length+'</span>'+
+    '<span class="lbl">'+esc(free.length===1?t("freeOne"):t("freeMany"))+'</span>'+
+    '<span class="dates">'+chips+'</span>';
+}
+
+function renderGrid(){
+  var monthsArr = S.lang==="mr"?MONTHS_MR:MONTHS_EN;
+  $("monthName").textContent = monthsArr[S.m];
+  $("yearName").textContent = S.y;
+
+  var dowHost=$("dow"); dowHost.innerHTML="";
+  (S.lang==="mr"?DOW_MR:DOW_EN).forEach(function(n,i){
+    var s=document.createElement("span");
+    s.textContent=n; s.className=(i===0?"sun ":"")+(S.lang==="mr"?"mr":"");
+    dowHost.appendChild(s);
+  });
+
+  var host=$("grid"); host.innerHTML="";
+  var first=new Date(S.y,S.m,1).getDay();
+  var dim=new Date(S.y,S.m+1,0).getDate();
+  var prevDim=new Date(S.y,S.m,0).getDate();
+  var tk=dateKey(now.getFullYear(),now.getMonth(),now.getDate());
+  var cells=[], i;
+  for(i=0;i<first;i++) cells.push({pad:true,d:prevDim-first+1+i});
+  for(i=1;i<=dim;i++) cells.push({pad:false,d:i});
+  while(cells.length%7!==0) cells.push({pad:true,d:cells.length-first-dim+1});
+
+  cells.forEach(function(c,idx){
+    var el=document.createElement(c.pad?"div":"button");
+    var dow=idx%7;
+    if(c.pad){
+      el.className="cell pad";
+      el.innerHTML='<span class="dn">&nbsp;</span><span class="num">'+c.d+'</span>';
+      host.appendChild(el); return;
+    }
+    el.type="button";
+    var key=dateKey(S.y,S.m,c.d);
+    var who=marksOn(key);
+    var fests=festsFor(S.y,S.m,c.d);
+    var cls="cell";
+    if(dow===0) cls+=" sun";
+    if(fests.length) cls+=" fest";
+    if(key===tk) cls+=" today";
+    if(S.lang==="mr") cls+=" mr";
+    el.className=cls;
+    var colors=who.map(function(m){ return m.color; });
+    var html="";
+    if(colors.length){
+      html += '<span class="tint" style="background-image:'+splitGradient(colors,null)+'"></span>';
+      html += '<span class="strip" style="background-image:'+splitGradient(colors,null)+'"></span>';
+    }
+    html += '<span class="dn">'+esc((S.lang==="mr"?DOW_MR:DOW_EN)[dow])+'</span>';
+    html += '<span class="num">'+c.d+'</span>';
+    if(fests.length){
+      html += '<span class="festdot" aria-hidden="true"></span>';
+      html += '<span class="fest">'+esc(fests.join(" · "))+'</span>';
+    }
+    if(S.me && who.some(function(m){return m.id===S.me;})){
+      var meM=member(S.me);
+      html += '<span class="mine" style="background:'+(meM?meM.color:"#000")+'"></span>';
+    }
+    el.innerHTML=html;
+    var label = c.d+" "+monthsArr[S.m]+", "+(S.lang==="mr"?DOWL_MR:DOWL_EN)[dow];
+    if(who.length) label += " — "+t("busy")+": "+who.map(mName).join(", ");
+    el.setAttribute("aria-label",label);
+    el.addEventListener("click", function(){ openDay(c.d); });
+    host.appendChild(el);
+  });
+}
+
+function render(){ renderChrome(); renderSelects(); renderRoster(); renderReadout(); renderGrid(); }
+
+/* ---------------- day sheet ---------------- */
+var openDate=null;
+
+function openDay(d){
+  openDate=d;
+  drawSheet();
+  $("scrim").hidden=false;
+  document.body.style.overflow="hidden";
+  var b=$("sheet").querySelector(".act, .close");
+  if(b) b.focus();
+}
+function closeDay(){
+  openDate=null; $("scrim").hidden=true; document.body.style.overflow="";
+}
+function drawSheet(){
+  if(openDate==null) return;
+  var d=openDate, key=dateKey(S.y,S.m,d), who=marksOn(key), fests=festsFor(S.y,S.m,d);
+  var dow=new Date(S.y,S.m,d).getDay();
+  var colors=who.map(function(m){ return m.color; });
+  var iAm = !!S.me && who.some(function(m){ return m.id===S.me; });
+  var sheet=$("sheet");
+  sheet.className="sheet"+(S.lang==="mr"?" mr":"");
+
+  var h='<button type="button" class="close" id="sheetClose" aria-label="'+esc(t("close"))+'">×</button>';
+  h+='<div class="top">';
+  if(colors.length) h+='<span class="tint" style="background-image:'+splitGradient(colors,null)+'"></span>';
+  h+='<div class="dn'+(dow===0?" sun":"")+'">'+esc((S.lang==="mr"?DOWL_MR:DOWL_EN)[dow])+'</div>';
+  h+='<div class="num">'+d+'</div>';
+  h+='<div class="my">'+esc((S.lang==="mr"?MONTHS_MR:MONTHS_EN)[S.m])+" "+S.y+'</div>';
+  if(fests.length){
+    h+='<div class="fests">'+fests.map(function(f){ return "<b>"+esc(f)+"</b>"; }).join("")+'</div>';
+  }
+  h+='</div><div class="body">';
+  h+='<h3>'+esc(t("busy"))+'</h3><div class="who">';
+  if(who.length){
+    who.forEach(function(m){
+      h+='<div class="row"><span class="sw" style="background:'+m.color+'"></span><span>'+esc(mName(m))+'</span>'+
+         (m.id===S.me?'<span class="tag">'+esc(t("you"))+'</span>':'')+'</div>';
+    });
+  } else {
+    h+='<div class="clear">'+esc(t("allFree"))+'</div>';
+  }
+  h+='</div>';
+  if(S.me){
+    h+='<button type="button" class="act'+(iAm?" on":"")+'" id="actBtn">'+
+       '<span class="lead">'+esc(iAm?t("markOff"):t("markOn"))+'</span>'+
+       '<span class="sub">'+esc(iAm?t("markOffSub"):t("markOnSub"))+'</span></button>';
+  } else {
+    h+='<button type="button" class="act" disabled>'+esc(t("needName"))+'</button>';
+  }
+  h+='</div>';
+  sheet.innerHTML=h;
+  $("sheetClose").addEventListener("click", closeDay);
+  var a=$("actBtn");
+  if(a) a.addEventListener("click", function(){ toggleDay(key); });
+}
+function toggleDay(key){
+  if(!S.me) return;
+  var cur=(S.marks[key]||[]).slice();
+  var i=cur.indexOf(S.me);
+  if(i>-1) cur.splice(i,1); else cur.push(S.me);
+  writeDay(key,cur);
+  drawSheet();
+}
+
+/* ---------------- manage groups ---------------- */
+function openManage(){ drawManage(); $("mgScrim").hidden=false; document.body.style.overflow="hidden"; }
+function closeManage(){ $("mgScrim").hidden=true; document.body.style.overflow=""; }
+function drawManage(){
+  var sheet=$("mgSheet");
+  sheet.className="sheet"+(S.lang==="mr"?" mr":"");
+  var h='<button type="button" class="close" id="mgClose" aria-label="'+esc(t("close"))+'">×</button>';
+  h+='<div class="mg"><h3 style="margin-bottom:-4px">'+esc(t("mgTitle"))+'</h3>';
+  S.groups.forEach(function(g){
+    h+='<div class="grp"><h4>'+esc(gName(g))+'</h4>';
+    g.members.forEach(function(m){
+      h+='<div class="mem"><span class="sw" style="background:'+m.color+'"></span><span>'+esc(mName(m))+'</span>'+
+         '<button type="button" class="rm" data-g="'+esc(g.id)+'" data-m="'+esc(m.id)+'" aria-label="remove">×</button></div>';
+    });
+    if(g.members.length>=MAX_MEMBERS){
+      h+='<div class="full">'+esc(t("full"))+'</div>';
+    } else {
+      h+='<div class="add"><input type="text" placeholder="'+esc(t("friendName"))+'" data-nm="'+esc(g.id)+'">'+
+         '<input type="color" value="'+PALETTE[g.members.length%PALETTE.length]+'" data-cl="'+esc(g.id)+'">'+
+         '<button type="button" class="go" data-add="'+esc(g.id)+'">'+esc(t("addFriend"))+'</button></div>';
+    }
+    h+='</div>';
+  });
+  h+='<div class="newgrp"><h3>'+esc(t("newGroup"))+'</h3><div class="add">'+
+     '<input type="text" placeholder="'+esc(t("groupName"))+'" id="newGrpName">'+
+     '<button type="button" class="go" id="newGrpGo">'+esc(t("create"))+'</button></div></div>';
+  h+='</div>';
+  sheet.innerHTML=h;
+  $("mgClose").addEventListener("click", closeManage);
+  Array.prototype.forEach.call(sheet.querySelectorAll("[data-add]"), function(b){
+    b.addEventListener("click", function(){
+      var gid=b.getAttribute("data-add");
+      var nm=sheet.querySelector('[data-nm="'+gid+'"]').value.trim();
+      var cl=sheet.querySelector('[data-cl="'+gid+'"]').value;
+      if(!nm) return;
+      addMember(gid,nm,cl);
+    });
+  });
+  Array.prototype.forEach.call(sheet.querySelectorAll(".rm"), function(b){
+    b.addEventListener("click", function(){
+      removeMember(b.getAttribute("data-g"), b.getAttribute("data-m"));
+    });
+  });
+  $("newGrpGo").addEventListener("click", function(){
+    var nm=$("newGrpName").value.trim();
+    if(nm) addGroup(nm);
+  });
+}
+function addMember(gid,name,color){
+  var g=null,i;
+  for(i=0;i<S.groups.length;i++) if(S.groups[i].id===gid) g=S.groups[i];
+  if(!g || g.members.length>=MAX_MEMBERS) return;
+  var id=slug(name), n=1, base=id;
+  while(g.members.some(function(m){return m.id===id;})){ id=base+"-"+(++n); }
+  var isMr=/[ऀ-ॿ]/.test(name);
+  g.members.push({id:id, en:isMr?name:name, mr:isMr?name:"", color:color});
+  saveGroup(g); render(); drawManage();
+}
+function removeMember(gid,mid){
+  var g=null,i;
+  for(i=0;i<S.groups.length;i++) if(S.groups[i].id===gid) g=S.groups[i];
+  if(!g) return;
+  g.members=g.members.filter(function(m){ return m.id!==mid; });
+  if(S.me===mid && gid===S.groupId) setMe("");
+  saveGroup(g); render(); drawManage();
+}
+function addGroup(name){
+  var id=slug(name), n=1, base=id;
+  while(S.groups.some(function(g){return g.id===id;})){ id=base+"-"+(++n); }
+  var isMr=/[ऀ-ॿ]/.test(name);
+  var g={id:id, order:S.groups.length+1, name_en:name, name_mr:isMr?name:"", members:[]};
+  S.groups.push(g); saveGroup(g);
+  S.groupId=id; lsSet("md.group",id); S.me=null;
+  subscribeMonth(); render(); drawManage();
+}
+
+/* ---------------- wiring ---------------- */
+function setMe(id){
+  S.me = id || null;
+  lsSet("md.me."+S.groupId, id||"");
+  render();
+  if(openDate!=null) drawSheet();
+}
+$("selGroup").addEventListener("change", function(e){
+  S.groupId=e.target.value; lsSet("md.group",S.groupId);
+  S.me = ls("md.me."+S.groupId) || null;
+  subscribeMonth(); render();
+});
+$("selMe").addEventListener("change", function(e){ setMe(e.target.value); });
+$("selMonth").addEventListener("change", function(e){ S.m=+e.target.value; subscribeMonth(); render(); });
+$("selYear").addEventListener("change", function(e){ S.y=+e.target.value; subscribeMonth(); render(); });
+$("btnToday").addEventListener("click", function(){
+  S.y=now.getFullYear(); S.m=now.getMonth(); subscribeMonth(); render();
+});
+$("langEn").addEventListener("click", function(){ S.lang="en"; lsSet("md.lang","en"); render(); if(openDate!=null) drawSheet(); });
+$("langMr").addEventListener("click", function(){ S.lang="mr"; lsSet("md.lang","mr"); render(); if(openDate!=null) drawSheet(); });
+$("scrim").addEventListener("click", function(e){ if(e.target===$("scrim")) closeDay(); });
+$("mgScrim").addEventListener("click", function(e){ if(e.target===$("mgScrim")) closeManage(); });
+document.addEventListener("keydown", function(e){
+  if(e.key!=="Escape") return;
+  if(!$("scrim").hidden) closeDay();
+  else if(!$("mgScrim").hidden) closeManage();
+});
+
+S.me = ls("md.me."+S.groupId) || null;
+loadLocalMarks();
+render();
+
+/* Light up the shared store when the viewer grants it. */
+if(window.claude && window.claude.use){
+  window.claude.use("db").then(function(db){
+    S.ready=true;
+    if(!db){ render(); return; }
+    S.db=db;
+    db.collection("groups").orderBy("order").onSnapshot(function(snap){
+      if(snap.empty) { render(); return; }
+      var list=[];
+      snap.docs.forEach(function(doc){
+        var v=doc.data()||{};
+        if(!Array.isArray(v.members)) return;
+        list.push({id:doc.id, order:v.order||99, name_en:v.name_en||doc.id, name_mr:v.name_mr||"", members:v.members});
+      });
+      if(!list.length) { render(); return; }
+      S.groups=list;
+      if(!list.some(function(g){return g.id===S.groupId;})) S.groupId=list[0].id;
+      S.me = ls("md.me."+S.groupId) || null;
+      render();
+    }, function(){});
+    subscribeMonth();
+  }).catch(function(){ S.ready=true; render(); });
+} else {
+  S.ready=true; render();
+}
+})();
+</script>

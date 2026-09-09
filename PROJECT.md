@@ -183,6 +183,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-09** — Added `mokla-divas/index.html`: a standalone shared availability calendar
+  for the Funda and Thigdam friend groups (English/Marathi, one page, no backend — published
+  as a Claude Artifact whose `db` capability holds the shared marks). Not part of the Lead
+  Tracker app; it shares the repo only for storage and has no coupling to `backend/` or
+  `frontend/`.
 - **2026-07-15** — Pipeline Board cards now show enquiry date and city; board sorts leads by
   enquiry date descending (newest first) before grouping into columns.
 - **2026-07-13** — Documentation Steward process adopted: created `PROJECT.md`, expanded

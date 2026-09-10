@@ -121,6 +121,11 @@ select,.btn{
 }
 .btn{background-image:none;padding-right:10px;text-align:center;font-weight:600;white-space:nowrap}
 .btn:hover{border-color:var(--ink-2)}
+.field .groupname{
+  font-family:"Rozha One",Georgia,serif;font-weight:400;
+  font-size:20px;line-height:1.55;padding:5px 2px 0;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .controls .field.today{justify-content:flex-end;grid-column:1/-1}
 @media(min-width:640px){ .controls .field.today{grid-column:auto} }
 :where(select,button,[tabindex]):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -345,7 +350,7 @@ select,.btn{
   </header>
 
   <div class="controls">
-    <div class="field"><label for="selGroup" id="lblGroup">Group</label><select id="selGroup"></select></div>
+    <div class="field"><label for="selGroup" id="lblGroup">Group</label><select id="selGroup"></select><div class="groupname" id="groupName" hidden></div></div>
     <div class="field"><label for="selMe" id="lblMe">Your name</label><select id="selMe"></select></div>
     <div class="field"><label for="selMonth" id="lblMonth">Month</label><select id="selMonth"></select></div>
     <div class="field"><label for="selYear" id="lblYear">Year</label><select id="selYear"></select></div>
@@ -469,9 +474,10 @@ var T = {
   en:{
     brand:"Mokla Divas",
     sub:"Shared availability · pick a date everyone is free",
+    subGroup:"pick a date everyone is free",
     group:"Group", me:"Your name", month:"Month", year:"Year", today:"Today",
     pickName:"— choose your name —",
-    manage:"Manage groups",
+    manage:"Manage friends",
     freeOne:"day nobody has blocked", freeMany:"days nobody has blocked",
     noneFree:"Every date this month is blocked by someone.",
     tap:"Tap a date to open it",
@@ -483,7 +489,7 @@ var T = {
     footA:"A colour on a date means that friend is busy.",
     footB:"Dates with no colour at all are open for the whole group.",
     footC:"Festival dates follow the common Indian panchang and are listed for 2026–2027.",
-    mgTitle:"Groups & friends",
+    mgTitle:"Friends in this group",
     addFriend:"Add friend", friendName:"Friend's name", newGroup:"New group", groupName:"Group name", create:"Create",
     full:"Six friends is the maximum for a group.",
     you:"you",
@@ -492,9 +498,10 @@ var T = {
   mr:{
     brand:"मोकळा दिवस",
     sub:"गटाची उपलब्धता · सर्वांना मोकळा दिवस शोधा",
+    subGroup:"सर्वांना मोकळा दिवस शोधा",
     group:"गट", me:"तुमचे नाव", month:"महिना", year:"वर्ष", today:"आज",
     pickName:"— तुमचे नाव निवडा —",
-    manage:"गट व्यवस्थापन",
+    manage:"मित्र व्यवस्थापन",
     freeOne:"दिवस पूर्ण मोकळा", freeMany:"दिवस पूर्ण मोकळे",
     noneFree:"या महिन्यात पूर्ण मोकळा दिवस नाही.",
     tap:"तारीख उघडण्यासाठी त्यावर टॉप करा",
@@ -507,7 +514,7 @@ var T = {
     footA:"तारखेवरील रंग म्हणजे तो मित्र त्या दिवशी व्यग्र आहे.",
     footB:"ज्या तारखेवर एकही रंग नाही ती सर्व गटासाठी मोकळी आहे.",
     footC:"सणाच्या तारखा प्रचलित पंचांगानुसार आहेत — २०२६–२०२७.",
-    mgTitle:"गट आणि मित्र",
+    mgTitle:"या गटातील मित्र",
     addFriend:"मित्र जोडा", friendName:"मित्राचे नाव",
     newGroup:"नवीन गट", groupName:"गटाचे नाव", create:"तयार करा",
     full:"एका गटात जास्तीत जास्त सहा मित्र.",
@@ -530,6 +537,7 @@ var S = {
   api: (window.__CAL__ && window.__CAL__.api) || null,
   ready: false
 };
+var SINGLE_GROUP = !!(window.__CAL__ && window.__CAL__.api);
 var unsubMarks = null;
 var monthDocExists = false;
 var pollTimer = null;
@@ -623,7 +631,7 @@ function saveLocalMarks(){ lsSet(localMarksKey(), JSON.stringify(S.marks)); }
 
 function fetchMonth(){
   var forGroup=S.groupId, forMonth=ymKey();
-  return apiGet("/marks?group="+encodeURIComponent(forGroup)+"&month="+encodeURIComponent(forMonth))
+  return apiGet("/marks?month="+encodeURIComponent(forMonth))
     .then(function(j){
       // Ignore a reply for a month the viewer has already navigated away from,
       // and never let a poll overwrite an edit that has not landed yet.
@@ -658,7 +666,7 @@ function writeDay(key, ids, memberId, busy){
   render();
   if(S.api){
     pendingWrites++;
-    apiSend("POST","/marks",{group:S.groupId, date:key, member_id:memberId, busy:!!busy})
+    apiSend("POST","/marks",{date:key, member_id:memberId, busy:!!busy})
       .then(function(j){ S.marks[j.date] = (j.members||[]).slice(); })
       .catch(function(){ pendingWrites--; fetchMonth(); pendingWrites++; })
       .then(function(){
@@ -680,9 +688,9 @@ function writeDay(key, ids, memberId, busy){
 
 function saveGroup(g){
   if(S.api){
-    apiSend("PUT","/groups/"+encodeURIComponent(g.id),{members:g.members})
-      .then(function(j){ applyGroups(j.groups); render(); drawManage(); })
-      .catch(function(){ fetchGroups(); });
+    apiSend("PUT","/members",{members:g.members})
+      .then(function(j){ applyGroups([j.group]); render(); drawManage(); })
+      .catch(function(e){ alert(e.message); fetchGroups(); });
     return;
   }
   if(!S.db) return;
@@ -697,7 +705,7 @@ var $ = function(id){ return document.getElementById(id); };
 function renderChrome(){
   document.documentElement.lang = S.lang==="mr" ? "mr" : "en";
   $("brandName").textContent = t("brand");
-  $("brandSub").textContent = t("sub");
+  $("brandSub").textContent = SINGLE_GROUP ? (gName(group()) + " · " + t("subGroup")) : t("sub");
   $("brandSub").className = "sub" + (S.lang==="mr" ? " mr" : "");
   $("langEn").setAttribute("aria-pressed", S.lang==="en");
   $("langMr").setAttribute("aria-pressed", S.lang==="mr");
@@ -712,7 +720,15 @@ function renderChrome(){
 }
 
 function renderSelects(){
-  var sg=$("selGroup"); sg.innerHTML="";
+  var sg=$("selGroup"), gn=$("groupName");
+  // Served from a group's own link, the group is already decided — show its name
+  // rather than a picker that could only ever hold one entry.
+  if(SINGLE_GROUP){
+    sg.hidden=true; gn.hidden=false; gn.textContent=gName(group());
+  } else {
+    sg.hidden=false; gn.hidden=true;
+  }
+  sg.innerHTML="";
   S.groups.forEach(function(g){
     var o=document.createElement("option"); o.value=g.id; o.textContent=gName(g);
     if(g.id===S.groupId) o.selected=true; sg.appendChild(o);
@@ -911,7 +927,7 @@ function drawManage(){
   sheet.className="sheet"+(S.lang==="mr"?" mr":"");
   var h='<button type="button" class="close" id="mgClose" aria-label="'+esc(t("close"))+'">×</button>';
   h+='<div class="mg"><h3 style="margin-bottom:-4px">'+esc(t("mgTitle"))+'</h3>';
-  S.groups.forEach(function(g){
+  (SINGLE_GROUP ? [group()] : S.groups).forEach(function(g){
     h+='<div class="grp"><h4>'+esc(gName(g))+'</h4>';
     g.members.forEach(function(m){
       h+='<div class="mem"><span class="sw" style="background:'+m.color+'"></span><span>'+esc(mName(m))+'</span>'+
@@ -926,9 +942,11 @@ function drawManage(){
     }
     h+='</div>';
   });
-  h+='<div class="newgrp"><h3>'+esc(t("newGroup"))+'</h3><div class="add">'+
-     '<input type="text" placeholder="'+esc(t("groupName"))+'" id="newGrpName">'+
-     '<button type="button" class="go" id="newGrpGo">'+esc(t("create"))+'</button></div></div>';
+  if(!SINGLE_GROUP){
+    h+='<div class="newgrp"><h3>'+esc(t("newGroup"))+'</h3><div class="add">'+
+       '<input type="text" placeholder="'+esc(t("groupName"))+'" id="newGrpName">'+
+       '<button type="button" class="go" id="newGrpGo">'+esc(t("create"))+'</button></div></div>';
+  }
   h+='</div>';
   sheet.innerHTML=h;
   $("mgClose").addEventListener("click", closeManage);
@@ -946,7 +964,8 @@ function drawManage(){
       removeMember(b.getAttribute("data-g"), b.getAttribute("data-m"));
     });
   });
-  $("newGrpGo").addEventListener("click", function(){
+  var ng=$("newGrpGo");
+  if(ng) ng.addEventListener("click", function(){
     var nm=$("newGrpName").value.trim();
     if(nm) addGroup(nm);
   });
@@ -971,18 +990,6 @@ function removeMember(gid,mid){
 }
 function addGroup(name){
   var isMrName=/[ऀ-ॿ]/.test(name);
-  if(S.api){
-    apiSend("POST","/groups",{name_en:name, name_mr:isMrName?name:""})
-      .then(function(j){
-        S.groupId = j.group_key;
-        lsSet("md.group", S.groupId);
-        applyGroups(j.groups);
-        S.me=null;
-        subscribeMonth(); render(); drawManage();
-      })
-      .catch(function(){});
-    return;
-  }
   var id=slug(name), n=1, base=id;
   while(S.groups.some(function(g){return g.id===id;})){ id=base+"-"+(++n); }
   var isMr=/[ऀ-ॿ]/.test(name);
@@ -1025,7 +1032,7 @@ loadLocalMarks();
 render();
 
 function fetchGroups(){
-  return apiGet("/groups").then(function(j){ applyGroups(j.groups); render(); }).catch(function(){});
+  return apiGet("").then(function(j){ applyGroups([j.group]); render(); }).catch(function(){});
 }
 
 /* Self-hosted build: the server injects an API base. */

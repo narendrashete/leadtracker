@@ -18,6 +18,7 @@ getDb().then(() => {
   const authRouter     = require('./routes/auth');
   const usersRouter    = require('./routes/users');
   const calendarRouter = require('./routes/calendar');
+  const calendarAdminRouter = require('./routes/calendarAdmin');
 
   // Public: auth endpoints
   app.use('/api/auth', authRouter);
@@ -27,10 +28,22 @@ getDb().then(() => {
   // only the calendar_* tables, never lead or user data.
   app.use('/api/calendar', calendarRouter);
 
+  // Protected: creating groups and reading their share links is admin-only, and
+  // deliberately lives outside /api/calendar so the public surface can never
+  // hand out a code.
+  app.use('/api/calendar-admin', calendarAdminRouter);
+
   // Protected: all other API routes require a valid session
   app.use('/api/leads',     requireAuth, leadsRouter);
   app.use('/api/followups', requireAuth, followupsRouter);
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
+
+  // Anything under /api that matched no route above is a 404 in JSON. Without
+  // this it falls through to the SPA fallback and answers 200 with React's HTML,
+  // which no API client can make sense of.
+  app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Not found' });
+  });
 
   // JSON error handler
   app.use('/api', (err, req, res, next) => {
@@ -42,7 +55,7 @@ getDb().then(() => {
   // ahead of the SPA fallback or the React app would swallow the URL.
   app.get('/calendar/:code', (req, res) => {
     const code = req.params.code;
-    if (query('SELECT id FROM calendar_spaces WHERE share_code = ?', [code]).length === 0) {
+    if (query('SELECT id FROM calendar_groups WHERE share_code = ?', [code]).length === 0) {
       return res.status(404).type('text/plain').send('Unknown calendar link.');
     }
     fs.readFile(CALENDAR_PAGE, 'utf8', (err, html) => {
@@ -70,10 +83,15 @@ getDb().then(() => {
     console.log('  ✅  Lead Tracker is running!');
     console.log('');
     console.log(`  Open in browser: http://localhost:${PORT}`);
-    const space = query('SELECT share_code FROM calendar_spaces LIMIT 1')[0];
-    if (space) {
+    const groups = query(
+      'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
+    );
+    if (groups.length) {
       console.log('');
-      console.log(`  Shared calendar link: /calendar/${space.share_code}`);
+      console.log('  Calendar links (one per group — manage them under Calendar Links):');
+      for (const g of groups) {
+        console.log(`    ${g.name_en}: /calendar/${g.share_code}`);
+      }
     }
     console.log('');
     console.log('  Keep this window open while using the app.');

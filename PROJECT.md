@@ -183,6 +183,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-10** — Gave every calendar group its own share link, so a friend sees only their
+  own group: `calendar_groups.share_code` (additive column, backfilled — the first group
+  inherits the old install-wide code so a circulated link keeps working), the public API
+  rescoped to the one group its code resolves to, group creation moved behind a new
+  admin-only `/api/calendar-admin`, and a **Calendar Links** page added to the SPA for
+  creating groups and copying, rotating or deleting their links. Unmatched `/api/*` paths now
+  return `404 {error}` instead of falling through to the SPA's HTML with a 200.
 - **2026-09-09** — Self-hosted the shared calendar so the link is public: new public
   `/api/calendar` routes and a `/calendar/<share-code>` page route in the Express app, with
   `calendar_spaces` / `calendar_groups` / `calendar_marks` tables added to `leads.db`. The

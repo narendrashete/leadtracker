@@ -4,38 +4,12 @@ const { query, run } = require('../db');
 const router = express.Router({ mergeParams: true });
 
 const MAX_MEMBERS = 6;
-const MAX_GROUPS = 20;
 const NAME_MAX = 40;
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const DATE_RE   = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE  = /^\d{4}-\d{2}$/;
 const KEY_RE    = /^[a-z0-9][a-z0-9-]{0,39}$/;
-
-function shareCodeIsValid(code) {
-  return query('SELECT id FROM calendar_spaces WHERE share_code = ?', [code]).length > 0;
-}
-
-// Every route below is public, so the share code in the path is the only gate.
-router.use('/:code', (req, res, next) => {
-  if (!shareCodeIsValid(req.params.code)) {
-    return res.status(404).json({ error: 'Unknown calendar link' });
-  }
-  next();
-});
-
-function readGroups() {
-  const rows = query(
-    'SELECT group_key, name_en, name_mr, sort_order, members FROM calendar_groups ORDER BY sort_order, id'
-  );
-  return rows.map(r => ({
-    id: r.group_key,
-    order: r.sort_order,
-    name_en: r.name_en,
-    name_mr: r.name_mr || '',
-    members: parseMembers(r.members)
-  }));
-}
 
 function parseMembers(raw) {
   try {
@@ -44,6 +18,11 @@ function parseMembers(raw) {
   } catch {
     return [];
   }
+}
+
+function slugify(name) {
+  const out = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return out || 'f' + crypto.randomBytes(3).toString('hex');
 }
 
 // Trusts nothing from the request body: names are trimmed and capped, colours
@@ -63,22 +42,38 @@ function cleanMembers(input) {
   });
 }
 
-function slugify(name) {
-  const out = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return out || 'f' + crypto.randomBytes(3).toString('hex');
+// The share code resolves to exactly ONE group, and every route below is scoped
+// to it. A friend holding one group's link cannot see, name, or touch any other
+// group — there is deliberately no endpoint here that lists groups.
+router.use('/:code', (req, res, next) => {
+  const rows = query(
+    `SELECT group_key, name_en, name_mr, members FROM calendar_groups WHERE share_code = ?`,
+    [req.params.code]
+  );
+  if (rows.length === 0) return res.status(404).json({ error: 'Unknown calendar link' });
+  req.calGroup = rows[0];
+  next();
+});
+
+function shape(g) {
+  return {
+    id: g.group_key,
+    name_en: g.name_en,
+    name_mr: g.name_mr || '',
+    members: parseMembers(g.members)
+  };
 }
 
-router.get('/:code/groups', (req, res) => {
-  res.json({ groups: readGroups() });
+router.get('/:code', (req, res) => {
+  res.json({ group: shape(req.calGroup) });
 });
 
 router.get('/:code/marks', (req, res) => {
-  const { group, month } = req.query;
-  if (!KEY_RE.test(group || '')) return res.status(400).json({ error: 'group required' });
+  const { month } = req.query;
   if (!MONTH_RE.test(month || '')) return res.status(400).json({ error: 'month must be YYYY-MM' });
   const rows = query(
     'SELECT mark_date, member_id FROM calendar_marks WHERE group_key = ? AND mark_date LIKE ?',
-    [group, month + '-%']
+    [req.calGroup.group_key, month + '-%']
   );
   const days = {};
   for (const r of rows) {
@@ -90,27 +85,24 @@ router.get('/:code/marks', (req, res) => {
 // Toggle one friend's unavailability on one date. Idempotent in both directions.
 router.post('/:code/marks', (req, res, next) => {
   try {
-    const { group, date, member_id, busy } = req.body || {};
-    if (!KEY_RE.test(group || ''))     return res.status(400).json({ error: 'group required' });
+    const { date, member_id, busy } = req.body || {};
+    const groupKey = req.calGroup.group_key;
     if (!DATE_RE.test(date || ''))     return res.status(400).json({ error: 'date must be YYYY-MM-DD' });
     if (!KEY_RE.test(member_id || '')) return res.status(400).json({ error: 'member_id required' });
-
-    const rows = query('SELECT members FROM calendar_groups WHERE group_key = ?', [group]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Unknown group' });
-    if (!parseMembers(rows[0].members).some(m => m.id === member_id)) {
+    if (!parseMembers(req.calGroup.members).some(m => m.id === member_id)) {
       return res.status(400).json({ error: 'That friend is not in this group' });
     }
 
     run('DELETE FROM calendar_marks WHERE group_key = ? AND mark_date = ? AND member_id = ?',
-        [group, date, member_id]);
+        [groupKey, date, member_id]);
     if (busy) {
       run('INSERT INTO calendar_marks (group_key, mark_date, member_id) VALUES (?,?,?)',
-          [group, date, member_id]);
+          [groupKey, date, member_id]);
     }
 
     const after = query(
       'SELECT member_id FROM calendar_marks WHERE group_key = ? AND mark_date = ?',
-      [group, date]
+      [groupKey, date]
     );
     res.json({ date, members: after.map(r => r.member_id) });
   } catch (err) {
@@ -118,48 +110,30 @@ router.post('/:code/marks', (req, res, next) => {
   }
 });
 
-router.post('/:code/groups', (req, res, next) => {
+// Friends manage their own group's roster. There is no route to create a group:
+// only an admin can, through /api/calendar-admin.
+router.put('/:code/members', (req, res, next) => {
   try {
-    const name = String((req.body && req.body.name_en) || '').trim().slice(0, NAME_MAX);
-    if (!name) return res.status(400).json({ error: 'Group name required' });
-    if (query('SELECT id FROM calendar_groups').length >= MAX_GROUPS) {
-      return res.status(400).json({ error: `At most ${MAX_GROUPS} groups` });
-    }
-    let key = slugify(name);
-    while (query('SELECT id FROM calendar_groups WHERE group_key = ?', [key]).length > 0) {
-      key += '-2';
-    }
-    const order = query('SELECT COUNT(*) AS n FROM calendar_groups')[0].n + 1;
-    run(`INSERT INTO calendar_groups (group_key, name_en, name_mr, sort_order, members)
-         VALUES (?,?,?,?,?)`,
-        [key, name, String((req.body && req.body.name_mr) || '').trim().slice(0, NAME_MAX), order, '[]']);
-    res.status(201).json({ group_key: key, groups: readGroups() });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.put('/:code/groups/:groupKey', (req, res, next) => {
-  try {
-    const key = req.params.groupKey;
-    const existing = query('SELECT id FROM calendar_groups WHERE group_key = ?', [key]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Unknown group' });
-
+    const groupKey = req.calGroup.group_key;
     const members = cleanMembers((req.body && req.body.members) || []);
     run('UPDATE calendar_groups SET members = ? WHERE group_key = ?',
-        [JSON.stringify(members), key]);
+        [JSON.stringify(members), groupKey]);
 
     // Marks belonging to a friend who was just removed would otherwise linger
     // as colours nobody can clear.
     const ids = members.map(m => m.id);
-    const stale = query('SELECT DISTINCT member_id FROM calendar_marks WHERE group_key = ?', [key])
+    const stale = query('SELECT DISTINCT member_id FROM calendar_marks WHERE group_key = ?', [groupKey])
       .map(r => r.member_id)
       .filter(id => ids.indexOf(id) === -1);
     for (const id of stale) {
-      run('DELETE FROM calendar_marks WHERE group_key = ? AND member_id = ?', [key, id]);
+      run('DELETE FROM calendar_marks WHERE group_key = ? AND member_id = ?', [groupKey, id]);
     }
 
-    res.json({ groups: readGroups() });
+    const fresh = query(
+      `SELECT group_key, name_en, name_mr, members FROM calendar_groups WHERE group_key = ?`,
+      [groupKey]
+    );
+    res.json({ group: shape(fresh[0]) });
   } catch (err) {
     if (/at most|needs a name|must be a list/.test(err.message)) {
       return res.status(400).json({ error: err.message });

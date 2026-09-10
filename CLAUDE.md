@@ -21,11 +21,12 @@ Browser (React SPA, Vite build)
    ▼
 Express (backend/server.js)
    ├── /api/auth      (public)
-   ├── /api/calendar  (public — share-code gated)
+   ├── /api/calendar  (public — per-group share-code gated)
+   ├── /api/calendar-admin (requireAuth + requireAdmin)
    ├── /api/leads     (requireAuth)
    ├── /api/followups (requireAuth)
    ├── /api/users     (requireAuth + requireAdmin)
-   ├── /calendar/<code>  (public — serves mokla-divas/index.html)
+   ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -48,7 +49,8 @@ backend/
   server.js            Express app — API mount, static frontend, SPA fallback, error handler
   db.js                sql.js init/schema, query()/run() helpers, save-on-write, admin seed
   auth.js              in-memory session store + requireAuth/requireAdmin middleware
-  routes/               leads.js, followups.js, auth.js, users.js, calendar.js
+  routes/               leads.js, followups.js, auth.js, users.js, calendar.js,
+                        calendarAdmin.js
   leads.db             the entire database (git-ignored)
 frontend/src/
   api.js               fetch wrapper — adds Bearer token, unwraps { error } bodies, 401→login
@@ -59,7 +61,7 @@ frontend/src/
     Leads/               NewLeadForm, LeadDetailDrawer
     Followups/           FollowupScreen, AddFollowupModal
     Reports/             Reports, StatusPieChart, DetailedReport
-    Admin/               UserManagement
+    Admin/               UserManagement, CalendarLinks
     Layout/              Sidebar
   App.jsx               routes + auth gate
 mokla-divas/
@@ -71,26 +73,42 @@ start.bat               local one-click launcher (runs the production build)
 ## Mokla Divas (shared availability calendar)
 A second, unrelated app that shares this repo and this Express process for storage only. It
 has no coupling to leads, follow-ups, or users, and nothing in the Lead Tracker SPA links to
-it. Friends of the owner open `/calendar/<share-code>`, pick their name from a combo, and
-block the dates they are busy; dates with no colour are open for the whole group.
-- **Deliberately unauthenticated.** It is the only public write API in the project. The
-  random `share_code` in the path is the entire gate — there are no accounts, because the
-  point is that friends without logins can use it. `routes/calendar.js` therefore validates
+it. Friends open `/calendar/<group-code>`, pick their name from a combo, and block the dates
+they are busy; dates with no colour are open for the whole group.
+- **One share code per GROUP, and that is the isolation boundary.** A code resolves to
+  exactly one group; everything in `routes/calendar.js` is scoped to `req.calGroup`. A
+  friend holding one group's link cannot see another group's existence, name, members, or
+  marks. There is deliberately NO route on the public surface that lists groups — do not
+  add one. Rotating a group's code (admin) invalidates its old link at once.
+- **Admin vs friends.** Only an admin creates or deletes groups, and only an admin can see
+  the links — via `routes/calendarAdmin.js` (requireAuth + requireAdmin) and the
+  **Calendar Links** page in the SPA. Friends manage only their own group's roster, through
+  `PUT /api/calendar/<code>/members`. A group is always created with its first friend,
+  because a group with no members is a link nobody can pick a name on.
+- **Deliberately unauthenticated** on the public half: no accounts, because the point is
+  that friends without logins can use it. `routes/calendar.js` therefore validates
   everything itself: date/month/key formats by regex, colours as hex, names trimmed and
   length-capped, member ids re-derived server-side rather than trusted, six friends per
-  group, twenty groups per install.
-- **Tables:** `calendar_spaces` (the share code), `calendar_groups` (roster as a JSON
-  `members` column), `calendar_marks` (one row per group + date + friend). The unique index
-  on `calendar_marks` is an integrity constraint, not a performance index.
-- The share code is generated on first run (or taken from `CALENDAR_SHARE_CODE`) and printed
-  at startup — `pm2 logs leadtracker` shows it.
+  group, fifty groups per install.
+- **Tables:** `calendar_groups` (roster as a JSON `members` column, plus its own
+  `share_code`), `calendar_marks` (one row per group + date + friend). `calendar_spaces` is
+  vestigial — it held the original install-wide code and now only donates that code to the
+  first group on migration, so a link already circulated keeps working. Don't build on it.
+  The unique indexes on `calendar_marks` and `calendar_groups.share_code` are integrity
+  constraints, not performance indexes.
+- Every group's link is printed at startup — `pm2 logs leadtracker` shows them — and the
+  Calendar Links page is the everyday way to read, copy, rotate them.
 - The page is also published as a Claude Artifact, where it talks to that runtime's document
   store instead. One file serves both: `server.js` injects `window.__CAL__` when it serves
   the page, and the page uses the REST API when that is present. Keep both paths working
   when editing it — it has no build step, so edit `mokla-divas/index.html` directly.
 - The `api.js` rule below is about the React SPA. This page cannot import it (it is not part
   of the Vite build), so it has its own three-line `fetch` wrapper that unwraps `{ error }`
-  the same way.
+  the same way. The **Calendar Links** admin page IS part of the SPA and uses `api.js`
+  normally.
+- Served from a group link the page runs in single-group mode (`SINGLE_GROUP`): the group
+  picker becomes a plain label and the manage sheet offers friends only, no group creation.
+  In Artifact mode there are no per-link codes, so it keeps the group dropdown.
 
 ## Coding Standards
 - Functional React components with hooks only — no class components.
@@ -149,8 +167,10 @@ block the dates they are busy; dates with no colour are open for the whole group
   server-side in `routes/users.js`, not just hidden in the UI. Preserve this invariant in any
   user-management change.
 - The calendar API at `/api/calendar` is public by design and must stay scoped to the
-  `calendar_*` tables. Never widen it to read or write leads, follow-ups, or users, and never
-  add an endpoint there that returns the share code — knowing the code is what grants access.
+  `calendar_*` tables, and to the single group its share code resolves to. Never widen it to
+  read or write leads, follow-ups, or users; never add an endpoint there that lists groups or
+  returns a share code — knowing a code is what grants access to that group. Anything that
+  hands out codes belongs in `/api/calendar-admin`, behind requireAuth + requireAdmin.
 - `ADMIN_SEED_PASSWORD` env var seeds the initial admin password on first run; if unset it
   falls back to a dev-only default (`admin123`) with a console warning — production must set
   this env var (or rotate the password immediately after first deploy).
@@ -193,11 +213,13 @@ pm2 reload leadtracker
 "
 ```
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
-The calendar page needs no build step (it is plain HTML, not part of the Vite bundle), so a
-`git pull` + `pm2 reload` is enough to ship a change to it. To find the shared calendar link
-after a deploy, run `pm2 logs leadtracker --lines 40` and look for `Shared calendar link:`.
-Set `CALENDAR_SHARE_CODE` before first run to choose the code yourself; changing it later has
-no effect, since the code is stored in the database once.
+The calendar page itself needs no build step (it is plain HTML, not part of the Vite
+bundle), so a `git pull` + `pm2 reload` ships a change to it. The **Calendar Links** admin
+page is React, so any change touching `frontend/src` still needs the `npm run build` step
+above. To find the calendar links after a
+deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines 40` and look
+for the `Calendar links` block, which lists one line per group. `CALENDAR_SHARE_CODE` only
+seeds the very first group's code on a fresh database; every later group gets a random one.
 
 ## Pipeline Column Logic (don't duplicate — reuse)
 Derived, never stored, in `getColumn()` (`frontend/src/components/Board/PipelineBoard.jsx`):

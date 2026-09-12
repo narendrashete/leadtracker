@@ -7,6 +7,7 @@ import NewLeadForm from './components/Leads/NewLeadForm';
 import FollowupScreen from './components/Followups/FollowupScreen';
 import Reports from './components/Reports/Reports';
 import UserManagement from './components/Admin/UserManagement';
+import CalendarLinks from './components/Admin/CalendarLinks';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -37,6 +38,9 @@ function AppShell() {
             <Route path="/reports"   element={<Reports />} />
             {user.role === 'admin' && (
               <Route path="/users" element={<UserManagement />} />
+            )}
+            {user.role === 'admin' && (
+              <Route path="/calendar-links" element={<CalendarLinks />} />
             )}
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>

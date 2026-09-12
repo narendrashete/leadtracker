@@ -42,6 +42,14 @@ export default function Sidebar() {
             Users
           </NavLink>
         )}
+
+        {/* Admin-only: share links for the friends' availability calendar */}
+        {user?.role === 'admin' && (
+          <NavLink to="/calendar-links" style={navStyle}>
+            <span style={{ fontSize: 16 }}>🗓️</span>
+            Calendar Links
+          </NavLink>
+        )}
       </nav>
 
       {/* Logged-in user + logout */}

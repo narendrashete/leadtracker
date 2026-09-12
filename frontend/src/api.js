@@ -49,6 +49,12 @@ export const api = {
   getFollowups:   (lead_id) => request(`/followups?lead_id=${lead_id}`),
   createFollowup: (data)    => request('/followups', { method: 'POST', body: JSON.stringify(data) }),
 
+  // Calendar links (admin only) — group share links for the availability calendar
+  getCalendarGroups:   ()     => request('/calendar-admin'),
+  createCalendarGroup: (data) => request('/calendar-admin', { method: 'POST', body: JSON.stringify(data) }),
+  rotateCalendarLink:  (key)  => request(`/calendar-admin/${key}/rotate`, { method: 'POST' }),
+  deleteCalendarGroup: (key)  => request(`/calendar-admin/${key}`, { method: 'DELETE' }),
+
   // Users (admin only)
   getUsers:      ()       => request('/users'),
   createUser:    (data)   => request('/users',               { method: 'POST',   body: JSON.stringify(data) }),

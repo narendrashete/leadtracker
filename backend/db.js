@@ -125,16 +125,28 @@ async function getDb() {
       group_key TEXT NOT NULL,
       mark_date TEXT NOT NULL,
       member_id TEXT NOT NULL,
+      mark_kind TEXT NOT NULL DEFAULT 'busy',
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
-  // Integrity, not speed: one friend can only be marked once per date.
+  // A mark is either 'busy' (cannot make it) or 'prefer' (would like this date
+  // for the event). Databases predating the second kind get the column here.
   try {
-    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_marks_unique
-             ON calendar_marks (group_key, mark_date, member_id)`);
+    _db.run(`ALTER TABLE calendar_marks ADD COLUMN mark_kind TEXT NOT NULL DEFAULT 'busy'`);
+  } catch { /* column already exists */ }
+
+  // Integrity, not speed: one friend, one mark of each kind per date. The old
+  // index left mark_kind out, which would have collapsed the two kinds into one
+  // row, so it is replaced. Dropping an index discards no data.
+  try { _db.run(`DROP INDEX IF EXISTS calendar_marks_unique`); } catch { /* never existed */ }
+  try {
+    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_marks_unique_kind
+             ON calendar_marks (group_key, mark_date, member_id, mark_kind)`);
   } catch { /* index already exists */ }
 
-  // One share code per install; it is what makes the public link unguessable.
+  // calendar_spaces held the original single install-wide code. Each group now
+  // carries its own, so this table only survives to donate that original code to
+  // the first group below, keeping a link already handed out working.
   if (query(`SELECT id FROM calendar_spaces`).length === 0) {
     const code = process.env.CALENDAR_SHARE_CODE || crypto.randomBytes(6).toString('hex');
     _db.run(`INSERT INTO calendar_spaces (share_code) VALUES (?)`, [code]);
@@ -149,6 +161,31 @@ async function getDb() {
       );
     }
   }
+
+  // One share code per GROUP: a friend's link resolves to exactly one group, so
+  // they never see another group or its members.
+  try {
+    _db.run(`ALTER TABLE calendar_groups ADD COLUMN share_code TEXT`);
+  } catch { /* column already exists */ }
+
+  const uncoded = query(
+    `SELECT id FROM calendar_groups WHERE share_code IS NULL OR share_code = '' ORDER BY sort_order, id`
+  );
+  if (uncoded.length > 0) {
+    const legacy = query(`SELECT share_code FROM calendar_spaces ORDER BY id LIMIT 1`);
+    const firstHasCode = query(`SELECT id FROM calendar_groups WHERE share_code IS NOT NULL AND share_code != ''`).length > 0;
+    uncoded.forEach((row, i) => {
+      // The very first group inherits the old install-wide code so a link already
+      // shared with friends keeps working — and now points at just that group.
+      const inherit = i === 0 && !firstHasCode && legacy.length > 0;
+      const code = inherit ? legacy[0].share_code : crypto.randomBytes(6).toString('hex');
+      _db.run(`UPDATE calendar_groups SET share_code = ? WHERE id = ?`, [code, row.id]);
+    });
+  }
+  try {
+    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_groups_share_code
+             ON calendar_groups (share_code)`);
+  } catch { /* index already exists */ }
 
   // Seed admin if not exists
   const existing = query(`SELECT id FROM users WHERE username = 'admin'`);

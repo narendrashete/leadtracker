@@ -73,8 +73,20 @@ start.bat               local one-click launcher (runs the production build)
 ## Mokla Divas (shared availability calendar)
 A second, unrelated app that shares this repo and this Express process for storage only. It
 has no coupling to leads, follow-ups, or users, and nothing in the Lead Tracker SPA links to
-it. Friends open `/calendar/<group-code>`, pick their name from a combo, and block the dates
-they are busy; dates with no colour are open for the whole group.
+it. Friends open `/calendar/<group-code>`, pick their name from a combo, and mark dates two ways:
+**busy** (can't make it — paints their colour into the cell) and **prefer** (this date suits
+me for the picnic/event — adds a yellow dot). Dates with no colour are open for the group;
+once every friend in the group has preferred a date its dots and its border turn fluorescent
+green, which is the answer the group is looking for.
+- **Two mark kinds, one table.** `calendar_marks.mark_kind` is `'busy'` or `'prefer'`. They
+  are mutually exclusive for a given friend and date — writing one clears the other, in the
+  route and in the page — because being unavailable and preferring the same date is
+  nonsense. The unique index covers `mark_kind`, so a friend can hold one mark of each kind
+  and no duplicates. `POST /api/calendar/<code>/marks` takes `{date, member_id, kind, on}`;
+  the older `{busy: true}` shape is still accepted.
+- **Unanimous is computed, never stored** (`allPrefer()` in the page): preferred count equals
+  the group's current member count. Adding a friend therefore un-greens a date and removing
+  one can green it — correct, and the reason not to cache it.
 - **One share code per GROUP, and that is the isolation boundary.** A code resolves to
   exactly one group; everything in `routes/calendar.js` is scoped to `req.calGroup`. A
   friend holding one group's link cannot see another group's existence, name, members, or
@@ -91,7 +103,7 @@ they are busy; dates with no colour are open for the whole group.
   length-capped, member ids re-derived server-side rather than trusted, six friends per
   group, fifty groups per install.
 - **Tables:** `calendar_groups` (roster as a JSON `members` column, plus its own
-  `share_code`), `calendar_marks` (one row per group + date + friend). `calendar_spaces` is
+  `share_code`), `calendar_marks` (one row per group + date + friend + kind). `calendar_spaces` is
   vestigial — it held the original install-wide code and now only donates that code to the
   first group on migration, so a link already circulated keeps working. Don't build on it.
   The unique indexes on `calendar_marks` and `calendar_groups.share_code` are integrity

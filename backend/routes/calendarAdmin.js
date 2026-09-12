@@ -50,7 +50,8 @@ router.get('/', (req, res) => {
   res.json(rows.map(r => {
     const members = parseMembers(r.members);
     const marks = query(
-      'SELECT COUNT(*) AS n FROM calendar_marks WHERE group_key = ?', [r.group_key]
+      `SELECT COUNT(*) AS n FROM calendar_marks
+       WHERE group_key = ? AND mark_kind != 'prefer'`, [r.group_key]
     )[0].n;
     return {
       group_key: r.group_key,

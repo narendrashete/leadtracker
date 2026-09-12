@@ -125,13 +125,23 @@ async function getDb() {
       group_key TEXT NOT NULL,
       mark_date TEXT NOT NULL,
       member_id TEXT NOT NULL,
+      mark_kind TEXT NOT NULL DEFAULT 'busy',
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
-  // Integrity, not speed: one friend can only be marked once per date.
+  // A mark is either 'busy' (cannot make it) or 'prefer' (would like this date
+  // for the event). Databases predating the second kind get the column here.
   try {
-    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_marks_unique
-             ON calendar_marks (group_key, mark_date, member_id)`);
+    _db.run(`ALTER TABLE calendar_marks ADD COLUMN mark_kind TEXT NOT NULL DEFAULT 'busy'`);
+  } catch { /* column already exists */ }
+
+  // Integrity, not speed: one friend, one mark of each kind per date. The old
+  // index left mark_kind out, which would have collapsed the two kinds into one
+  // row, so it is replaced. Dropping an index discards no data.
+  try { _db.run(`DROP INDEX IF EXISTS calendar_marks_unique`); } catch { /* never existed */ }
+  try {
+    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_marks_unique_kind
+             ON calendar_marks (group_key, mark_date, member_id, mark_kind)`);
   } catch { /* index already exists */ }
 
   // calendar_spaces held the original single install-wide code. Each group now

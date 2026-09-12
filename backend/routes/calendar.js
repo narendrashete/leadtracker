@@ -11,6 +11,10 @@ const DATE_RE   = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_RE  = /^\d{4}-\d{2}$/;
 const KEY_RE    = /^[a-z0-9][a-z0-9-]{0,39}$/;
 
+// 'busy'   — this friend cannot make it.
+// 'prefer' — this friend would like the event on this date.
+const KINDS = ['busy', 'prefer'];
+
 function parseMembers(raw) {
   try {
     const list = JSON.parse(raw);
@@ -68,43 +72,63 @@ router.get('/:code', (req, res) => {
   res.json({ group: shape(req.calGroup) });
 });
 
+function marksForMonth(groupKey, month) {
+  const rows = query(
+    `SELECT mark_date, member_id, mark_kind FROM calendar_marks
+     WHERE group_key = ? AND mark_date LIKE ?`,
+    [groupKey, month + '-%']
+  );
+  const days = {}, prefer = {};
+  for (const r of rows) {
+    const bucket = r.mark_kind === 'prefer' ? prefer : days;
+    (bucket[r.mark_date] = bucket[r.mark_date] || []).push(r.member_id);
+  }
+  return { days, prefer };
+}
+
 router.get('/:code/marks', (req, res) => {
   const { month } = req.query;
   if (!MONTH_RE.test(month || '')) return res.status(400).json({ error: 'month must be YYYY-MM' });
-  const rows = query(
-    'SELECT mark_date, member_id FROM calendar_marks WHERE group_key = ? AND mark_date LIKE ?',
-    [req.calGroup.group_key, month + '-%']
-  );
-  const days = {};
-  for (const r of rows) {
-    (days[r.mark_date] = days[r.mark_date] || []).push(r.member_id);
-  }
-  res.json({ days });
+  res.json(marksForMonth(req.calGroup.group_key, month));
 });
 
-// Toggle one friend's unavailability on one date. Idempotent in both directions.
+// Toggle one friend's mark of one kind on one date. Idempotent in both
+// directions. The two kinds are mutually exclusive for a given friend and date:
+// saying a date suits you clears "can't make it", and the other way round.
 router.post('/:code/marks', (req, res, next) => {
   try {
-    const { date, member_id, busy } = req.body || {};
+    const body = req.body || {};
+    const { date, member_id } = body;
+    // `busy` is the shape this route originally took; `kind` + `on` supersede it.
+    const kind = body.kind === undefined ? 'busy' : body.kind;
+    const on   = body.on === undefined ? !!body.busy : !!body.on;
     const groupKey = req.calGroup.group_key;
+
     if (!DATE_RE.test(date || ''))     return res.status(400).json({ error: 'date must be YYYY-MM-DD' });
     if (!KEY_RE.test(member_id || '')) return res.status(400).json({ error: 'member_id required' });
+    if (KINDS.indexOf(kind) === -1)    return res.status(400).json({ error: 'kind must be busy or prefer' });
     if (!parseMembers(req.calGroup.members).some(m => m.id === member_id)) {
       return res.status(400).json({ error: 'That friend is not in this group' });
     }
 
+    // Clearing both kinds first makes the write idempotent and keeps a friend
+    // from being busy and preferring the same date at once.
     run('DELETE FROM calendar_marks WHERE group_key = ? AND mark_date = ? AND member_id = ?',
         [groupKey, date, member_id]);
-    if (busy) {
-      run('INSERT INTO calendar_marks (group_key, mark_date, member_id) VALUES (?,?,?)',
-          [groupKey, date, member_id]);
+    if (on) {
+      run('INSERT INTO calendar_marks (group_key, mark_date, member_id, mark_kind) VALUES (?,?,?,?)',
+          [groupKey, date, member_id, kind]);
     }
 
     const after = query(
-      'SELECT member_id FROM calendar_marks WHERE group_key = ? AND mark_date = ?',
+      'SELECT member_id, mark_kind FROM calendar_marks WHERE group_key = ? AND mark_date = ?',
       [groupKey, date]
     );
-    res.json({ date, members: after.map(r => r.member_id) });
+    res.json({
+      date,
+      members: after.filter(r => r.mark_kind !== 'prefer').map(r => r.member_id),
+      prefer:  after.filter(r => r.mark_kind === 'prefer').map(r => r.member_id)
+    });
   } catch (err) {
     next(err);
   }

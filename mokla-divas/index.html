@@ -18,6 +18,11 @@
   --saffron:#D98A16;
   --free:#3B7A5C;
   --free-soft:#E1EDE5;
+  --prefer:#E0A50B;
+  --prefer-soft:#FBEFCC;
+  --prefer-all:#0FBF57;
+  --prefer-all-soft:#D8F7E4;
+  --on-prefer:#1B1917;
   --fill-alpha:0.28;
   --shadow-sheet:0 24px 60px -18px rgba(27,25,23,.42), 0 2px 8px rgba(27,25,23,.10);
   --shadow-card:0 1px 2px rgba(27,25,23,.06);
@@ -38,6 +43,11 @@
     --saffron:#EDA63C;
     --free:#6CBE95;
     --free-soft:#1D2C24;
+    --prefer:#FFCE3F;
+    --prefer-soft:#332B12;
+    --prefer-all:#3DFF95;
+    --prefer-all-soft:#10301F;
+    --on-prefer:#1B1917;
     --fill-alpha:0.38;
     --shadow-sheet:0 26px 70px -20px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.5);
     --shadow-card:0 1px 2px rgba(0,0,0,.35);
@@ -58,6 +68,11 @@
   --saffron:#EDA63C;
   --free:#6CBE95;
   --free-soft:#1D2C24;
+  --prefer:#FFCE3F;
+  --prefer-soft:#332B12;
+  --prefer-all:#3DFF95;
+  --prefer-all-soft:#10301F;
+  --on-prefer:#1B1917;
   --fill-alpha:0.38;
   --shadow-sheet:0 26px 70px -20px rgba(0,0,0,.75), 0 2px 10px rgba(0,0,0,.5);
   --shadow-card:0 1px 2px rgba(0,0,0,.35);
@@ -154,8 +169,14 @@ select,.btn{
 .readout{
   margin-top:14px;border:1px solid var(--rule);border-left:3px solid var(--free);
   background:var(--card);border-radius:4px;padding:11px 13px;
-  display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;
+  display:flex;flex-direction:column;gap:9px;
 }
+.rline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px}
+.rline.pref{
+  border-bottom:1px solid var(--rule);padding-bottom:9px;margin-bottom:-1px;
+}
+.rline.pref .big{color:var(--prefer-all)}
+.rline.pref .dates b{background:var(--prefer-all-soft);color:var(--prefer-all)}
 .readout .big{
   font-family:"Khand",sans-serif;font-weight:700;font-size:26px;line-height:1;
   color:var(--free);font-variant-numeric:tabular-nums;
@@ -236,6 +257,17 @@ select,.btn{
   .cell .fest{display:none}
   .cell .festdot{display:block}
 }
+.cell .dots{
+  display:flex;gap:2px;flex-wrap:wrap;align-items:center;
+  margin-top:auto;position:relative;z-index:2;max-width:100%;
+}
+.cell .dots i{
+  width:6px;height:6px;border-radius:50%;background:var(--prefer);flex:none;
+  box-shadow:0 0 0 1px rgba(0,0,0,.14);
+}
+@media(min-width:640px){ .cell .dots{gap:3px} .cell .dots i{width:8px;height:8px} }
+.cell .dots.all i{background:var(--prefer-all);box-shadow:0 0 4px var(--prefer-all)}
+.cell.unanimous{border-color:var(--prefer-all);box-shadow:inset 0 0 0 1.5px var(--prefer-all)}
 .cell .tint{position:absolute;inset:0;z-index:0;opacity:var(--fill-alpha);pointer-events:none}
 .cell .strip{position:absolute;left:0;right:0;bottom:0;height:6px;z-index:2;pointer-events:none}
 .cell .mine{
@@ -296,6 +328,13 @@ select,.btn{
   border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;width:100%;
 }
 .act.on{background:transparent;color:var(--ink)}
+.act.pref{background:var(--prefer);border-color:var(--prefer);color:var(--on-prefer)}
+.act.pref.on{background:transparent;color:var(--ink);border-color:var(--prefer)}
+.act.pref.on .lead{color:var(--ink-2)}
+.sheet .acts{display:flex;flex-direction:column;gap:8px}
+.who .row .sw.pdot{background:var(--prefer)}
+.who .row .sw.pdot.all{background:var(--prefer-all)}
+.who .allpref{font-size:13px;color:var(--prefer-all);font-weight:700}
 .act.on .lead{color:var(--red)}
 .act:disabled{opacity:.45;cursor:not-allowed}
 .act .sub{display:block;font-size:11px;font-weight:500;opacity:.7;margin-top:1px}
@@ -330,6 +369,13 @@ select,.btn{
   display:flex;flex-direction:column;gap:4px;
 }
 .foot .k{color:var(--ink-2);font-weight:600}
+.legend{
+  display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;
+  font-size:11.5px;color:var(--ink-3);
+}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .k{width:16px;height:7px;border-radius:2px;flex:none}
+.legend .k.dot{width:8px;height:8px;border-radius:50%}
 .offline{
   margin-top:12px;font-size:12px;padding:8px 11px;border-radius:6px;
   background:var(--red-soft);color:var(--red);font-weight:600;
@@ -369,6 +415,7 @@ select,.btn{
 
   <div class="dow" id="dow"></div>
   <div class="grid" id="grid"></div>
+  <div class="legend" id="legend"></div>
 
   <div class="offline" id="offline" hidden></div>
 
@@ -481,7 +528,16 @@ var T = {
     freeOne:"day nobody has blocked", freeMany:"days nobody has blocked",
     noneFree:"Every date this month is blocked by someone.",
     tap:"Tap a date to open it",
-    busy:"Not available", allFree:"Everyone is free this day",
+    busy:"Can't make it", allFree:"Everyone is free this day",
+    preferHead:"This day suits", noPrefer:"Nobody has picked this day yet",
+    allPrefer:"Everyone prefers this day",
+    preferOn:"This day suits me", preferOff:"Remove my preference",
+    preferOnSub:"Adds your yellow dot to this date",
+    preferOffSub:"Removes your yellow dot from this date",
+    unanOne:"day everyone prefers", unanMany:"days everyone prefers",
+    legBusy:"Colour bar — can't make it",
+    legPref:"Yellow dot — suits that friend",
+    legAll:"All green — suits everyone",
     markOn:"I'm not available", markOff:"I am available again",
     markOnSub:"Adds your colour to this date", markOffSub:"Removes your colour from this date",
     needName:"Choose your name above first",
@@ -505,7 +561,16 @@ var T = {
     freeOne:"दिवस पूर्ण मोकळा", freeMany:"दिवस पूर्ण मोकळे",
     noneFree:"या महिन्यात पूर्ण मोकळा दिवस नाही.",
     tap:"तारीख उघडण्यासाठी त्यावर टॉप करा",
-    busy:"अनुपलब्ध", allFree:"या दिवशी सर्वजण मोकळे आहेत",
+    busy:"येऊ शकत नाही", allFree:"या दिवशी सर्वजण मोकळे आहेत",
+    preferHead:"हा दिवस चालेल", noPrefer:"अजून कोणीही हा दिवस निवडलेला नाही",
+    allPrefer:"सर्वांना हा दिवस पसंत आहे",
+    preferOn:"हा दिवस मला चालेल", preferOff:"माझी पसंती काढा",
+    preferOnSub:"या तारखेवर तुमचा पिवळा ठिपका येईल",
+    preferOffSub:"या तारखेवरून तुमचा पिवळा ठिपका काढला जाईल",
+    unanOne:"दिवस सर्वांना पसंत", unanMany:"दिवस सर्वांना पसंत",
+    legBusy:"रंगाची पट्टी — येऊ शकत नाही",
+    legPref:"पिवळा ठिपका — तो दिवस चालेल",
+    legAll:"सर्व हिरवे — सर्वांना चालेल",
     markOn:"मी उपलब्ध नाही", markOff:"मी पुन्हा उपलब्ध आहे",
     markOnSub:"या तारखेला तुमचा रंग लागेल",
     markOffSub:"या तारखेवरून तुमचा रंग काढला जाईल",
@@ -533,6 +598,7 @@ var S = {
   y: now.getFullYear(),
   m: now.getMonth(),
   marks: {},
+  prefer: {},
   db: null,
   api: (window.__CAL__ && window.__CAL__.api) || null,
   ready: false
@@ -580,11 +646,19 @@ function festsFor(y,m,d){
   if(FEST_FIXED[mmdd]) out=out.concat(FEST_FIXED[mmdd]);
   return out.map(function(p){ return S.lang==="mr" ? p[1] : p[0]; });
 }
-function marksOn(key){
-  var raw = S.marks[key] || [];
+function membersFrom(raw){
+  raw = raw || [];
   var g = group(), out = [];
   for(var i=0;i<g.members.length;i++){ if(raw.indexOf(g.members[i].id)>-1) out.push(g.members[i]); }
   return out;
+}
+function marksOn(key){ return membersFrom(S.marks[key]); }
+function prefersOn(key){ return membersFrom(S.prefer[key]); }
+// Unanimous only counts when every friend currently in the group has picked it,
+// so removing a friend can turn a date green and adding one can turn it back.
+function allPrefer(key){
+  var n = group().members.length;
+  return n > 0 && prefersOn(key).length === n;
 }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
@@ -625,9 +699,14 @@ function applyGroups(list){
 function localMarksKey(){ return "md.marks."+S.groupId+"."+ymKey(); }
 function loadLocalMarks(){
   var raw = ls(localMarksKey());
-  S.marks = raw ? cloneDays(JSON.parse(raw)) : {};
+  if(!raw){ S.marks={}; S.prefer={}; return; }
+  var o = JSON.parse(raw) || {};
+  if(o.busy || o.prefer){ S.marks=cloneDays(o.busy); S.prefer=cloneDays(o.prefer); }
+  else { S.marks=cloneDays(o); S.prefer={}; }   // written before preferences existed
 }
-function saveLocalMarks(){ lsSet(localMarksKey(), JSON.stringify(S.marks)); }
+function saveLocalMarks(){
+  lsSet(localMarksKey(), JSON.stringify({busy:S.marks, prefer:S.prefer}));
+}
 
 function fetchMonth(){
   var forGroup=S.groupId, forMonth=ymKey();
@@ -637,6 +716,7 @@ function fetchMonth(){
       // and never let a poll overwrite an edit that has not landed yet.
       if(forGroup!==S.groupId || forMonth!==ymKey() || pendingWrites>0) return;
       S.marks = cloneDays(j.days);
+      S.prefer = cloneDays(j.prefer);
       render();
     })
     .catch(function(){});
@@ -645,7 +725,7 @@ function subscribeMonth(){
   if(unsubMarks){ unsubMarks(); unsubMarks=null; }
   if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
   if(S.api){
-    S.marks={}; render();
+    S.marks={}; S.prefer={}; render();
     fetchMonth();
     pollTimer=setInterval(function(){ if(!document.hidden) fetchMonth(); }, 20000);
     return;
@@ -657,17 +737,38 @@ function subscribeMonth(){
     monthDocExists = snap.exists;
     var data = snap.exists ? (snap.data()||{}) : {};
     S.marks = cloneDays(data.days);
+    S.prefer = cloneDays(data.prefer);
     render();
   }, function(){ /* listener died; the page keeps its last view */ });
 }
 
-function writeDay(key, ids, memberId, busy){
-  S.marks[key] = ids;
+// A friend is either busy on a date or prefers it, never both — setting one
+// clears the other, here and on the server.
+function writeMark(key, kind, on){
+  if(!S.me) return;
+  var mine = kind === "prefer" ? S.prefer : S.marks;
+  var other = kind === "prefer" ? S.marks : S.prefer;
+
+  var cur = (mine[key] || []).slice();
+  var i = cur.indexOf(S.me);
+  if(on && i === -1) cur.push(S.me);
+  if(!on && i > -1) cur.splice(i, 1);
+  mine[key] = cur;
+
+  if(on){
+    var oc = (other[key] || []).slice();
+    var j = oc.indexOf(S.me);
+    if(j > -1){ oc.splice(j, 1); other[key] = oc; }
+  }
   render();
+
   if(S.api){
     pendingWrites++;
-    apiSend("POST","/marks",{date:key, member_id:memberId, busy:!!busy})
-      .then(function(j){ S.marks[j.date] = (j.members||[]).slice(); })
+    apiSend("POST","/marks",{date:key, member_id:S.me, kind:kind, on:!!on})
+      .then(function(j){
+        S.marks[j.date]  = (j.members||[]).slice();
+        S.prefer[j.date] = (j.prefer ||[]).slice();
+      })
       .catch(function(){ pendingWrites--; fetchMonth(); pendingWrites++; })
       .then(function(){
         pendingWrites--;
@@ -677,12 +778,17 @@ function writeDay(key, ids, memberId, busy){
     return;
   }
   if(!S.db){ saveLocalMarks(); return; }
+
   var ref = S.db.doc("marks/"+markDocId());
-  var patch = {}; patch[key] = ids;
-  var body = {days:patch};
-  var p = monthDocExists ? ref.update(body) : ref.set({days:S.marks, group:S.groupId, month:ymKey()});
+  var whole = {days:S.marks, prefer:S.prefer, group:S.groupId, month:ymKey()};
+  // Merge just this date in both maps, so two friends editing different dates
+  // in the same month don't overwrite each other.
+  var body = {days:{}, prefer:{}};
+  body.days[key]   = S.marks[key]  || [];
+  body.prefer[key] = S.prefer[key] || [];
+  var p = monthDocExists ? ref.update(body) : ref.set(whole);
   p.then(function(){ monthDocExists=true; }).catch(function(){
-    return ref.set({days:S.marks, group:S.groupId, month:ymKey()}).then(function(){ monthDocExists=true; }).catch(function(){});
+    return ref.set(whole).then(function(){ monthDocExists=true; }).catch(function(){});
   });
 }
 
@@ -773,18 +879,41 @@ function renderRoster(){
   host.appendChild(mg);
 }
 
+function chipRow(days){
+  var out = days.slice(0,14).map(function(d){ return "<b>"+d+"</b>"; }).join("");
+  if(days.length>14) out += '<b>+'+(days.length-14)+'</b>';
+  return '<span class="dates">'+out+'</span>';
+}
 function renderReadout(){
-  var dim=new Date(S.y,S.m+1,0).getDate(), free=[];
+  var dim=new Date(S.y,S.m+1,0).getDate(), free=[], unanimous=[];
   for(var d=1; d<=dim; d++){
-    if(marksOn(dateKey(S.y,S.m,d)).length===0) free.push(d);
+    var key=dateKey(S.y,S.m,d);
+    if(marksOn(key).length===0) free.push(d);
+    if(allPrefer(key)) unanimous.push(d);
   }
-  var host=$("readout");
-  if(!free.length){ host.innerHTML='<span class="none">'+esc(t("noneFree"))+'</span>'; return; }
-  var chips = free.slice(0,14).map(function(d){ return "<b>"+d+"</b>"; }).join("");
-  if(free.length>14) chips += '<b>+'+(free.length-14)+'</b>';
-  host.innerHTML = '<span class="big">'+free.length+'</span>'+
-    '<span class="lbl">'+esc(free.length===1?t("freeOne"):t("freeMany"))+'</span>'+
-    '<span class="dates">'+chips+'</span>';
+  var h="";
+  // The whole point of preferences: a date the entire group has picked.
+  if(unanimous.length){
+    h += '<div class="rline pref"><span class="big">'+unanimous.length+'</span>'+
+         '<span class="lbl">'+esc(unanimous.length===1?t("unanOne"):t("unanMany"))+'</span>'+
+         chipRow(unanimous)+'</div>';
+  }
+  h += '<div class="rline">';
+  if(!free.length){
+    h += '<span class="none">'+esc(t("noneFree"))+'</span>';
+  } else {
+    h += '<span class="big">'+free.length+'</span>'+
+         '<span class="lbl">'+esc(free.length===1?t("freeOne"):t("freeMany"))+'</span>'+
+         chipRow(free);
+  }
+  h += '</div>';
+  $("readout").innerHTML = h;
+}
+function renderLegend(){
+  $("legend").innerHTML =
+    '<span><i class="k" style="background:var(--ink-3)"></i>'+esc(t("legBusy"))+'</span>'+
+    '<span><i class="k dot" style="background:var(--prefer)"></i>'+esc(t("legPref"))+'</span>'+
+    '<span><i class="k dot" style="background:var(--prefer-all)"></i>'+esc(t("legAll"))+'</span>';
 }
 
 function renderGrid(){
@@ -820,11 +949,14 @@ function renderGrid(){
     el.type="button";
     var key=dateKey(S.y,S.m,c.d);
     var who=marksOn(key);
+    var pref=prefersOn(key);
+    var everyone=allPrefer(key);
     var fests=festsFor(S.y,S.m,c.d);
     var cls="cell";
     if(dow===0) cls+=" sun";
     if(fests.length) cls+=" fest";
     if(key===tk) cls+=" today";
+    if(everyone) cls+=" unanimous";
     if(S.lang==="mr") cls+=" mr";
     el.className=cls;
     var colors=who.map(function(m){ return m.color; });
@@ -843,8 +975,15 @@ function renderGrid(){
       var meM=member(S.me);
       html += '<span class="mine" style="background:'+(meM?meM.color:"#000")+'"></span>';
     }
+    // One dot per friend who picked this date; the whole row turns green once
+    // every friend has.
+    if(pref.length){
+      html += '<span class="dots'+(everyone?" all":"")+'">'+
+              pref.map(function(){ return "<i></i>"; }).join("")+'</span>';
+    }
     el.innerHTML=html;
     var label = c.d+" "+monthsArr[S.m]+", "+(S.lang==="mr"?DOWL_MR:DOWL_EN)[dow];
+    if(pref.length) label += " — "+(everyone?t("allPrefer"):t("preferHead")+": "+pref.map(mName).join(", "));
     if(who.length) label += " — "+t("busy")+": "+who.map(mName).join(", ");
     el.setAttribute("aria-label",label);
     el.addEventListener("click", function(){ openDay(c.d); });
@@ -852,7 +991,7 @@ function renderGrid(){
   });
 }
 
-function render(){ renderChrome(); renderSelects(); renderRoster(); renderReadout(); renderGrid(); }
+function render(){ renderChrome(); renderSelects(); renderRoster(); renderReadout(); renderGrid(); renderLegend(); }
 
 /* ---------------- day sheet ---------------- */
 var openDate=null;
@@ -862,7 +1001,7 @@ function openDay(d){
   drawSheet();
   $("scrim").hidden=false;
   document.body.style.overflow="hidden";
-  var b=$("sheet").querySelector(".act, .close");
+  var b=$("sheet").querySelector(".act:not([disabled]), .close");
   if(b) b.focus();
 }
 function closeDay(){
@@ -871,15 +1010,21 @@ function closeDay(){
 function drawSheet(){
   if(openDate==null) return;
   var d=openDate, key=dateKey(S.y,S.m,d), who=marksOn(key), fests=festsFor(S.y,S.m,d);
+  var pref=prefersOn(key), everyone=allPrefer(key);
   var dow=new Date(S.y,S.m,d).getDay();
   var colors=who.map(function(m){ return m.color; });
   var iAm = !!S.me && who.some(function(m){ return m.id===S.me; });
+  var iPrefer = !!S.me && pref.some(function(m){ return m.id===S.me; });
   var sheet=$("sheet");
   sheet.className="sheet"+(S.lang==="mr"?" mr":"");
 
   var h='<button type="button" class="close" id="sheetClose" aria-label="'+esc(t("close"))+'">×</button>';
   h+='<div class="top">';
-  if(colors.length) h+='<span class="tint" style="background-image:'+splitGradient(colors,null)+'"></span>';
+  if(everyone){
+    h+='<span class="tint" style="background:var(--prefer-all)"></span>';
+  } else if(colors.length){
+    h+='<span class="tint" style="background-image:'+splitGradient(colors,null)+'"></span>';
+  }
   h+='<div class="dn'+(dow===0?" sun":"")+'">'+esc((S.lang==="mr"?DOWL_MR:DOWL_EN)[dow])+'</div>';
   h+='<div class="num">'+d+'</div>';
   h+='<div class="my">'+esc((S.lang==="mr"?MONTHS_MR:MONTHS_EN)[S.m])+" "+S.y+'</div>';
@@ -887,6 +1032,21 @@ function drawSheet(){
     h+='<div class="fests">'+fests.map(function(f){ return "<b>"+esc(f)+"</b>"; }).join("")+'</div>';
   }
   h+='</div><div class="body">';
+
+  h+='<h3>'+esc(t("preferHead"))+'</h3><div class="who">';
+  if(everyone){
+    h+='<div class="allpref">'+esc(t("allPrefer"))+'</div>';
+  }
+  if(pref.length){
+    pref.forEach(function(m){
+      h+='<div class="row"><span class="sw pdot'+(everyone?" all":"")+'"></span><span>'+esc(mName(m))+'</span>'+
+         (m.id===S.me?'<span class="tag">'+esc(t("you"))+'</span>':'')+'</div>';
+    });
+  } else {
+    h+='<div class="row" style="color:var(--ink-3);font-size:13px">'+esc(t("noPrefer"))+'</div>';
+  }
+  h+='</div>';
+
   h+='<h3>'+esc(t("busy"))+'</h3><div class="who">';
   if(who.length){
     who.forEach(function(m){
@@ -897,10 +1057,16 @@ function drawSheet(){
     h+='<div class="clear">'+esc(t("allFree"))+'</div>';
   }
   h+='</div>';
+
   if(S.me){
+    h+='<div class="acts">';
+    h+='<button type="button" class="act pref'+(iPrefer?" on":"")+'" id="prefBtn">'+
+       '<span class="lead">'+esc(iPrefer?t("preferOff"):t("preferOn"))+'</span>'+
+       '<span class="sub">'+esc(iPrefer?t("preferOffSub"):t("preferOnSub"))+'</span></button>';
     h+='<button type="button" class="act'+(iAm?" on":"")+'" id="actBtn">'+
        '<span class="lead">'+esc(iAm?t("markOff"):t("markOn"))+'</span>'+
        '<span class="sub">'+esc(iAm?t("markOffSub"):t("markOnSub"))+'</span></button>';
+    h+='</div>';
   } else {
     h+='<button type="button" class="act" disabled>'+esc(t("needName"))+'</button>';
   }
@@ -908,14 +1074,14 @@ function drawSheet(){
   sheet.innerHTML=h;
   $("sheetClose").addEventListener("click", closeDay);
   var a=$("actBtn");
-  if(a) a.addEventListener("click", function(){ toggleDay(key); });
+  if(a) a.addEventListener("click", function(){ toggleMark(key, "busy"); });
+  var pb=$("prefBtn");
+  if(pb) pb.addEventListener("click", function(){ toggleMark(key, "prefer"); });
 }
-function toggleDay(key){
+function toggleMark(key, kind){
   if(!S.me) return;
-  var cur=(S.marks[key]||[]).slice();
-  var i=cur.indexOf(S.me), busy=(i===-1);
-  if(i>-1) cur.splice(i,1); else cur.push(S.me);
-  writeDay(key,cur,S.me,busy);
+  var mine = kind === "prefer" ? S.prefer : S.marks;
+  writeMark(key, kind, (mine[key]||[]).indexOf(S.me) === -1);
   drawSheet();
 }
 

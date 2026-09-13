@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>आरती संग्रह</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Marathi:ital@0;1&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF1DC;
+    --paper-deep:#F4E6C4;
+    --card:#FFFDF6;
+    --maroon:#7A1B2E;
+    --maroon-dark:#57101F;
+    --gold:#B9852B;
+    --gold-light:#E8C874;
+    --gold-pale:#F3E1B0;
+    --ink:#3A2410;
+    --ink-soft:#6B5236;
+    --shadow: 0 10px 30px rgba(58,24,16,0.18);
+    --shadow-sm: 0 4px 14px rgba(58,24,16,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at top, #efe0bc 0%, #d9c391 100%);
+    font-family:'Noto Sans Devanagari', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app-shell{
+    width:100%;
+    max-width:480px;
+    height:100dvh;
+    background:var(--paper);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow: 0 0 60px rgba(0,0,0,0.35);
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    background: linear-gradient(180deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+    color: var(--gold-light);
+    padding:14px 16px 12px;
+    text-align:center;
+    position:relative;
+    flex-shrink:0;
+    border-bottom: 3px solid var(--gold);
+  }
+  .masthead h1{
+    font-family:'Tiro Devanagari Marathi', serif;
+    margin:0;
+    font-size:22px;
+    letter-spacing:0.5px;
+    font-weight:400;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .masthead .diya{
+    width:20px;height:20px;flex-shrink:0;
+  }
+  .masthead .sub{
+    font-size:11px;
+    color: var(--gold-pale);
+    opacity:0.85;
+    margin-top:2px;
+    letter-spacing:1.5px;
+  }
+
+  /* ---------- Controls row ---------- */
+  .controls{
+    display:flex;
+    gap:8px;
+    padding:10px 12px;
+    background:var(--paper-deep);
+    border-bottom:1px solid #e2cfa0;
+    flex-shrink:0;
+    position:relative;
+    z-index:30;
+  }
+  .idx-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--maroon);
+    color:var(--gold-light);
+    border:none;
+    border-radius:10px;
+    padding:0 12px;
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    height:40px;
+    flex-shrink:0;
+    cursor:pointer;
+    box-shadow: var(--shadow-sm);
+  }
+  .idx-btn svg{width:18px;height:18px;}
+  .search-wrap{
+    position:relative;
+    flex:1;
+    min-width:0;
+  }
+  .search-wrap input{
+    width:100%;
+    height:40px;
+    border-radius:10px;
+    border:1.5px solid #d9c08a;
+    background:var(--card);
+    padding:0 36px 0 12px;
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:13.5px;
+    color:var(--ink);
+    outline:none;
+  }
+  .search-wrap input:focus{
+    border-color:var(--maroon);
+  }
+  .search-wrap .sicon{
+    position:absolute;
+    right:10px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;height:16px;
+    color:var(--ink-soft);
+    pointer-events:none;
+  }
+  .search-dropdown{
+    position:absolute;
+    top:46px;
+    left:0;
+    right:0;
+    background:var(--card);
+    border:1px solid #e2cfa0;
+    border-radius:10px;
+    box-shadow: var(--shadow);
+    max-height:260px;
+    overflow-y:auto;
+    z-index:40;
+    display:none;
+  }
+  .search-dropdown.show{display:block;}
+  .search-dropdown .item{
+    padding:10px 14px;
+    font-size:13.5px;
+    font-family:'Tiro Devanagari Marathi', serif;
+    color:var(--ink);
+    border-bottom:1px solid #f0e6cc;
+    cursor:pointer;
+  }
+  .search-dropdown .item:last-child{border-bottom:none;}
+  .search-dropdown .item:active, .search-dropdown .item.hi{background:var(--gold-pale);}
+  .search-dropdown .empty{
+    padding:14px;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  /* ---------- Page viewport ---------- */
+  .page-viewport{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    padding:16px 14px 84px;
+  }
+  .page-card{
+    height:100%;
+    background:var(--card);
+    border-radius:14px;
+    box-shadow: var(--shadow);
+    border:1px solid #ecd9ab;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .page-card::before, .page-card::after{
+    content:"";
+    position:absolute;
+    width:34px;height:34px;
+    border-color:var(--gold);
+    opacity:0.55;
+    pointer-events:none;
+  }
+  .page-card::before{
+    top:8px; right:8px;
+    border-top:2px solid var(--gold);
+    border-right:2px solid var(--gold);
+    border-radius:0 8px 0 0;
+  }
+  .page-card::after{
+    bottom:8px; left:8px;
+    border-bottom:2px solid var(--gold);
+    border-left:2px solid var(--gold);
+    border-radius:0 0 0 8px;
+  }
+  .page-title-wrap{
+    padding:22px 20px 12px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .page-title{
+    font-family:'Tiro Devanagari Marathi', serif;
+    font-size:22px;
+    color:var(--maroon);
+    margin:0;
+    line-height:1.35;
+  }
+  .divider{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin:10px auto 0;
+    width:70%;
+  }
+  .divider .line{height:1px;flex:1;background:linear-gradient(90deg, transparent, var(--gold), transparent);}
+  .divider .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+
+  .page-content{
+    flex:1;
+    overflow-y:auto;
+    padding:6px 22px 20px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .page-content p{
+    font-family:'Tiro Devanagari Marathi', serif;
+    font-size:17px;
+    line-height:1.9;
+    color:var(--ink);
+    margin:0 0 18px;
+    white-space:pre-line;
+    text-align:center;
+  }
+  .page-content p:last-child{margin-bottom:4px;}
+
+  /* transition animations */
+  .page-card.anim-next{animation: slideInNext 0.32s ease;}
+  .page-card.anim-prev{animation: slideInPrev 0.32s ease;}
+  @keyframes slideInNext{
+    from{transform:translateX(26px) scale(0.98); opacity:0;}
+    to{transform:translateX(0) scale(1); opacity:1;}
+  }
+  @keyframes slideInPrev{
+    from{transform:translateX(-26px) scale(0.98); opacity:0;}
+    to{transform:translateX(0) scale(1); opacity:1;}
+  }
+
+  /* ---------- Nav arrows & page indicator ---------- */
+  .nav-btn{
+    position:absolute;
+    bottom:20px;
+    width:52px;height:52px;
+    border-radius:50%;
+    background: linear-gradient(160deg, var(--gold-light), var(--gold));
+    border:none;
+    box-shadow: var(--shadow-sm);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:20;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .nav-btn:active{transform:scale(0.92);}
+  .nav-btn svg{width:22px;height:22px;color:var(--maroon-dark);}
+  .nav-prev{left:26px;}
+  .nav-next{right:26px;}
+  .nav-btn.hidden{opacity:0; pointer-events:none; transform:scale(0.6);}
+
+  .page-indicator{
+    position:absolute;
+    bottom:32px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--maroon);
+    color:var(--gold-pale);
+    font-size:11.5px;
+    font-family:'Noto Sans Devanagari',sans-serif;
+    padding:5px 12px;
+    border-radius:999px;
+    z-index:19;
+    letter-spacing:0.5px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ---------- Index Modal ---------- */
+  .modal-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(30,15,8,0.45);
+    z-index:50;
+    display:none;
+    align-items:flex-end;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-sheet{
+    width:100%;
+    max-height:82%;
+    background:var(--paper);
+    border-radius:20px 20px 0 0;
+    display:flex;
+    flex-direction:column;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
+    animation: sheetUp 0.28s ease;
+  }
+  @keyframes sheetUp{
+    from{transform:translateY(100%);}
+    to{transform:translateY(0);}
+  }
+  .modal-handle{
+    width:40px;height:4px;border-radius:2px;
+    background:#d9c08a;
+    margin:10px auto 4px;
+    flex-shrink:0;
+  }
+  .modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 18px 10px;
+    flex-shrink:0;
+  }
+  .modal-header h2{
+    font-family:'Tiro Devanagari Marathi', serif;
+    font-size:19px;
+    color:var(--maroon);
+    margin:0;
+    font-weight:400;
+  }
+  .modal-close{
+    width:32px;height:32px;
+    border-radius:50%;
+    border:none;
+    background:var(--paper-deep);
+    color:var(--maroon);
+    font-size:18px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .modal-search{
+    padding:0 18px 12px;
+    flex-shrink:0;
+  }
+  .modal-search input{
+    width:100%;
+    height:40px;
+    border-radius:10px;
+    border:1.5px solid #d9c08a;
+    background:var(--card);
+    padding:0 12px;
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:13.5px;
+    outline:none;
+  }
+  .modal-search input:focus{border-color:var(--maroon);}
+  .modal-list{
+    overflow-y:auto;
+    padding:0 10px 24px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .modal-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 10px;
+    border-bottom:1px solid #ecdcae;
+    cursor:pointer;
+  }
+  .modal-item:active{background:var(--gold-pale);}
+  .modal-item .num{
+    width:26px;height:26px;
+    border-radius:50%;
+    background:var(--maroon);
+    color:var(--gold-pale);
+    font-size:11px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .modal-item .txt{
+    font-family:'Tiro Devanagari Marathi', serif;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .modal-item.current{background:var(--gold-pale);}
+  .modal-item.current .num{background:var(--gold);color:var(--maroon-dark);}
+  .no-results{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    padding:24px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <div class="masthead">
+    <h1>
+      <svg class="diya" viewBox="0 0 24 24" fill="none">
+        <path d="M4 15c0-2 2-3 8-3s8 1 8 3-3.5 4-8 4-8-2-8-4z" fill="#E8C874"/>
+        <path d="M12 4c1.5 2 2 3.5 0.8 5.2-0.8 1.1-2 1-2.4-0.2C9.9 7.3 10.6 5.6 12 4z" fill="#E8C874"/>
+      </svg>
+      आरती संग्रह
+    </h1>
+    <div class="sub">॥ श्री गणेशाय नमः ॥</div>
+  </div>
+
+  <div class="controls">
+    <button class="idx-btn" id="idxBtn" aria-label="अनुक्रमणिका पहा">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+      अनुक्रम
+    </button>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="आरतीचे नाव शोधा... (उदा. ganpati, vitthal)" autocomplete="off">
+      <svg class="sicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="search-dropdown" id="searchDropdown"></div>
+    </div>
+  </div>
+
+  <div class="page-viewport">
+    <div class="page-card" id="pageCard">
+      <div class="page-title-wrap">
+        <h2 class="page-title" id="pageTitle"></h2>
+        <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
+      </div>
+      <div class="page-content" id="pageContent"></div>
+    </div>
+
+    <button class="nav-btn nav-prev" id="prevBtn" aria-label="मागील आरती">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="page-indicator" id="pageIndicator"></div>
+    <button class="nav-btn nav-next" id="nextBtn" aria-label="पुढील आरती">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>अनुक्रमणिका</h2>
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="modal-search">
+        <input type="text" id="modalSearchInput" placeholder="यादीत शोधा..." autocomplete="off">
+      </div>
+      <div class="modal-list" id="modalList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const aartis = [
+  {
+    title: "श्री गणपतीची आरती",
+    tag: "सुखकर्ता दुःखहर्ता",
+    keywords: "ganpati ganesh sukhkarta dukhharta mangalmurti aarti",
+    body: [
+      "सुखकर्ता दुःखहर्ता वार्ता विघ्नाची। नुरवी पुरवी प्रेम कृपा जयाची ।\nसर्वांगी सुंदर उटी शेंदुराची । कंठी झळके माळ मुक्ताफळांची ।\nजय देव जय देव जय मंगलमूर्ती । दर्शनमात्रे मनकामना पुरती ।।धृ।।",
+      "रत्नखचित फरा तूज गौरीकुमरा । चंदनाची उटी कुंकुमकेशरा\nहिरे जडित मुकुट शोभतो बरा । रुणझुणती नुपुरे चरणी घागरिया ॥१॥",
+      "लंबोदर पीतांबर फणीवरवंदना । सरळ सोंड वक्रतुंड त्रिनयना ।\nदास रामाचा वाट पाहे सदना । संकटी पावावे निर्वाणी रक्षावे सुरवंदना ।\nजय देव जय देव जय मंगलमूर्ती । दर्शनमात्रे मनकामना पुरती ।। ॥२॥"
+    ]
+  },
+  {
+    title: "श्री गणपतीची आरती",
+    tag: "तूं सुखकर्ता तूं दुःखहर्ता",
+    keywords: "ganpati bappa morya tu sukhkarta vinayak aarti",
+    body: [
+      "तूं सुखकर्ता तूं दुःखहर्ता । विघ्नविनाशक मोरया ।\nसंकटी रक्षी शरण तुला मी । गणपतीबाप्पा मोरया ।। ध्रु ।।",
+      "मंगलमूर्ती तूं गणनायक । वक्रतुंड तूं सिद्धिविनायक ।\nतुझिया दारी आज पातलों । देई चित्त मज ध्याया ।। १ ।।",
+      "तूं सकलांचा भाग्यविधाता । तूं विद्येचा स्वामी दाता ।\nज्ञानदीप उजळुनी आमुचा । निमवी नैराश्याला ।। २ ।।",
+      "तूं माता तूं पिता जागीं या । ज्ञाना तूं सर्वस्व जागीं या ।\nपामर मी वर उणे भासती । तुझी आरती गाया ।। ३ ।।",
+      "मंगलमूर्ती मोरया । गणपतीबाप्पा मोरया ।"
+    ]
+  },
+  {
+    title: "आरती श्री गणराजाची",
+    tag: "शेंदूर लाल चढायो",
+    keywords: "ganraja shendur lal ganpati hindi aarti",
+    body: [
+      "शेंदूर लाल चढायो अच्छा गजमुखको,\nदोंदिल लाल बिराजे सूत गौरीहरको ,\nहाथ लिए गुड-लड्डू साई सुरवरको ,\nमहिमा कहे ना जाय लागत हूँ पदको,",
+      "जय जय श्री गणराज विध्यासुखदाता,\nधन्य तुम्हारा दर्शन मेरा मन रमता,",
+      "अष्टो सिद्धि दासी संकटको बैरी,\nविघ्नाविनाशन मंगल मूरत अधिकारी,\nकोटि सूरजप्रकाश ऐसी छबि तेरी,\nगंड-स्थल मदमस्तक झूले शाशिहारी,",
+      "जय जय श्री गणराज विध्यासुखदाता,\nधन्य तुम्हारा दर्शन मेरा मन रमता,",
+      "भावभगत से कोई शरणागत आवे,\nसंतति सम्पति सभी भरपूर पावे,\nऐसे तुम महाराज मोको अति भावे,\nगोसावीनंदन निशिदिन गुण गावे,",
+      "जय जय श्री गणराज विध्यासुखदाता,\nधन्य तुम्हारा दर्शन मेरा मन रमता."
+    ]
+  },
+  {
+    title: "श्री शंकराची आरती",
+    tag: "लवथवती विक्राळा",
+    keywords: "shankar mahadev shiv lavthavati aarti",
+    body: [
+      "लवथवती विक्राळा ब्रह्मांडी माळा।\nवीषें कंठी काळा त्रिनेत्रीं ज्वाळां।।\nलावण्यसुंदर मस्तकीं बाळा।\nतेथुनियां जळ निर्मळ वाहे झुळझुळां ॥१॥\nजय देव जय देव जय श्रीशंकरा।।\nआरती ओवाळूं तुज कर्पुगौरा ।।ध्रु.।।",
+      "कर्पुगौरा भोळा नयनीं विशाळा।\nआर्धांगीं पार्वती सुमनांच्या माळा।\nविभुतीचें उधळण शितिकंठ नीळा।\nऐसा शंकर शोभे उमावेल्हाळा ॥२॥",
+      "देवी दैत्यीं सागरमंथन पैं केलें।\nत्यामाजी जें अवचित हळाहळ उठिलें।\nतें त्वां असुरपषं प्राशन केलें।\nनीळकंठ नाम प्रसिद्ध झालें॥३॥",
+      "व्याघ्रांबर फणिवरधर सुंदर मदनारी।\nपंचानन मनमोहन मुनिजनसुखकारी।\nशतकोटीचें बीज वाचे उच्चारी।\nरघुकुलतिलक रामदासा अंतरी।।\nजय देव जय देव जय श्रीशंकरा॥४॥"
+    ]
+  },
+  {
+    title: "श्री देवीची आरती",
+    tag: "दुर्गे दुर्घट भारी",
+    keywords: "devi durga durge durghat bhari aarti",
+    body: [
+      "दुर्गे दुर्घट भारी तुजविण संसारी।\nअनाथ नाथे अंबे करुणा विस्तारी।\nवारी वारी जन्म मरणांते वारी।\nहारी पडलो आता संकट निवारी॥१॥",
+      "जय देवी जय देवी महिषासुरमथिनी।\nसुरवर ईश्वर वरदे तारक संजीवनी॥धृ॥",
+      "तुजवीण भुवनी पाहतां तुज ऐसे नाही।\nचारी श्रमले परंतु न बोलवे काही।\nसाही श्रमले परंतु न बोलवे काही।\nसाही विवाद करितां पडले प्रवाही।\nते तू भक्तालागी पावसी लवलाही॥२॥",
+      "प्रसन्न वदने प्रसन्न होती निजदासा।\nक्लेशांपासूनी सोडवी तोडी भवपाशा।\nअंबे तुजवाचून कोण पुरवील आशा।\nनरहरी तल्लीन झाला पदपंकजलेशा॥३॥"
+    ]
+  },
+  {
+    title: "श्री विठोबाची आरती",
+    tag: "युगे अठ्ठावीस विटेवरी",
+    keywords: "vithoba pandurang yuge athavis aarti",
+    body: [
+      "युगे अठ्ठावीस विटेवरी उभा । वामांगी रखुमाई दिसे दिव्य शोभा ।\nपुंडलिकाचे भेटी परब्रह्म आलें गा । चरणी वाहे भीमा उद्धारी जगा ॥१॥\nजय देव जय देव जय पांडुरंगा । रखुमाईवल्लभा राईच्या वल्लभा\nपावे जिवलगा ।।धृ. ।।",
+      "तुळसी माळा गळा कर टेवुनी कटी । कांसे पीतांबर कस्तुरी लल्लाटी ।\nदेव सुरवर नित्य येती भेटी । गरूड हनुमंत पुढे उभे राहती ।।\nजय देव ॥२॥",
+      "धन्य वेणुनाद अनुक्षेत्रपाळा । सुवर्णाची कमळे वनमाळा गळा ।\nराई रखुमाबाई राणीया सकळा । ओवळिती राजा विठोबा सावळा।।\nजय देव ॥३॥",
+      "ओवाळू आरत्या कुर्वंड्या येती । चंद्रभागेमाजी सोडुनिया देती ।\nदिंड्या पताका वैष्णव नाचती । पंढरीचा महिमा वर्णावा किती ।।\nजय देव ॥४॥",
+      "आषाढी कार्तिकी भक्तजन येती । चंद्रभागेमध्यें स्नाने जे करिती।।\nदर्शनहेळामात्रें तया होय मुक्ती। केशवासी नामदेव भावे ओंवळिती।।\nजय देव जय देव ॥५॥"
+    ]
+  },
+  {
+    title: "श्री विठ्ठलाची आरती",
+    tag: "येई हो विठ्ठले माझे माउली",
+    keywords: "vitthal mauli yei ho vitthale pandharpur aarti",
+    body: [
+      "येई हो विठ्ठले माझे माउली ये ॥\nनिढळावरी कर ठेवूनि वाट मी पाहे ॥\nआलिया गोलिया हाती धाडी निरोप ।\nपंढरपुरी आहे माझा मायबाप ॥ १ ॥",
+      "पिवळा पितांबर कैसा गगनी झळकला ।\nगरुडावरी बैसोनी माझा कैवारी आला ॥ २ ॥",
+      "विठोबाचे राज्य आम्हा नित्य दिपवाळी ॥\nविष्णुदास नामा जीवेभावे ओवाळी ॥ ३ ॥",
+      "असो नासो भाव आम्हा तुझ्या थाया\nकृपादृष्टि पाहे माझा पंढरीराया",
+      "येई हो विठ्ठले माझे माऊली ये ॥"
+    ]
+  },
+  {
+    title: "श्री ज्ञानराजा आरती",
+    tag: "आरती ज्ञानराजा",
+    keywords: "dnyanraja dnyaneshwar gyanraja aarti",
+    body: [
+      "आरती ज्ञानराजा । महाकैवल्यतेजा ।\nसेविती साधुसंत ॥ मनु वेधला माझा ॥ आरती ॥ धृ ॥",
+      "लोपलें ज्ञान जगी । हित नेणती कोणी ।\nअवतार पांडुरंग । नाम ठेविले ज्ञानी ॥ १ ॥ आरती ॥ धृ ॥",
+      "कनकाचे ताट करी । उभ्या गोपिका नारी ।\nनारद तुंबर हो ॥ साम गायन करी ॥ २ ॥ आरती ॥ धृ ॥",
+      "प्रकट गुह्य बोले । विश्व ब्रम्हाची केलें ।\nरामजनार्दनी । पायी मस्तक टेविले ।\nआरती ज्ञानराजा । महाकैवल्यतेजा ॥ सेविती ॥ ३ ॥"
+    ]
+  },
+  {
+    title: "श्री तुकारामाची आरती",
+    tag: "आरती तुकारामा",
+    keywords: "tukaram tukoba sadguru dhama aarti",
+    body: [
+      "आरती तुकारामा । स्वामी सद्गुरुधामा ।\nसच्चिदानंद मूर्ती । पायी दाखवीं आम्हां ॥ धृ ॥",
+      "राघवें सागरांत । पाषाण तारिले ।\nतैसे हे तुकोबाचे । अभंग उदकीं रक्षिले ।\nआरती तुकारामा ॥ १ ॥",
+      "तुकितां तुलनेसी । ब्रह्म तुकासी आलें ।\nम्हणोनी रामेश्वरें । चरणी मस्तक ठेविलें ॥\nआरती तकारामा ॥ २ ॥"
+    ]
+  },
+  {
+    title: "श्री साईबाबांची आरती",
+    tag: "आरती साईबाबा",
+    keywords: "sai baba saibaba shirdi aarti",
+    body: [
+      "आरती साईबाबा । सौख्यदातार जीवा।\nचरणरजातली । ध्यावा दासा विसावा,\nभक्ता विसावा ।। आ०।।ध्रु ०।।",
+      "जाळुनियां अनंग। स्वस्वरूपी राहेदंग ।\nमुमुक्षूजनां दावी । निज डोळा श्रीरंग ।। आ०।। १ ।।",
+      "जयामनी जैसा भाव । तया तैसा अनुभव ।\nदाविसी दयाघना । ऐसी तुझीही माव ।। आ०।। २ ।।",
+      "तुमचे नाम ध्याता । हरे संस्कृती व्यथा ।\nअगाध तव करणी । मार्ग दाविसी अनाथा ।। आ०।। ३ ।।",
+      "कलियुगी अवतार । सगुण परब्रह्मः साचार ।\nअवतीर्ण झालासे । स्वामी दत्त दिगंबर ।। द०।। आ०।। ४ ।।",
+      "आठा दिवसा गुरुवारी । भक्त करिती वारी ।\nप्रभुपद पहावया । भवभय निवारी ।। आ०।। ५ ।।",
+      "माझा निजद्रव्यठेवा । तव चरणरज सेवा ।\nमागणे हेचि आता । तुम्हा देवाधिदेवा ।। आ०।। ६ ।।",
+      "इच्छित दिन चातक। निर्मल तोय निजसुख ।\nपाजावे माधवा या । सांभाळ आपुली भाक ।। आ०।। ७ ।।"
+    ]
+  },
+  {
+    title: "श्री गुरुदत्तांची आरती",
+    tag: "त्रिगुणात्मक त्रैमूर्ती दत्त",
+    keywords: "dattatreya guru dutt trigunatmak aarti",
+    body: [
+      "त्रिगुणात्मक त्रैमूर्ती दत्त हा जाणा।\nत्रिगुणी अवतार त्रैलोक्य राणा ।।\nनेती नेती शब्द न ये अनुमाना ।\nसुरवर मुनिजन योगी समाधी न ये ध्याना ।।१।।",
+      "जय देव जयदेव जय श्री गुरुदत्ता।\nआरती ओवाळिता हरली भवचिंता।\nजय देव जय देव।",
+      "सबाह्य अभ्यंतरीं तू एक दत्त।\nअभाग्यासी कैंची कळेल ही मात ।।\nपरा ही परतली तेथे कैंचा हा हेत ।\nजन्ममरण्याचा पुरलासे अंत ।।२।।\nजय देव जय देव",
+      "दत्त येऊनिया उभा ठाकला ।\nसद्भावे साष्टांग प्रणिपात केला ।।\nप्रसन्न होऊनिया आशीर्वाद दिधला ।\nजन्ममरण्याचा फेरा चुकविला ।।३।।\nजय देव जय देव",
+      "दत्त दत्त ऐसे लागले ध्यान।\nहरपले मन झाले उन्मन ।।\nमीतूंपणाची झाली बोळवण ।\nएका जनार्दनीं श्री दत्त ध्यान ।।४।।\nजय देव जय देव"
+    ]
+  },
+  {
+    title: "देवा देवीची निरोप आरती",
+    tag: "जाहले भजन आम्ही",
+    keywords: "nirop aarti farewell devi deva",
+    body: [
+      "जाहले भजन आम्ही नमितो तव चरण ।\nवारुनिया विघ्ने देवा रक्षावे दीना ॥धृ॥",
+      "दास तुझे आम्ही देवा तुजलाची ध्यातो\nप्रेमे करुनिया देवा गुण तुझेची गातो ॥१॥",
+      "तरी द्यावी सिध्दी देवा हेची वासना, देवा हेची वासना\nरक्षुनियां सर्वा द्यावी आम्हासी आज्ञा ॥२॥",
+      "मागणे ते देवा एकची आहे आता एकची आहे\nतारुनियां सकळां आम्हां कृपादृष्टी पाहे ॥३॥",
+      "जेव्हां सर्व आम्ही मिळू ऐशा या ठाया ऐशा या ठाया\nप्रेमानंदे लागू तुझी कीर्ति गावया ॥४॥",
+      "सदा ऐशी भक्ति राहो आमुच्या मनी देवा आमुच्या\nमनी हेची देवा तुम्हा असे नित्य विनवणी ॥५॥",
+      "वारुनिया संकटें आता आमुची सारी आता आमुची\nसारी कृपेची साऊली देवा दीनावरि करी ॥६॥",
+      "निरंतर आमुची चिंता तुम्हां असावी चिंता तुम्हा असावी\nआम्हां सर्वांची लज्जा देवा तुम्ही रक्षावी ॥७॥",
+      "निरोप घेता आता आम्हा आज्ञा असावी देवा आज्ञा असावी\nचुकले आमचे काही त्याची क्षमा असावी ॥८॥"
+    ]
+  },
+  {
+    title: "घालिन लोटांगण",
+    tag: "घालीन लोटांगण वंदीन चरण",
+    keywords: "ghalin lotangan mangalmurti hare ram krishna",
+    body: [
+      "घालीन लोटांगण वंदीन चरण ।डोळ्यांनी पाहिन रूप तुझे ।\nप्रेमें आलिंगीन आनंद पूजन । भावे ओवाळिन म्हणे नामा ।।",
+      "त्वमेव माता पिता त्वमेव । त्वमेव बन्धुः सख्रा त्वमेव ।\nत्वमेव विद्या द्रविणं त्वमेव । त्वमेव सर्व मम देवदेव ।।",
+      "कायेन वाचा मनसेंद्रियैर्वा । बुध्यात्मना वा प्रकृति स्वभावात् ।\nकरमि यद्यत् सकलं परस्मै । नारायणायेती समर्पयामि ।।",
+      "अच्युतं केशवं राम नारायणम् कृष्णदामोदरं वासुदेवं भजे।\nश्रीधरं माधवं गोपिकावल्लभम् जानकीनायकं रामचंद्र भजे ।।",
+      "हरे राम हरे राम राम राम हरे हरे\nहरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे ।।",
+      "।। मंगलमुर्ती मोरया ।।\n।। गणपतिबाप्पा मोरया ।।"
+    ]
+  },
+  {
+    title: "प्रार्थना",
+    tag: "सदा सर्वदा योग तुझा घडावा",
+    keywords: "prathana prayer sada sarvada yog dnyaneshwar",
+    body: [
+      "सदा सर्वदा योग तुझा घडावा । तुझे कारणी देह माझा पडावा ।।\nउपेक्षू नको गूणवंता अनंता । रघूनायका मागणे हेचि आतां ।।",
+      "कैलास राणा शिव चंद्रमौळी । फणींद्र माथा मुकुटीं झळाळी ।।\nकारुण्य सिंधू भवदुःखहारी । तुजवीण शंभो मज कोण तारी ।।",
+      "मोरया मोरया मी बाळ तान्हें । तुझीच सेवा करु काय जाणें ।\nअन्याय माझे कोट्यानुकोटी । मोरेश्वरा बा तूं घाल पोटी ।।",
+      "ज्या ज्या ठिकाणी मन जाय माझे । त्या त्या ठिकाणी निजरुप तुझे ।\nमी ठेवितो मस्तक ज्या ठिकाणी । तेथे तुझे सदगुरु पाय दोन्ही ।।",
+      "अलंकापुरी पुण्य भूमी पवित्र । तिथे नांदतो ज्ञानराजा सूपात्र ।\nतया आटविता महापुण्यराशी । नमस्कार माझा सदगुरु ज्ञानेश्वराशी ।।"
+    ]
+  },
+  {
+    title: "श्री गणेश करुणाश्लोक",
+    tag: "मोरया मोरया मी बाळ तान्हे",
+    keywords: "ganesh karunashlok morya moreshwara",
+    body: [
+      "मोरया मोरया मी बाळ तान्हे । तुझीच सेवा करु काय जाणे ।\nअन्याय माझे कोट्यानुकोटी । मोरेश्वरा बा तू घाल पोटी ।।",
+      "पिता माता बंधू तुजविण कोण असे मजला ।\nबहु मी अन्यायी परि सकलही लाज तुजला ।।",
+      "न जाणे मी काही जप तप पूजा साधन विधी\nकृपादृष्टि पाहेशरण तुज आलो गणपती ।।",
+      "वळेना ही जिव्हा धड मज तुझे नामहि न ये ।\nधरावे त्वा हाती अभयवरदा पूर्ण अभये ।।\nअनाथांच्या नाथा झडकरी करी आस पुरती ।।",
+      "भुकेलो केव्हांचा हृदय निष्ठुर नकरी झणी ।\nप्रसादाचा लाडू कवळ बरवा घाल वदनी ।\nसदा ब्रह्मानंदे मग तुजपुढे नाचत प्रिती ।।",
+      "बहू बोलू काही परमसुखदामंगलनिधी मला तारी\nआता अति कठीण संसार जलधी ।\nस्वभावे गोसावीसुत करितसे हेचि विनंती ।।"
+    ]
+  },
+  {
+    title: "दशावतारांची आरती",
+    tag: "आरती सप्रेम जय जय विठ्ठल",
+    keywords: "dashavatar ten avatars vitthal parabrahma",
+    body: [
+      "आरती सप्रेम जय जय विठ्ठल परब्रह्म । भक्त संकटिं नानास्वरूपीं स्थापिसि स्वधर्म ॥धृ॥",
+      "अंबऋषीकारणें गर्भवास सोशीसी। वेद नेले चोरुनि ब्रह्मया आणुनियां देसी ॥\nमत्स्यरूपी नारायण सप्तहि सागर धुंडीसी। हस्त लागतां शंख्रासुरा तुझा वर देसी ॥आरती०॥१॥",
+      "रसातळासी जातां पृथ्वी पाठीवर घेसी। परोपकरासाठीं देवा कांसव झालासी ॥\nदाढें धरुनी पृथ्वी नेतां वराहरूप होसी। प्रल्हादाकारणें स्तंभीं नरहरि गुरगुरसी ॥आरती०॥२॥",
+      "पांचवे अवतारीं बळिच्या द्याराला जासी। भिक्षे स्थळ मागुनीं बळीला पाताळा नेसी ॥\nसर्व समर्पण केलं म्हणुनी प्रसन्न त्या होसी। वामनरूप धरुनी बळिच्या द्वारीं तिष्ठसी ॥आरती०॥३॥",
+      "सहस्त्रार्जुन मातला जमदग्नीचा वध केला। कष्टी ते रेणुका म्हणुनी सहस्त्रार्जुन वधिला ॥\nनिःक्षत्री पृथ्वी दान दिधली विप्राला। सहावा अवतार परशुराम प्रगटला ॥आरती०॥४॥",
+      "मातला रावण सर्वा उपद्रव केला। तेहतिस कोटी देव बंदी हरिलें सीतेला ॥\nपितृवचनालागीं रामें वनवास केला। मिळोनि वानरसहित राजा राम प्रगटला ॥आरती०॥५॥",
+      "देवकीवसुदेवबंदीमोचन त्वां केलें। नंदाघरीं जाउनी निजसुख गोकुळा दिधलें ॥\nगोरसचोरी करितां नवलक्ष गोपाळ मिळविले। गोपिकांचें प्रेम देख्वुनि श्रीकृष्ण भुलले ॥आरती०॥६॥",
+      "बौद्ध कलंकी कलियुगीं झाला अधर्म हा अवघा। सोडुनी दिधला धर्म म्हणुनी न दिससी देवा ॥\nम्लेंच्छमर्दन करिसी म्हणोनि कलंकी केशवा। बहिरवि जान्हवी द्यावी निजसुखानंदाची सेवा ॥आरती०॥७॥"
+    ]
+  },
+  {
+    title: "श्री गणपती स्तोत्र",
+    tag: "साष्टांग नमन हे माझे",
+    keywords: "ganpati stotra sashtang naman vinayaka",
+    body: [
+      "साष्टांग नमन हे माझे गौरीपुत्रा विनायका ।\nभक्तीनें स्मरतो नित्य आयुःकामार्थ साधती ॥ १ ॥",
+      "प्रथम नांव वक्रतुंड दुसरें एकदंत ते ।\nतिसरे कृष्णपिंगाक्ष चवथे गजवक्र ते ॥ २ ॥",
+      "पांचवे श्रीलंबोदर सहावें विकट नांव ते ।\nसातवे विघ्नराजेंद्र आठवे धुम्रवर्ण ते ॥ ३ ॥",
+      "नववे श्री भालचंद्र दहावे श्री विनायक ।\nअकरावे गणपती बारावे श्री गजानन ॥ ४ ॥",
+      "देवनांवे अशी बारा तीन संध्या म्हणे नर ।\nविघ्नभीती नसे त्याला प्रभो ! तू सर्व सिद्धिदे ॥ ५ ॥",
+      "विद्यार्थ्याला मिळे विद्या धनार्थ्याला मिळे धन ।\nपुत्रार्थ्याला मिळे पुत्र मोक्षार्थ्याला मिळे गति ॥ ६ ॥",
+      "जपता गणपती स्तोत्र सहा मासांत हे फळ ।\nएक वर्ष पुर्ण होतां मिळे सिद्धी न संशय ॥ ७ ॥",
+      "नारदांनी रचिलेले झाले संपूर्ण स्तोत्र हें ।\nश्रीधराने मराठींत पठण्या अनुवादिले ॥ ८ ॥",
+      "॥ श्रीगणपती स्तोत्र संपूर्ण ॥"
+    ]
+  },
+  {
+    title: "मंत्रपुष्पांजली आरती",
+    tag: "ॐ यज्ञेन यज्ञमयजन्त",
+    keywords: "mantrapushpanjali om yagyena sanskrit mantra",
+    body: [
+      "ॐ यज्ञेन यज्ञमयजन्त देवास्तनि धर्माणि प्रथमान्यासन् ।\nते ह नाकं महिमान : सचंत यत्र पूर्वे साध्या : संति देवा : ।।",
+      "ॐ राजाधिराजाय प्रसह्य साहिने ।\nनमो वयं वैश्रवणाय कुर्महे ।\nस मस कामान् काम कामाय मह्यं।\nकामेश्वरो वैश्रवणो ददातु कुबेराय वैश्रवणाय ।\nमहाराजाय नमः ।",
+      "ॐ स्वस्ति। साम्राज्यं भौज्यं स्वाराज्यं\nवैराज्यं पारमेष्ठ्यं राज्यं महाराज्यमाधिपत्यमयं\nसमंतपर्यायीस्यात् सार्वभैमः सार्वायुष आं\nतादापराधर्थात् पृथिब्यै समुद्रपर्यंताया एकेराळिति\nतदप्येषः श्लोको भिगीतो मरूतः परिवेष्टारो\nमरूतस्यावसन् गृहे ।\nआविक्षितस्य कामप्रेर्विश्वेदेवाः सभासद इति ।।",
+      "एकदंतायविघ्महे वक्रतुण्डाय धीमहि ।\nतन्नोदंती प्रचोदयात् ।",
+      "मंत्रपुष्पांजली समर्पयामि ।।\n।। गणपतिबाप्पा मोरया ।।"
+    ]
+  }
+];
+
+let current = 0;
+
+const pageTitle = document.getElementById('pageTitle');
+const pageContent = document.getElementById('pageContent');
+const pageCard = document.getElementById('pageCard');
+const pageIndicator = document.getElementById('pageIndicator');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function renderPage(idx, direction){
+  const a = aartis[idx];
+  pageTitle.textContent = a.title;
+  pageContent.innerHTML = a.body.map(p => `<p>${p}</p>`).join('');
+  pageContent.scrollTop = 0;
+  pageIndicator.textContent = (idx+1) + ' / ' + aartis.length;
+  prevBtn.classList.toggle('hidden', idx === 0);
+  nextBtn.classList.toggle('hidden', idx === aartis.length - 1);
+
+  pageCard.classList.remove('anim-next','anim-prev');
+  void pageCard.offsetWidth;
+  if(direction === 'next') pageCard.classList.add('anim-next');
+  if(direction === 'prev') pageCard.classList.add('anim-prev');
+
+  current = idx;
+}
+
+function goTo(idx){
+  if(idx < 0 || idx >= aartis.length) return;
+  const direction = idx > current ? 'next' : 'prev';
+  renderPage(idx, direction);
+}
+
+prevBtn.addEventListener('click', () => goTo(current - 1));
+nextBtn.addEventListener('click', () => goTo(current + 1));
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'ArrowRight') goTo(current + 1);
+  if(e.key === 'ArrowLeft') goTo(current - 1);
+});
+
+// swipe support
+let touchStartX = null;
+const viewport = document.querySelector('.page-viewport');
+viewport.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; }, {passive:true});
+viewport.addEventListener('touchend', (e) => {
+  if(touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(Math.abs(dx) > 55){
+    if(dx < 0) goTo(current + 1);
+    else goTo(current - 1);
+  }
+  touchStartX = null;
+}, {passive:true});
+
+/* ---------------- Search (top bar) ---------------- */
+const searchInput = document.getElementById('searchInput');
+const searchDropdown = document.getElementById('searchDropdown');
+
+function matchScore(a, q){
+  const hay = (a.title + ' ' + a.tag + ' ' + a.keywords).toLowerCase();
+  return hay.includes(q) ? 1 : 0;
+}
+
+function renderDropdown(q){
+  if(!q){
+    searchDropdown.classList.remove('show');
+    searchDropdown.innerHTML = '';
+    return;
+  }
+  const ql = q.toLowerCase().trim();
+  const results = aartis
+    .map((a, i) => ({a, i}))
+    .filter(o => matchScore(o.a, ql))
+    .slice(0, 8);
+
+  if(results.length === 0){
+    searchDropdown.innerHTML = '<div class="empty">काही सापडले नाही</div>';
+  } else {
+    searchDropdown.innerHTML = results.map(o =>
+      `<div class="item" data-idx="${o.i}">${o.a.title}<br><small style="color:#8a6f45;font-family:'Noto Sans Devanagari',sans-serif;">${o.a.tag}</small></div>`
+    ).join('');
+  }
+  searchDropdown.classList.add('show');
+}
+
+searchInput.addEventListener('input', () => renderDropdown(searchInput.value));
+searchInput.addEventListener('focus', () => { if(searchInput.value) renderDropdown(searchInput.value); });
+
+searchDropdown.addEventListener('click', (e) => {
+  const item = e.target.closest('.item[data-idx]');
+  if(!item) return;
+  const idx = parseInt(item.dataset.idx, 10);
+  goTo(idx);
+  searchInput.value = '';
+  searchDropdown.classList.remove('show');
+  searchInput.blur();
+});
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.search-wrap')){
+    searchDropdown.classList.remove('show');
+  }
+});
+
+/* ---------------- Index Modal ---------------- */
+const idxBtn = document.getElementById('idxBtn');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+const modalList = document.getElementById('modalList');
+const modalSearchInput = document.getElementById('modalSearchInput');
+
+function renderModalList(q){
+  const ql = (q||'').toLowerCase().trim();
+  const items = aartis
+    .map((a, i) => ({a, i}))
+    .filter(o => !ql || matchScore(o.a, ql));
+
+  if(items.length === 0){
+    modalList.innerHTML = '<div class="no-results">काही सापडले नाही</div>';
+    return;
+  }
+  modalList.innerHTML = items.map(o => `
+    <div class="modal-item ${o.i === current ? 'current' : ''}" data-idx="${o.i}">
+      <div class="num">${o.i+1}</div>
+      <div class="txt">${o.a.title}<br><small style="color:#8a6f45;font-family:'Noto Sans Devanagari',sans-serif;font-size:11.5px;">${o.a.tag}</small></div>
+    </div>
+  `).join('');
+}
+
+function openModal(){
+  modalSearchInput.value = '';
+  renderModalList('');
+  modalOverlay.classList.add('show');
+}
+function closeModal(){
+  modalOverlay.classList.remove('show');
+}
+
+idxBtn.addEventListener('click', openModal);
+modalCloseBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeModal(); });
+modalSearchInput.addEventListener('input', () => renderModalList(modalSearchInput.value));
+
+modalList.addEventListener('click', (e) => {
+  const item = e.target.closest('.modal-item[data-idx]');
+  if(!item) return;
+  const idx = parseInt(item.dataset.idx, 10);
+  goTo(idx);
+  closeModal();
+});
+
+/* init */
+renderPage(0, null);
+</script>
+</body>
+</html>

@@ -167,6 +167,14 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   is exactly one data URI in the file. Replacing the seal means regenerating that one data
   URI, not editing markup. A tap anywhere on the overlay closes it — the × is an affordance,
   not the only exit — so nothing inside it should stop click propagation.
+- **The animated Ganpati medallion at the masthead's left** is a second data URI, a 180px
+  GIF (~51 KB) drawn for this page rather than sourced: the idol on a lotus with an agarbatti
+  beside it, five smoke strands rising in turn off a flickering ember over a 1.8s loop, and
+  transparent outside the disc so it sits on the maroon gradient. It mirrors the seal's
+  absolute positioning so neither badge shifts the centred title. Its source is not in the
+  repo — it was generated from an SVG scene rendered frame by frame, so editing it means
+  redrawing and re-embedding, the same as the seal. Note the two data URIs are what make this
+  file ~160 KB; keep that in mind before adding a third.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself.
 

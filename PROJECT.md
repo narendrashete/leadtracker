@@ -186,6 +186,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-13** — Tapping the masthead seal now opens it enlarged and centred, so the
+  family name and वाडा line can actually be read. The embedded artwork was re-cut at 360px /
+  192 colours to stand up to that size; the lightbox borrows the masthead image's `src` so
+  the data URI still appears only once. Closes on a tap anywhere, the × button, or Escape.
 - **2026-09-13** — Added the शेटे परिवार family seal to the Aarti Sangrah masthead, top right.
   Embedded as a base64 PNG data URI (the page is one self-contained file), cut from the
   supplied artwork along its scalloped edge with a transparent surround so it blends into the

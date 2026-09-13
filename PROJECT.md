@@ -186,6 +186,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-13** — Added the शेटे परिवार family seal to the Aarti Sangrah masthead, top right.
+  Embedded as a base64 PNG data URI (the page is one self-contained file), cut from the
+  supplied artwork along its scalloped edge with a transparent surround so it blends into the
+  masthead gradient — which also removed the white screenshot strip along the top and the
+  stray lavender sparkle at the bottom. Absolutely positioned, so the centred title does not
+  shift.
 - **2026-09-13** — Hosted the Aarti Sangrah reader in this app: added
   `aartisangrah/index.html` (one self-contained file, 18 aartis, index sheet + Devanagari and
   transliteration search) and a public `/aartisangrah` route in `server.js` serving it

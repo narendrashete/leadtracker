@@ -186,6 +186,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-13** — Added an animated Ganpati puja medallion to the left of the Aarti Sangrah
+  masthead, balancing the शेटे परिवार seal on the right: a 180px looping GIF (idol, burning
+  agarbatti, rising smoke) drawn as an SVG scene and rendered frame by frame, embedded as a
+  data URI. Frames are delta-encoded against each other, which kept it to 51 KB; the page is
+  now ~160 KB.
 - **2026-09-13** — Added a 19th Aarti Sangrah page, **उत्सवी प्रार्थना**: ten named shlokas
   (घालीन लोटांगण through धर्माच्या करिता) in recitation order on one page. Introduced a `## `
   prefix convention in `body` for sub-headings so each shloka gets its own title and a gold

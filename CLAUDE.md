@@ -151,9 +151,13 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   — the page has to stay one self-contained file, and it is not part of the Vite build, so it
   cannot reference an asset path. That data URI is most of the file's size. It was cut from
   the supplied artwork along the scalloped gold edge with a transparent surround, so it sits
-  on the masthead gradient with no visible box; quantised to 128 colours (~6 KB) because at
-  46px the full-colour version is indistinguishable. Replacing it means regenerating the data
-  URI, not editing markup.
+  on the masthead gradient with no visible box. It is stored at 360px / 192 colours (~25 KB)
+  — sized for the lightbox, not the masthead, which just downscales it to 46px. Tapping it
+  opens that same image enlarged and centred (`#sealOverlay`); the lightbox copies its `src`
+  from the masthead `<img>` at first open rather than embedding the artwork twice, so there
+  is exactly one data URI in the file. Replacing the seal means regenerating that one data
+  URI, not editing markup. A tap anywhere on the overlay closes it — the × is an affordance,
+  not the only exit — so nothing inside it should stop click propagation.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself.
 

@@ -186,6 +186,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-13** — Added a 19th Aarti Sangrah page, **उत्सवी प्रार्थना**: ten named shlokas
+  (घालीन लोटांगण through धर्माच्या करिता) in recitation order on one page. Introduced a `## `
+  prefix convention in `body` for sub-headings so each shloka gets its own title and a gold
+  separating rule. Four of the ten also exist as standalone pages in different wordings
+  (13, 14, 15) — kept deliberately, since this page is the sequence read start to finish.
 - **2026-09-13** — Tapping the masthead seal now opens it enlarged and centred, so the
   family name and वाडा line can actually be read. The embedded artwork was re-cut at 360px /
   192 colours to stand up to that size; the lightbox borrows the masthead image's `src` so

@@ -145,8 +145,17 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
 - **To add or edit an aarti**, edit the `aartis` array in the file directly. Each entry is
   `{ title, tag, keywords, body }`, where `body` is an array of verses (one string per verse,
   `\n` between lines) and `keywords` is the Latin transliteration used for search. The page
-  numbering (`n / 18`) and the index sheet are both derived from the array — nothing to keep
-  in sync by hand.
+  numbering (`n / <count>`) and the index sheet are both derived from the array — nothing to
+  keep in sync by hand.
+- **A body string starting with `## ` renders as a sub-heading**, not a verse — `renderPage()`
+  emits `<h3 class="shlok-head">` for it, styled with a gold rule above so it separates what
+  comes after from what came before. It exists for pages that collect several separately-named
+  prayers under one title (उत्सवी प्रार्थना, page 19, holds ten), and the rule is suppressed on
+  the first heading. A normal single-prayer page needs none of this.
+- **Some prayers appear on more than one page, in different wordings** — घालीन लोटांगण, सदा
+  सर्वदा, ज्या ज्या ठिकाणी and मोरया मोरया each exist both standalone and inside उत्सवी
+  प्रार्थना, which is the festive recitation order read start to finish. That duplication is
+  intentional; don't "deduplicate" it without asking.
 - **The Shete family seal in the masthead** is a base64 PNG data URI, not a file in the repo
   — the page has to stay one self-contained file, and it is not part of the Vite build, so it
   cannot reference an asset path. That data URI is most of the file's size. It was cut from

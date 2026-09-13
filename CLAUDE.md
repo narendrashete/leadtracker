@@ -147,6 +147,13 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   `\n` between lines) and `keywords` is the Latin transliteration used for search. The page
   numbering (`n / 18`) and the index sheet are both derived from the array — nothing to keep
   in sync by hand.
+- **The Shete family seal in the masthead** is a base64 PNG data URI, not a file in the repo
+  — the page has to stay one self-contained file, and it is not part of the Vite build, so it
+  cannot reference an asset path. That data URI is most of the file's size. It was cut from
+  the supplied artwork along the scalloped gold edge with a transparent surround, so it sits
+  on the masthead gradient with no visible box; quantised to 128 colours (~6 KB) because at
+  46px the full-colour version is indistinguishable. Replacing it means regenerating the data
+  URI, not editing markup.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself.
 

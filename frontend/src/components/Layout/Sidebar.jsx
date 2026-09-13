@@ -35,6 +35,19 @@ export default function Sidebar() {
           </NavLink>
         ))}
 
+        {/* Aarti Sangrah — a standalone page served by this same Express process, not
+            a React route, so it is a plain link rather than a NavLink. Opens in a new
+            tab to leave the board where the user left it. */}
+        <a
+          href="/aartisangrah"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={navStyle({ isActive: false })}
+        >
+          <span style={{ fontSize: 16 }}>🪔</span>
+          Aarti Sangrah
+        </a>
+
         {/* Admin-only: Users */}
         {user?.role === 'admin' && (
           <NavLink to="/users" style={navStyle}>

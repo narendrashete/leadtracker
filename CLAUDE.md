@@ -27,6 +27,7 @@ Express (backend/server.js)
    ├── /api/followups (requireAuth)
    ├── /api/users     (requireAuth + requireAdmin)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
+   ├── /aartisangrah  (public — serves aartisangrah/index.html verbatim, no API)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -67,6 +68,9 @@ frontend/src/
 mokla-divas/
   index.html           Mokla Divas — the shared availability calendar. One self-contained
                        file, no build step, no React. Served at /calendar/<share-code>.
+aartisangrah/
+  index.html           Aarti Sangrah — the Marathi aarti reader. One self-contained file,
+                       no build step, no React, no API. Served at /aartisangrah.
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -121,6 +125,30 @@ green, which is the answer the group is looking for.
 - Served from a group link the page runs in single-group mode (`SINGLE_GROUP`): the group
   picker becomes a plain label and the manage sheet offers friends only, no group creation.
   In Artifact mode there are no per-link codes, so it keeps the group dropdown.
+
+## Aarti Sangrah (Marathi aarti reader)
+A third app sharing this repo and this Express process — and, unlike Mokla Divas, sharing
+nothing else: no tables, no API, no share codes, no accounts. `aartisangrah/index.html` is one
+self-contained file (markup, CSS, and the aarti texts as a `const aartis` array in a single
+inline `<script>`); the only external request it makes is Google Fonts. It is a phone-shaped
+reader: one aarti per page, swipe/arrow navigation, an अनुक्रम index sheet, and a search box
+matching both Devanagari titles and the Latin `keywords` field on each entry.
+- **Served verbatim** at `/aartisangrah` by `server.js` — `res.sendFile`, no wrapper and no
+  injected boot script, because it is a complete HTML document (Mokla Divas is a fragment,
+  which is why that route wraps it). The route sits ahead of the static/SPA handlers or the
+  React fallback would answer the URL with the SPA's HTML.
+- **Public, like the calendar page** — there is nothing private in it, so it is not behind
+  `requireAuth`. It is reachable to anyone with the URL, by design.
+- **The sidebar entry is a plain `<a>`, not a `NavLink`** (`Sidebar.jsx`), because the target
+  is not a React route; it opens in a new tab so the board keeps its place. Adding a React
+  route for it would be wrong — there is no React component to route to.
+- **To add or edit an aarti**, edit the `aartis` array in the file directly. Each entry is
+  `{ title, tag, keywords, body }`, where `body` is an array of verses (one string per verse,
+  `\n` between lines) and `keywords` is the Latin transliteration used for search. The page
+  numbering (`n / 18`) and the index sheet are both derived from the array — nothing to keep
+  in sync by hand.
+- No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
+  change to the page itself.
 
 ## Coding Standards
 - Functional React components with hooks only — no class components.
@@ -225,8 +253,9 @@ pm2 reload leadtracker
 "
 ```
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
-The calendar page itself needs no build step (it is plain HTML, not part of the Vite
-bundle), so a `git pull` + `pm2 reload` ships a change to it. The **Calendar Links** admin
+The calendar and Aarti Sangrah pages need no build step (they are plain HTML, not part of
+the Vite bundle), so a `git pull` + `pm2 reload` ships a change to either. Aarti Sangrah is
+then live at `https://leadtracker.primecomputers.co.in/aartisangrah`. The **Calendar Links** admin
 page is React, so any change touching `frontend/src` still needs the `npm run build` step
 above. To find the calendar links after a
 deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines 40` and look

@@ -23,6 +23,9 @@ address/city/state to leads.
 - Follow-ups: add dated discussion entries against a lead.
 - Reports: status pie chart (hover breakdown) + date-range table with CSV export.
 - Admin: user management (add / reset password / delete), admin-only.
+- Aarti Sangrah: a Marathi aarti reader (18 aartis) hosted by the same Express process at
+  `/aartisangrah`, reachable from the sidebar. Standalone single HTML file — no API, no
+  tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
 
 ## Features In Progress
 None currently.
@@ -183,6 +186,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-13** — Hosted the Aarti Sangrah reader in this app: added
+  `aartisangrah/index.html` (one self-contained file, 18 aartis, index sheet + Devanagari and
+  transliteration search) and a public `/aartisangrah` route in `server.js` serving it
+  verbatim ahead of the SPA fallback, plus an **Aarti Sangrah** sidebar entry — a plain
+  `<a target="_blank">`, since the page is not a React route. No API, no tables, no auth: it
+  shares the repo and the Express process for hosting only, with no coupling to leads,
+  follow-ups, users, or the calendar. The startup banner now prints its URL.
 - **2026-09-12** — Added a second kind of mark so friends can say a date *suits* them, not
   only that they are busy: `calendar_marks.mark_kind` (`busy` | `prefer`, additive column,
   kind-aware unique index replacing the old one). Each friend who prefers a date adds a

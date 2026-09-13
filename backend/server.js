@@ -11,6 +11,7 @@ app.use(express.json());
 
 const FRONTEND_DIST = path.resolve(__dirname, '..', 'frontend', 'dist');
 const CALENDAR_PAGE = path.resolve(__dirname, '..', 'mokla-divas', 'index.html');
+const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -67,6 +68,16 @@ getDb().then(() => {
     });
   });
 
+  // Aarti Sangrah — a standalone reader page sharing this process the way the
+  // calendar page does, but with no API and no tables of its own: it is one
+  // self-contained HTML file, so it is served verbatim. Public (there is nothing
+  // private in it) and ahead of the SPA fallback, or React would swallow the URL.
+  app.get('/aartisangrah', (req, res) => {
+    res.sendFile(AARTI_PAGE, (err) => {
+      if (err) res.status(500).type('text/plain').send('Aarti Sangrah page missing.');
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -83,6 +94,7 @@ getDb().then(() => {
     console.log('  ✅  Lead Tracker is running!');
     console.log('');
     console.log(`  Open in browser: http://localhost:${PORT}`);
+    console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

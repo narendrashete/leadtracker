@@ -28,7 +28,8 @@ address/city/state to leads.
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
 
 ## Features In Progress
-- **Aarti audio playback** — a mini player is wired on aarti 1 (सुखकर्ता) only, as a pilot.
+- **Aarti audio playback** — a mini player with a draggable seek bar is wired on aarti 1
+  (सुखकर्ता) only, as a pilot.
   The supplied MP3 is a rough cut (4:50, and it still contains two aartis), kept deliberately
   until the behaviour is signed off. Next: replace that file with a clean cut, then add the
   remaining recordings — each needs only its MP3 in `aartisangrah/audio/` plus an `audio`
@@ -191,6 +192,14 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-14** — Added a draggable seek bar to the aarti player, and fixed a crash it
+  uncovered. The bar is a native range input showing elapsed and total time; it knows the
+  duration before playback because the `<audio>` element is now built with
+  `preload='metadata'` when the page renders, so a listener can drag to a starting point and
+  then press play. Dragging previews and releasing commits, to avoid a range request per
+  pixel. **Crash fix:** both `res.sendFile` callbacks in `server.js` answered again after a
+  client disconnected mid-transfer, throwing an uncaught `ERR_HTTP_HEADERS_SENT` that killed
+  the process and logged every Lead Tracker user out; they now check `res.headersSent`.
 - **2026-09-14** — Added a mini audio player to the Aarti Sangrah reader, wired to aarti 1
   only for now. Play buffers and starts the recording, swapping the play button for pause and
   stop while music notes drift upward beside them; pause holds the position, stop returns to

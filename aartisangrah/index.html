@@ -329,14 +329,57 @@
   .pbtn.loading .ico-wait{display:block;animation:pspin 0.9s linear infinite;}
   @keyframes pspin{to{transform:rotate(360deg);}}
 
+  .player.on{flex-direction:column;gap:9px;}
+  .prow{display:flex;align-items:center;justify-content:center;gap:9px;min-height:38px;}
+  .seekrow{display:flex;align-items:center;gap:9px;width:100%;}
+
   .ptime{
     font-family:'Noto Sans Devanagari',sans-serif;
-    font-size:12px;
+    font-size:11.5px;
     color:var(--ink-soft);
     font-variant-numeric:tabular-nums;
-    min-width:76px;
-    text-align:left;
+    flex-shrink:0;
+    min-width:30px;
   }
+  .ptime.dur{text-align:right;}
+  .pmsg{
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:11.5px;
+    color:#A8322B;
+    text-align:center;
+  }
+  .pmsg[hidden]{display:none;}
+
+  /* A native range input: it comes with drag, touch, and arrow keys already
+     working, which a div-and-pointer-maths slider would have to reinvent. */
+  .seek{
+    -webkit-appearance:none;appearance:none;
+    flex:1;min-width:0;
+    height:20px;margin:0;padding:0;
+    background:transparent;
+    cursor:pointer;
+  }
+  .seek:disabled{cursor:default;opacity:0.5;}
+  .seek::-webkit-slider-runnable-track{
+    height:4px;border-radius:2px;
+    background:linear-gradient(90deg,
+      var(--gold) 0, var(--gold) var(--p,0%), #E3D3AE var(--p,0%), #E3D3AE 100%);
+  }
+  .seek::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;
+    background:var(--maroon);
+    border:2px solid var(--gold-light);
+    margin-top:-5px;
+    box-shadow:0 1px 4px rgba(58,24,16,0.35);
+  }
+  .seek::-moz-range-track{height:4px;border-radius:2px;background:#E3D3AE;}
+  .seek::-moz-range-progress{height:4px;border-radius:2px;background:var(--gold);}
+  .seek::-moz-range-thumb{
+    width:14px;height:14px;border-radius:50%;border:2px solid var(--gold-light);
+    background:var(--maroon);
+  }
+  .seek:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 
   /* notes drifting up while it plays — the cue that sound is actually running */
   .notes{position:relative;width:22px;height:34px;flex-shrink:0;}
@@ -584,6 +627,7 @@
         <h2 class="page-title" id="pageTitle"></h2>
         <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
         <div class="player" id="player">
+          <div class="prow">
           <button class="pbtn" id="btnPlay" type="button" aria-label="आरती ऐका">
             <svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
             <svg class="ico-wait" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
@@ -595,8 +639,14 @@
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5.5" y="5.5" width="13" height="13" rx="2"/></svg>
           </button>
           <div class="notes" id="notes" hidden aria-hidden="true"><span>♪</span><span>♫</span><span>♪</span></div>
-          <span class="ptime" id="ptime" aria-live="off"></span>
         </div>
+        <div class="seekrow">
+          <span class="ptime" id="pcur">0:00</span>
+          <input class="seek" id="seek" type="range" min="0" max="0" step="0.1" value="0"
+                 disabled aria-label="आरतीमधली जागा निवडा">
+          <span class="ptime dur" id="pdur">0:00</span>
+        </div>
+        <div class="pmsg" id="pmsg" hidden></div>
       </div>
       <div class="page-content" id="pageContent"></div>
     </div>
@@ -922,6 +972,8 @@ function renderPage(idx, direction){
   stopAudio();
   trackSrc = a.audio || null;
   player.classList.toggle('on', !!trackSrc);
+  pmsg.hidden = true;
+  if(trackSrc) ensureAudio(trackSrc);   // pulls the header, so the bar has a scale
   pageTitle.textContent = a.title;
   // A body line prefixed with "## " is a sub-heading, not a verse — used by pages
   // that collect several separately-named prayers (see उत्सवी प्रार्थना).
@@ -1099,24 +1151,43 @@ const btnPlay  = document.getElementById('btnPlay');
 const btnPause = document.getElementById('btnPause');
 const btnStop  = document.getElementById('btnStop');
 const notes    = document.getElementById('notes');
-const ptime    = document.getElementById('ptime');
+const seek     = document.getElementById('seek');
+const pcur     = document.getElementById('pcur');
+const pdur     = document.getElementById('pdur');
+const pmsg     = document.getElementById('pmsg');
 
-let audio = null;          // created on first play, not on page load
+let audio = null;          // the one <audio> element, reused
 let audioSrc = null;       // what that element currently holds
 let trackSrc = null;       // what the aarti on screen offers, if anything
 let playerState = 'idle';  // idle | buffering | playing | paused
+let scrubbing = false;     // true between grabbing the handle and letting go
 
 function fmtTime(s){
   s = Math.max(0, Math.floor(s || 0));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 
+function paintSeek(pos, dur){
+  pcur.textContent = fmtTime(pos);
+  const pct = dur > 0 ? (pos / dur) * 100 : 0;
+  seek.style.setProperty('--p', pct.toFixed(2) + '%');
+}
+
 function showTime(){
-  // Setting currentTime to 0 on stop fires one last timeupdate, which would
-  // otherwise repaint "0:00 / 4:50" over the cleared idle state.
-  if(playerState === 'idle'){ ptime.textContent = ''; return; }
-  if(!audio || !audio.duration || isNaN(audio.duration)){ ptime.textContent = ''; return; }
-  ptime.textContent = fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration);
+  if(!audio || !audio.duration || isNaN(audio.duration)) return;
+  // While the handle is held, the drag owns the readout — otherwise each
+  // timeupdate would yank the thumb back to the playhead mid-gesture.
+  if(scrubbing) return;
+  seek.value = audio.currentTime;
+  paintSeek(audio.currentTime, audio.duration);
+}
+
+function onMetadata(){
+  if(!audio || !audio.duration || isNaN(audio.duration)) return;
+  seek.max = audio.duration;
+  seek.disabled = false;
+  pdur.textContent = fmtTime(audio.duration);
+  showTime();
 }
 
 // idle | buffering | playing | paused
@@ -1129,38 +1200,61 @@ function setPlayerState(state){
   btnPlay.disabled = (state === 'buffering');
   btnPlay.classList.toggle('loading', state === 'buffering');
   btnPlay.setAttribute('aria-label', state === 'paused' ? 'पुढे चालू करा' : 'आरती ऐका');
-  if(state === 'idle') ptime.textContent = '';
 }
 
+function showError(){
+  setPlayerState('idle');
+  pmsg.textContent = 'ही आरती ऐकता आली नाही';
+  pmsg.hidden = false;
+}
+
+// Built as soon as a page with a recording renders, with preload='metadata':
+// the seek bar is meaningless without a duration, and asking for the header
+// costs a few KB against the megabytes a full preload would pull down.
 function ensureAudio(src){
   if(audio && audioSrc === src) return audio;
   if(audio) audio.pause();
   audio = new Audio();
-  audio.preload = 'auto';
+  audio.preload = 'metadata';
   audio.src = src;
   audioSrc = src;
+  seek.disabled = true;
+  seek.max = 0;
+  seek.value = 0;
+  pdur.textContent = '0:00';
+  paintSeek(0, 0);
   // 'waiting' and 'playing' are the browser telling us about the buffer, so the
   // spinner reflects the real network state rather than a guessed delay.
   audio.addEventListener('waiting',       () => setPlayerState('buffering'));
   audio.addEventListener('playing',       () => setPlayerState('playing'));
   audio.addEventListener('ended',         stopAudio);
   audio.addEventListener('timeupdate',    showTime);
-  audio.addEventListener('loadedmetadata', showTime);
-  audio.addEventListener('error', () => {
-    setPlayerState('idle');
-    ptime.textContent = 'ऐकता आलं नाही';
-  });
+  audio.addEventListener('loadedmetadata', onMetadata);
+  audio.addEventListener('durationchange', onMetadata);
+  audio.addEventListener('error', showError);
   return audio;
 }
 
+/* Dragging previews; releasing commits. Seeking on every input event would fire
+   a range request per pixel of travel across a file served over the network. */
+seek.addEventListener('input', () => {
+  if(!audio) return;
+  scrubbing = true;
+  paintSeek(+seek.value, audio.duration || 0);
+});
+seek.addEventListener('change', () => {
+  if(!audio) return;
+  audio.currentTime = +seek.value;
+  scrubbing = false;
+  paintSeek(+seek.value, audio.duration || 0);
+});
+
 function playAudio(){
   if(!trackSrc) return;
+  pmsg.hidden = true;
   const a = ensureAudio(trackSrc);
   setPlayerState('buffering');
-  a.play().then(() => setPlayerState('playing')).catch(() => {
-    setPlayerState('idle');
-    ptime.textContent = 'ऐकता आलं नाही';
-  });
+  a.play().then(() => setPlayerState('playing')).catch(showError);
 }
 
 function pauseAudio(){
@@ -1170,8 +1264,11 @@ function pauseAudio(){
 }
 
 function stopAudio(){
+  scrubbing = false;
   if(audio){ audio.pause(); audio.currentTime = 0; }
   setPlayerState('idle');
+  seek.value = 0;
+  paintSeek(0, (audio && audio.duration) || 0);
 }
 
 btnPlay.addEventListener('click', playAudio);

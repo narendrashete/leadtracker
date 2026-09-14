@@ -293,6 +293,74 @@
   .divider .line{height:1px;flex:1;background:linear-gradient(90deg, transparent, var(--gold), transparent);}
   .divider .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
 
+  /* ---------- mini player ---------- */
+  .player{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    margin-top:13px;
+    min-height:38px;
+  }
+  .player.on{display:flex;}
+  .pbtn{
+    width:38px;height:38px;
+    border-radius:50%;
+    border:none;
+    flex-shrink:0;
+    cursor:pointer;
+    background:linear-gradient(160deg, var(--gold-light), var(--gold));
+    color:var(--maroon-dark);
+    box-shadow:var(--shadow-sm);
+    display:flex;align-items:center;justify-content:center;
+    padding:0;
+  }
+  .pbtn[hidden]{display:none;}
+  .pbtn:disabled{cursor:default;}
+  .pbtn.ghost{
+    background:var(--paper-deep);
+    color:var(--maroon);
+    border:1.5px solid #d9c08a;
+    box-shadow:none;
+  }
+  .pbtn svg{width:16px;height:16px;}
+  .pbtn .ico-wait{display:none;}
+  .pbtn.loading .ico-play{display:none;}
+  .pbtn.loading .ico-wait{display:block;animation:pspin 0.9s linear infinite;}
+  @keyframes pspin{to{transform:rotate(360deg);}}
+
+  .ptime{
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    min-width:76px;
+    text-align:left;
+  }
+
+  /* notes drifting up while it plays — the cue that sound is actually running */
+  .notes{position:relative;width:22px;height:34px;flex-shrink:0;}
+  .notes[hidden]{display:none;}
+  .notes span{
+    position:absolute;bottom:2px;left:50%;
+    font-size:13px;color:var(--gold);
+    opacity:0;
+    animation:noteUp 2.4s linear infinite;
+  }
+  .notes span:nth-child(2){animation-delay:0.8s;font-size:11px;}
+  .notes span:nth-child(3){animation-delay:1.6s;font-size:15px;}
+  @keyframes noteUp{
+    0%{transform:translate(-50%,6px) rotate(-10deg);opacity:0;}
+    20%{opacity:0.95;}
+    70%{opacity:0.65;}
+    100%{transform:translate(calc(-50% + 9px),-26px) rotate(14deg);opacity:0;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .notes span{animation:none;opacity:0.8;}
+    .notes span:nth-child(2),.notes span:nth-child(3){opacity:0.5;}
+    .pbtn.loading .ico-wait{animation:none;}
+  }
+
   .page-content{
     flex:1;
     overflow-y:auto;
@@ -515,6 +583,20 @@
       <div class="page-title-wrap">
         <h2 class="page-title" id="pageTitle"></h2>
         <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
+        <div class="player" id="player">
+          <button class="pbtn" id="btnPlay" type="button" aria-label="आरती ऐका">
+            <svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+            <svg class="ico-wait" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+          </button>
+          <button class="pbtn" id="btnPause" type="button" hidden aria-label="थोडं थांबा">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6.5" y="4.5" width="4" height="15" rx="1.2"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.2"/></svg>
+          </button>
+          <button class="pbtn ghost" id="btnStop" type="button" hidden aria-label="बंद करा">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5.5" y="5.5" width="13" height="13" rx="2"/></svg>
+          </button>
+          <div class="notes" id="notes" hidden aria-hidden="true"><span>♪</span><span>♫</span><span>♪</span></div>
+          <span class="ptime" id="ptime" aria-live="off"></span>
+        </div>
       </div>
       <div class="page-content" id="pageContent"></div>
     </div>
@@ -556,6 +638,10 @@ const aartis = [
     title: "श्री गणपतीची आरती",
     tag: "सुखकर्ता दुःखहर्ता",
     keywords: "ganpati ganesh sukhkarta dukhharta mangalmurti aarti",
+    // Absolute path, so it resolves the same whether the page was reached as
+    // /aartisangrah or /aartisangrah/. Give an aarti this field and it gets a
+    // player; leave it off and the controls never render.
+    audio: "/aartisangrah/audio/01-sukhkarta.mp3",
     body: [
       "सुखकर्ता दुःखहर्ता वार्ता विघ्नाची। नुरवी पुरवी प्रेम कृपा जयाची ।\nसर्वांगी सुंदर उटी शेंदुराची । कंठी झळके माळ मुक्ताफळांची ।\nजय देव जय देव जय मंगलमूर्ती । दर्शनमात्रे मनकामना पुरती ।।धृ।।",
       "रत्नखचित फरा तूज गौरीकुमरा । चंदनाची उटी कुंकुमकेशरा\nहिरे जडित मुकुट शोभतो बरा । रुणझुणती नुपुरे चरणी घागरिया ॥१॥",
@@ -831,6 +917,11 @@ const nextBtn = document.getElementById('nextBtn');
 
 function renderPage(idx, direction){
   const a = aartis[idx];
+  // Turning the page always silences the previous one: the controls live on the
+  // page, so audio left running elsewhere would have nothing to stop it.
+  stopAudio();
+  trackSrc = a.audio || null;
+  player.classList.toggle('on', !!trackSrc);
   pageTitle.textContent = a.title;
   // A body line prefixed with "## " is a sub-heading, not a verse — used by pages
   // that collect several separately-named prayers (see उत्सवी प्रार्थना).
@@ -998,6 +1089,94 @@ sealOverlay.addEventListener('click', closeSeal);
 document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && sealOverlay.classList.contains('show')) closeSeal();
 });
+
+/* ---------- mini player ----------
+   One <audio> element, reused. State is explicit rather than inferred from the
+   element, because a 'pause' event fires for both pausing and stopping and the
+   two have to leave different buttons on screen. */
+const player   = document.getElementById('player');
+const btnPlay  = document.getElementById('btnPlay');
+const btnPause = document.getElementById('btnPause');
+const btnStop  = document.getElementById('btnStop');
+const notes    = document.getElementById('notes');
+const ptime    = document.getElementById('ptime');
+
+let audio = null;          // created on first play, not on page load
+let audioSrc = null;       // what that element currently holds
+let trackSrc = null;       // what the aarti on screen offers, if anything
+let playerState = 'idle';  // idle | buffering | playing | paused
+
+function fmtTime(s){
+  s = Math.max(0, Math.floor(s || 0));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function showTime(){
+  // Setting currentTime to 0 on stop fires one last timeupdate, which would
+  // otherwise repaint "0:00 / 4:50" over the cleared idle state.
+  if(playerState === 'idle'){ ptime.textContent = ''; return; }
+  if(!audio || !audio.duration || isNaN(audio.duration)){ ptime.textContent = ''; return; }
+  ptime.textContent = fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration);
+}
+
+// idle | buffering | playing | paused
+function setPlayerState(state){
+  playerState = state;
+  btnPlay.hidden  = (state === 'playing');
+  btnPause.hidden = (state !== 'playing');
+  btnStop.hidden  = (state === 'idle');
+  notes.hidden    = (state !== 'playing');
+  btnPlay.disabled = (state === 'buffering');
+  btnPlay.classList.toggle('loading', state === 'buffering');
+  btnPlay.setAttribute('aria-label', state === 'paused' ? 'पुढे चालू करा' : 'आरती ऐका');
+  if(state === 'idle') ptime.textContent = '';
+}
+
+function ensureAudio(src){
+  if(audio && audioSrc === src) return audio;
+  if(audio) audio.pause();
+  audio = new Audio();
+  audio.preload = 'auto';
+  audio.src = src;
+  audioSrc = src;
+  // 'waiting' and 'playing' are the browser telling us about the buffer, so the
+  // spinner reflects the real network state rather than a guessed delay.
+  audio.addEventListener('waiting',       () => setPlayerState('buffering'));
+  audio.addEventListener('playing',       () => setPlayerState('playing'));
+  audio.addEventListener('ended',         stopAudio);
+  audio.addEventListener('timeupdate',    showTime);
+  audio.addEventListener('loadedmetadata', showTime);
+  audio.addEventListener('error', () => {
+    setPlayerState('idle');
+    ptime.textContent = 'ऐकता आलं नाही';
+  });
+  return audio;
+}
+
+function playAudio(){
+  if(!trackSrc) return;
+  const a = ensureAudio(trackSrc);
+  setPlayerState('buffering');
+  a.play().then(() => setPlayerState('playing')).catch(() => {
+    setPlayerState('idle');
+    ptime.textContent = 'ऐकता आलं नाही';
+  });
+}
+
+function pauseAudio(){
+  if(audio) audio.pause();
+  setPlayerState('paused');
+  showTime();
+}
+
+function stopAudio(){
+  if(audio){ audio.pause(); audio.currentTime = 0; }
+  setPlayerState('idle');
+}
+
+btnPlay.addEventListener('click', playAudio);
+btnPause.addEventListener('click', pauseAudio);
+btnStop.addEventListener('click', stopAudio);
 
 /* init */
 renderPage(0, null);

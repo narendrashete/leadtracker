@@ -28,7 +28,12 @@ address/city/state to leads.
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
 
 ## Features In Progress
-None currently.
+- **Aarti audio playback** — a mini player is wired on aarti 1 (सुखकर्ता) only, as a pilot.
+  The supplied MP3 is a rough cut (4:50, and it still contains two aartis), kept deliberately
+  until the behaviour is signed off. Next: replace that file with a clean cut, then add the
+  remaining recordings — each needs only its MP3 in `aartisangrah/audio/` plus an `audio`
+  field on its entry. Worth deciding before then whether ~19 MP3s belong in git (this one is
+  3.9 MB) or on the server outside the repo.
 
 ## Pending Features
 None currently tracked — see Future Ideas for unscoped possibilities.
@@ -186,6 +191,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-14** — Added a mini audio player to the Aarti Sangrah reader, wired to aarti 1
+  only for now. Play buffers and starts the recording, swapping the play button for pause and
+  stop while music notes drift upward beside them; pause holds the position, stop returns to
+  the initial play-only state. Recordings are served as static files at `/aartisangrah/audio`
+  (Range-capable, so seeking works) rather than inlined, unlike the page's images.
 - **2026-09-13** — Added an animated Ganpati puja medallion to the left of the Aarti Sangrah
   masthead, balancing the शेटे परिवार seal on the right: a 180px looping GIF (idol, burning
   agarbatti, rising smoke) drawn as an SVG scene and rendered frame by frame, embedded as a

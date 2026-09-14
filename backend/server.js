@@ -12,6 +12,7 @@ app.use(express.json());
 const FRONTEND_DIST = path.resolve(__dirname, '..', 'frontend', 'dist');
 const CALENDAR_PAGE = path.resolve(__dirname, '..', 'mokla-divas', 'index.html');
 const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html');
+const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -66,6 +67,18 @@ getDb().then(() => {
         '<meta name="viewport" content="width=device-width,initial-scale=1">' +
         boot + '</head><body>' + html + '</body></html>');
     });
+  });
+
+  // Aarti recordings. The page embeds its images as data URIs, but an MP3 is
+  // megabytes — inlining one would stall the first paint — so audio is the one
+  // asset served as a real file. No max-age: the files get replaced while the
+  // recordings are still being cut, and ETag revalidation keeps that honest.
+  // express.static answers Range requests, which is what lets the player seek.
+  app.use('/aartisangrah/audio', express.static(AARTI_AUDIO));
+  app.use('/aartisangrah/audio', (req, res) => {
+    // Without this a missing track would fall through to the SPA and arrive as
+    // HTML with a 200, which an <audio> element can only report as a decode error.
+    res.status(404).type('text/plain').send('Recording not found.');
   });
 
   // Aarti Sangrah — a standalone reader page sharing this process the way the

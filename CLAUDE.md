@@ -343,6 +343,15 @@ function rather than reimplementing the rule.
 - Don't create extra markdown files beyond `README.md`, `CLAUDE.md`, `PROJECT.md`.
 
 ## Lessons Learned
+- **`.page-content` must be a direct child of `.page-card`**, not of `.page-title-wrap`. The
+  card is the flex column; the content pane relies on `flex:1` + `overflow-y:auto` against it
+  to become the scrolling region. Nested one level deeper, inside the `flex-shrink:0` title
+  wrap, both declarations stop meaning anything: the pane grows to fit its text, the shell's
+  `overflow:hidden` clips it, and **every page silently loses scrolling** while still looking
+  correct at the top. This shipped once, from adding a row inside the title wrap and reusing
+  the player's closing `</div>` for it, leaving `.player` unclosed. Prevention: after any
+  markup surgery in the page card, check `pageContent.parentElement.className` is
+  `page-card`, and scroll a long aarti (page 19) before calling it done.
 - **`res.sendFile`'s callback fires on client disconnect, with the headers already sent.**
   Answering again there (`res.status(...).send(...)`) throws `ERR_HTTP_HEADERS_SENT`, which
   nothing catches, so the process exits — taking Lead Tracker down with whatever page was

@@ -6,6 +6,10 @@ const { getDb, query } = require('./db');
 const { requireAuth } = require('./auth');
 
 const app = express();
+// nginx sits in front in production, so the client address arrives in
+// X-Forwarded-For. Without this every visitor would look like 127.0.0.1 and
+// collapse into a single counted visitor. One hop: only nginx is trusted.
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
@@ -21,6 +25,8 @@ getDb().then(() => {
   const usersRouter    = require('./routes/users');
   const calendarRouter = require('./routes/calendar');
   const calendarAdminRouter = require('./routes/calendarAdmin');
+  const statsRouter    = require('./routes/stats');
+  const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
   app.use('/api/auth', authRouter);
@@ -39,6 +45,7 @@ getDb().then(() => {
   app.use('/api/leads',     requireAuth, leadsRouter);
   app.use('/api/followups', requireAuth, followupsRouter);
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
+  app.use('/api/stats',     statsRouter); // stats router applies requireAuth + requireAdmin itself
 
   // Anything under /api that matched no route above is a 404 in JSON. Without
   // this it falls through to the SPA fallback and answers 200 with React's HTML,
@@ -60,6 +67,7 @@ getDb().then(() => {
     if (query('SELECT id FROM calendar_groups WHERE share_code = ?', [code]).length === 0) {
       return res.status(404).type('text/plain').send('Unknown calendar link.');
     }
+    recordVisit(req, 'calendar');
     fs.readFile(CALENDAR_PAGE, 'utf8', (err, html) => {
       if (err) return res.status(500).type('text/plain').send('Calendar page missing.');
       const boot = `<script>window.__CAL__=${JSON.stringify({ api: '/api/calendar/' + code })};</script>`;
@@ -86,6 +94,7 @@ getDb().then(() => {
   // self-contained HTML file, so it is served verbatim. Public (there is nothing
   // private in it) and ahead of the SPA fallback, or React would swallow the URL.
   app.get('/aartisangrah', (req, res) => {
+    recordVisit(req, 'aartisangrah');
     res.sendFile(AARTI_PAGE, (err) => {
       // A client that disconnects mid-transfer lands here with the headers
       // already sent — answering again throws ERR_HTTP_HEADERS_SENT, which is
@@ -102,6 +111,9 @@ getDb().then(() => {
 
   // React client-side routing fallback
   app.use((req, res) => {
+    // Only real page loads: a missing asset also lands here, and counting those
+    // would turn one broken image into a second "visit".
+    if (req.accepts('html')) recordVisit(req, 'leadtracker');
     res.sendFile('index.html', { root: FRONTEND_DIST }, (err) => {
       if (err && !res.headersSent) res.status(500).send('Could not serve app.');
     });

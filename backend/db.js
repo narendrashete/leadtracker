@@ -101,6 +101,36 @@ async function getDb() {
 
   // Shared availability calendar (mokla-divas). Public, code-gated, independent
   // of the lead pipeline — it shares this database file only for storage.
+  // Small key/value store for install-level values that belong to no feature.
+  // Currently holds only the visitor-counting salt.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS app_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
+  // One row per visitor per page per day. Unique visitors for a day are the
+  // rows; views are their summed counters. `visitor` is a salted hash, never an
+  // address — see analytics.js for why it is only comparable within one day.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS page_hits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      day TEXT NOT NULL,
+      page TEXT NOT NULL,
+      visitor TEXT NOT NULL,
+      views INTEGER NOT NULL DEFAULT 1,
+      first_seen TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      last_seen TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  // Integrity, not speed: one row per visitor per page per day, so a reload
+  // bumps the counter instead of inventing a second visitor.
+  try {
+    _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS page_hits_unique
+             ON page_hits (day, page, visitor)`);
+  } catch { /* index already exists */ }
+
   _db.run(`
     CREATE TABLE IF NOT EXISTS calendar_spaces (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -26,6 +26,7 @@ Express (backend/server.js)
    ├── /api/leads     (requireAuth)
    ├── /api/followups (requireAuth)
    ├── /api/users     (requireAuth + requireAdmin)
+   ├── /api/stats     (requireAuth + requireAdmin — visitor counts)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
    ├── /aartisangrah  (public — serves aartisangrah/index.html verbatim, no API)
    ├── /aartisangrah/audio/*  (public — static MP3 recordings, Range-capable)
@@ -52,7 +53,8 @@ backend/
   db.js                sql.js init/schema, query()/run() helpers, save-on-write, admin seed
   auth.js              in-memory session store + requireAuth/requireAdmin middleware
   routes/               leads.js, followups.js, auth.js, users.js, calendar.js,
-                        calendarAdmin.js
+                        calendarAdmin.js, stats.js
+  analytics.js         records a page view; hashes the visitor, filters bots
   leads.db             the entire database (git-ignored)
 frontend/src/
   api.js               fetch wrapper — adds Bearer token, unwraps { error } bodies, 401→login
@@ -63,7 +65,7 @@ frontend/src/
     Leads/               NewLeadForm, LeadDetailDrawer
     Followups/           FollowupScreen, AddFollowupModal
     Reports/             Reports, StatusPieChart, DetailedReport
-    Admin/               UserManagement, CalendarLinks
+    Admin/               UserManagement, CalendarLinks, Visitors
     Layout/              Sidebar
   App.jsx               routes + auth gate
 mokla-divas/
@@ -209,6 +211,34 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   nothing to stop it.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself, and to the recordings.
+
+## Visitor Counting
+Server-side, in `analytics.js`, recorded on the two public pages and on the SPA's own
+HTML loads. Admin-only, shown on the **Visitors** screen.
+- **`recordVisit(req, page)` is called from the route, not from the browser.** Nothing to
+  block, and it works for readers with JS off. It is wrapped in try/catch and swallows its
+  own errors: counting is never worth failing a page load over.
+- **`page_hits` holds one row per visitor per page per day**, with a `views` counter. Unique
+  visitors for a day are that day's rows; views are their counters summed. The unique index
+  on `(day, page, visitor)` is what makes a reload a view rather than a second visitor.
+- **`visitor` is a hash, never an address.** `sha256(install_salt | date | ip | user-agent)`,
+  truncated. The salt lives in `app_meta` and the date is part of the input, so the same
+  phone hashes differently tomorrow and the two cannot be linked. **No IP is ever stored.**
+- **Therefore "unique visitors" is a per-day figure and nothing else.** Summing days counts a
+  daily returner once per day, so the period number is *visitor-days*, not people. The API
+  field is literally named `visitor_days` and the screen labels it "summed per day" —
+  don't quietly relabel either as "unique visitors".
+- **Bots are filtered by two gates**: the user-agent must contain `Mozilla/` (scripts and
+  scrapers mostly don't) and must not match the `BOTS` pattern (which catches the crawlers
+  that do claim Mozilla, Googlebot and the WhatsApp/Facebook link previewers among them).
+  Every paste of the aarti link into WhatsApp fetches the page, so without this the numbers
+  would be inflated by sharing rather than reading.
+- **`app.set('trust proxy', 1)` is required** for any of this to mean anything: nginx sits in
+  front in production, so without it every visitor is `127.0.0.1` and collapses into one. One
+  hop — only nginx is trusted. If nginx is ever reconfigured without
+  `proxy_set_header X-Forwarded-For`, daily visitors will silently read 1.
+- Each recorded view is a `run()`, and `run()` rewrites the whole DB file (see Database
+  Rules). Fine at this scale; worth remembering if a link ever goes properly viral.
 
 ## Coding Standards
 - Functional React components with hooks only — no class components.

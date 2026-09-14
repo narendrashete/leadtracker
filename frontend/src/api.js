@@ -55,6 +55,9 @@ export const api = {
   rotateCalendarLink:  (key)  => request(`/calendar-admin/${key}/rotate`, { method: 'POST' }),
   deleteCalendarGroup: (key)  => request(`/calendar-admin/${key}`, { method: 'DELETE' }),
 
+  // Visitor stats (admin only)
+  getStats: (days) => request(`/stats?days=${days}`),
+
   // Users (admin only)
   getUsers:      ()       => request('/users'),
   createUser:    (data)   => request('/users',               { method: 'POST',   body: JSON.stringify(data) }),

@@ -8,6 +8,7 @@ import FollowupScreen from './components/Followups/FollowupScreen';
 import Reports from './components/Reports/Reports';
 import UserManagement from './components/Admin/UserManagement';
 import CalendarLinks from './components/Admin/CalendarLinks';
+import Visitors from './components/Admin/Visitors';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -41,6 +42,9 @@ function AppShell() {
             )}
             {user.role === 'admin' && (
               <Route path="/calendar-links" element={<CalendarLinks />} />
+            )}
+            {user.role === 'admin' && (
+              <Route path="/visitors" element={<Visitors />} />
             )}
             <Route path="*" element={<Navigate to="/board" replace />} />
           </Routes>

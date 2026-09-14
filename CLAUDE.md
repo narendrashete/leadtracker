@@ -28,6 +28,7 @@ Express (backend/server.js)
    ├── /api/users     (requireAuth + requireAdmin)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
    ├── /aartisangrah  (public — serves aartisangrah/index.html verbatim, no API)
+   ├── /aartisangrah/audio/*  (public — static MP3 recordings, Range-capable)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -71,6 +72,8 @@ mokla-divas/
 aartisangrah/
   index.html           Aarti Sangrah — the Marathi aarti reader. One self-contained file,
                        no build step, no React, no API. Served at /aartisangrah.
+  audio/               MP3 recordings, one per aarti that has one. The only part of
+                       this app not inlined into the page. Served as static files.
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -175,8 +178,27 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   repo — it was generated from an SVG scene rendered frame by frame, so editing it means
   redrawing and re-embedding, the same as the seal. Note the two data URIs are what make this
   file ~160 KB; keep that in mind before adding a third.
+- **Audio is the one asset NOT inlined.** Images are data URIs, but an MP3 is megabytes —
+  inlining one would stall the first paint and bloat every page load for readers who never
+  press play. Recordings live in `aartisangrah/audio/` and are served by a static mount at
+  `/aartisangrah/audio`, which also answers Range requests (that is what lets the player
+  seek). A second handler returns a plain-text 404 for a missing track, so it can't fall
+  through to the SPA and arrive as HTML with a 200 — an `<audio>` element can only report
+  that as a decode error. The mount sets no max-age: recordings get replaced while they are
+  still being cut, and ETag revalidation keeps a reload honest.
+- **An aarti gets a player only if its entry carries an `audio` field** — an absolute path
+  like `/aartisangrah/audio/01-sukhkarta.mp3`, absolute so it resolves the same whether the
+  reader arrived at `/aartisangrah` or `/aartisangrah/`. Add the field and the MP3 to give
+  any aarti a player; leave it off and the controls never render. Only aarti 1 has one today
+  (see `PROJECT.md` — the rest of the recordings are still being cut).
+- **The player's state is explicit** (`playerState`: idle / buffering / playing / paused),
+  not inferred from the `<audio>` element, because a `pause` event fires for both pausing and
+  stopping and the two must leave different buttons on screen. Turning the page always calls
+  `stopAudio()`: the controls live on the page, so audio left running elsewhere would have
+  nothing to stop it. `showTime()` bails when idle — setting `currentTime = 0` on stop fires
+  one last `timeupdate` that would otherwise repaint the cleared readout.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
-  change to the page itself.
+  change to the page itself, and to the recordings.
 
 ## Coding Standards
 - Functional React components with hooks only — no class components.

@@ -192,6 +192,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-14** — Fixed scrolling being dead on every aarti page, a regression from the seek
+  bar. `.player` was left unclosed, so `.page-content` parsed as a child of
+  `.page-title-wrap` instead of `.page-card` and lost the flex context its `flex:1` +
+  `overflow-y:auto` depend on. Pages looked right at the top and simply would not scroll.
 - **2026-09-14** — Added a draggable seek bar to the aarti player, and fixed a crash it
   uncovered. The bar is a native range input showing elapsed and total time; it knows the
   duration before playback because the `<audio>` element is now built with

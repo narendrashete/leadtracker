@@ -191,12 +191,22 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   reader arrived at `/aartisangrah` or `/aartisangrah/`. Add the field and the MP3 to give
   any aarti a player; leave it off and the controls never render. Only aarti 1 has one today
   (see `PROJECT.md` — the rest of the recordings are still being cut).
+- **The seek bar is a native `<input type="range">`** — drag, touch and arrow keys come for
+  free, where a div-and-pointer-maths slider would reinvent all three. Its fill is a gradient
+  driven by a `--p` custom property on WebKit (Firefox uses `::-moz-range-progress`). Two
+  rules keep it honest: dragging only *previews* (`input`) and releasing *commits*
+  (`change`), because seeking on every input event fires a range request per pixel of travel;
+  and `showTime()` returns early while `scrubbing`, or each `timeupdate` would yank the thumb
+  back to the playhead mid-gesture.
+- **The `<audio>` element is built when a page with a recording renders, not on first play**,
+  with `preload='metadata'`. The seek bar is meaningless without a duration, and the header
+  costs a few KB against the megabytes a full preload would pull. The trade is one small
+  request per visit to an aarti that has audio, whether or not anyone presses play.
 - **The player's state is explicit** (`playerState`: idle / buffering / playing / paused),
   not inferred from the `<audio>` element, because a `pause` event fires for both pausing and
   stopping and the two must leave different buttons on screen. Turning the page always calls
   `stopAudio()`: the controls live on the page, so audio left running elsewhere would have
-  nothing to stop it. `showTime()` bails when idle — setting `currentTime = 0` on stop fires
-  one last `timeupdate` that would otherwise repaint the cleared readout.
+  nothing to stop it.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself, and to the recordings.
 
@@ -333,6 +343,13 @@ function rather than reimplementing the rule.
 - Don't create extra markdown files beyond `README.md`, `CLAUDE.md`, `PROJECT.md`.
 
 ## Lessons Learned
+- **`res.sendFile`'s callback fires on client disconnect, with the headers already sent.**
+  Answering again there (`res.status(...).send(...)`) throws `ERR_HTTP_HEADERS_SENT`, which
+  nothing catches, so the process exits — taking Lead Tracker down with whatever page was
+  being served and logging every user out, since sessions are in memory. On a phone the
+  trigger is mundane: navigating away while a page is still downloading. Both `sendFile`
+  callbacks in `server.js` now guard with `if (err && !res.headersSent)`. Prevention: any
+  `sendFile`/`sendfile` completion callback must check `res.headersSent` before it writes.
 - **sql.js throws on `undefined` bind params** (unlike better-sqlite3, which silently accepts
   it). Root cause: destructuring `req.body` fields that are optional in a form gives
   `undefined`, not `null`, when the field is absent. Fix: `sanitize()` in `db.js` coerces

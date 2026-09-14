@@ -87,7 +87,13 @@ getDb().then(() => {
   // private in it) and ahead of the SPA fallback, or React would swallow the URL.
   app.get('/aartisangrah', (req, res) => {
     res.sendFile(AARTI_PAGE, (err) => {
-      if (err) res.status(500).type('text/plain').send('Aarti Sangrah page missing.');
+      // A client that disconnects mid-transfer lands here with the headers
+      // already sent — answering again throws ERR_HTTP_HEADERS_SENT, which is
+      // uncaught and takes the whole process down with it. On a phone that is
+      // just navigating away while the page is still downloading.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Aarti Sangrah page missing.');
+      }
     });
   });
 
@@ -97,7 +103,7 @@ getDb().then(() => {
   // React client-side routing fallback
   app.use((req, res) => {
     res.sendFile('index.html', { root: FRONTEND_DIST }, (err) => {
-      if (err) res.status(500).send('Could not serve app.');
+      if (err && !res.headersSent) res.status(500).send('Could not serve app.');
     });
   });
 

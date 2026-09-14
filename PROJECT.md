@@ -23,6 +23,8 @@ address/city/state to leads.
 - Follow-ups: add dated discussion entries against a lead.
 - Reports: status pie chart (hover breakdown) + date-range table with CSV export.
 - Admin: user management (add / reset password / delete), admin-only.
+- Visitors: server-side page-view counting for the public pages and the app itself, with an
+  admin-only screen showing today's figures, a 7/30/90-day trend, and a per-page breakdown.
 - Aarti Sangrah: a Marathi aarti reader (18 aartis) hosted by the same Express process at
   `/aartisangrah`, reachable from the sidebar. Standalone single HTML file — no API, no
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
@@ -192,6 +194,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-14** — Added visitor counting and a **Visitors** admin screen: daily unique
+  visitors and page views for Aarti Sangrah, the calendar and the Lead Tracker app itself.
+  Counted server-side in `analytics.js` (new `page_hits` and `app_meta` tables, new admin-only
+  `/api/stats`), with the visitor identified by a daily-rotating salted hash rather than a
+  stored address — so uniqueness is meaningful within a day and deliberately not across days.
+  Bots and link-preview fetchers are excluded. `trust proxy` set so the real client address
+  survives nginx.
 - **2026-09-14** — Fixed scrolling being dead on every aarti page, a regression from the seek
   bar. `.player` was left unclosed, so `.page-content` parsed as a child of
   `.page-title-wrap` instead of `.page-card` and lost the flex context its `flex:1` +

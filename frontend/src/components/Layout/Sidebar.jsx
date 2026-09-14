@@ -56,6 +56,14 @@ export default function Sidebar() {
           </NavLink>
         )}
 
+        {/* Admin-only: how many people are opening the public pages */}
+        {user?.role === 'admin' && (
+          <NavLink to="/visitors" style={navStyle}>
+            <span style={{ fontSize: 16 }}>📈</span>
+            Visitors
+          </NavLink>
+        )}
+
         {/* Admin-only: share links for the friends' availability calendar */}
         {user?.role === 'admin' && (
           <NavLink to="/calendar-links" style={navStyle}>

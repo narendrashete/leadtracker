@@ -30,10 +30,10 @@ address/city/state to leads.
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
 
 ## Features In Progress
-- **Aarti audio playback** — the player is live, and which aartis have one is now driven by
-  the contents of `aartisangrah/audio/`: drop `NN-name.mp3` and aarti NN grows a player.
-  Only aarti 1 has a recording so far, and it is still the rough cut (4:50, two aartis in
-  one file).
+- **Aarti audio playback** — the player is live, and which aartis have one is driven by the
+  contents of `aartisangrah/audio/`: drop `NN-name.mp3` and aarti NN grows a player.
+  Three recordings are in (aartis 1, 4 and 5), cut from the one supplied file. The
+  remaining sixteen are still to come.
   The supplied MP3 is a rough cut (4:50, and it still contains two aartis), kept deliberately
   until the behaviour is signed off. Next: replace that file with a clean cut, then add the
   remaining recordings — each needs only its MP3 in `aartisangrah/audio/` plus an `audio`
@@ -196,6 +196,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-15** — Split the supplied recording into its three aartis and shipped them:
+  सुखकर्ता (1, 1:24), लवथवती विक्राळा (4, 1:58) and दुर्गे दुर्घट भारी (5, 1:26). Cut without
+  re-encoding, at the quietest point near each stated boundary rather than at the stated
+  second, so no word is clipped and each track opens with a short lead-in.
 - **2026-09-15** — Recordings are now discovered from `aartisangrah/audio/` via a
   `manifest.json` route instead of being hard-coded per aarti: a file whose name starts with
   the aarti's number becomes that page's track, so adding audio is dropping a file in the

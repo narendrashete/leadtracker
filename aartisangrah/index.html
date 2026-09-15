@@ -431,6 +431,15 @@
     border-top:1px solid rgba(185,133,43,0.4);
   }
   .page-content .shlok-head:first-child{padding-top:2px; border-top:none;}
+  .page-content .section-back{
+    font-family:'Noto Sans Devanagari',sans-serif;
+    font-size:12.5px;
+    color:var(--maroon);
+    text-align:center;
+    margin:0 0 14px;
+    cursor:pointer;
+    text-decoration:underline;
+  }
 
   /* transition animations */
   .page-card.anim-next{animation: slideInNext 0.32s ease;}
@@ -582,6 +591,12 @@
   }
   .modal-item.current{background:var(--gold-pale);}
   .modal-item.current .num{background:var(--gold);color:var(--maroon-dark);}
+  .modal-item.modal-folder .num,
+  .modal-item.modal-back .num{
+    background:var(--gold-pale);
+    color:var(--maroon-dark);
+    font-size:14px;
+  }
   .no-results{
     text-align:center;
     color:var(--ink-soft);
@@ -776,18 +791,15 @@ const aartis = [
     ]
   },
   {
-    title: "श्री साईबाबांची आरती",
-    tag: "आरती साईबाबा",
-    keywords: "sai baba saibaba shirdi aarti",
+    title: "श्री संत गजानन महाराजांची आरती",
+    tag: "जय जय सच्चित्स्वरूप स्वामी गणराया",
+    keywords: "gajanan maharaj shegaon sacchitswarup ganraya aarti",
     body: [
-      "आरती साईबाबा । सौख्यदातार जीवा।\nचरणरजातली । ध्यावा दासा विसावा,\nभक्ता विसावा ।। आ०।।ध्रु ०।।",
-      "जाळुनियां अनंग। स्वस्वरूपी राहेदंग ।\nमुमुक्षूजनां दावी । निज डोळा श्रीरंग ।। आ०।। १ ।।",
-      "जयामनी जैसा भाव । तया तैसा अनुभव ।\nदाविसी दयाघना । ऐसी तुझीही माव ।। आ०।। २ ।।",
-      "तुमचे नाम ध्याता । हरे संस्कृती व्यथा ।\nअगाध तव करणी । मार्ग दाविसी अनाथा ।। आ०।। ३ ।।",
-      "कलियुगी अवतार । सगुण परब्रह्मः साचार ।\nअवतीर्ण झालासे । स्वामी दत्त दिगंबर ।। द०।। आ०।। ४ ।।",
-      "आठा दिवसा गुरुवारी । भक्त करिती वारी ।\nप्रभुपद पहावया । भवभय निवारी ।। आ०।। ५ ।।",
-      "माझा निजद्रव्यठेवा । तव चरणरज सेवा ।\nमागणे हेचि आता । तुम्हा देवाधिदेवा ।। आ०।। ६ ।।",
-      "इच्छित दिन चातक। निर्मल तोय निजसुख ।\nपाजावे माधवा या । सांभाळ आपुली भाक ।। आ०।। ७ ।।"
+      "जय जय सच्चित्स्वरूप स्वामी गणराया ।।\nअवतरलासी भूवर जड मूढ ताराया ।। धृ ।।",
+      "निर्गुण ब्रह्म सनातन अव्यव अविनाशी ।\nस्थिरचर व्यापुन उरले जे या जगतासी ।।\nतें तूं खरोखर निःसंशय अससी ।\nलीलामात्रें धरिलें मानव देहासी ।।१।।",
+      "होऊं न देशी त्याची जाणिव तूं कवणा ।\nकरूनी गणि गण गणात बोते या भजना ।।\nधाता हरिहर गुरुवर तूंचि सुखसदना ।\nजिकडे पहावे तिकडे तूं दिससी नयना ।।२।।",
+      "लीला अनंत केल्या बकटसदनास ।\nपेटविले त्या अग्नीवांचुनि चिलमेस ।।\nक्षणांत आणिले जीवन निर्जल वापसि ।\nकेला ब्रह्मगिरीच्या गर्वाचा नाश ।।३।।",
+      "व्याधि वारुन केले कैकां संपन्न ।\nकरविलें भक्तांलागी विठ्ठल दर्शन ।।\nभवसिंधु हा तरण्या नौका तव चरण ।\nस्वामी दासगणूचे मान्य करा कवन ।।४।।"
     ]
   },
   {
@@ -800,6 +812,16 @@ const aartis = [
       "सबाह्य अभ्यंतरीं तू एक दत्त।\nअभाग्यासी कैंची कळेल ही मात ।।\nपरा ही परतली तेथे कैंचा हा हेत ।\nजन्ममरण्याचा पुरलासे अंत ।।२।।\nजय देव जय देव",
       "दत्त येऊनिया उभा ठाकला ।\nसद्भावे साष्टांग प्रणिपात केला ।।\nप्रसन्न होऊनिया आशीर्वाद दिधला ।\nजन्ममरण्याचा फेरा चुकविला ।।३।।\nजय देव जय देव",
       "दत्त दत्त ऐसे लागले ध्यान।\nहरपले मन झाले उन्मन ।।\nमीतूंपणाची झाली बोळवण ।\nएका जनार्दनीं श्री दत्त ध्यान ।।४।।\nजय देव जय देव"
+    ]
+  },
+  {
+    title: "हनुमान आरती",
+    tag: "सत्राणे उड्डाणे हुंकार वदनी",
+    keywords: "hanuman maruti satrane uddane aarti ramdas",
+    body: [
+      "सत्राणे उड्डाणे हुंकार वदनी ।\nकरि डळमळ भूमंडळ सिंधू जळ गगनी ।\nकडाडिले ब्रह्मांड धाके त्रिभुवनी ।\nसुरवर चर निशाचर त्या झाल्या पळनी ।।१।।",
+      "जय देव जय देव जय श्री हनुमंता ।\nतुमचेनी प्रसादे नाभे कृतांता जय देव जय देव ।।धृ।।",
+      "दुमदुमली पाताळे उठिला प्रतिशब्द ।\nथरथरला धरणीधर मानीला खेद ।\nकडाडिले पर्वत उडुगण् उच्छेद ।\nरामी रामदासा शक्तिचा शोध ।।२।। जय देव"
     ]
   },
   {
@@ -859,6 +881,78 @@ const aartis = [
       "आता धर्मसख्या तुझ्या पुढतिया नम्रत्वतेने असे ।\nइच्छा हो जशी मानसी करी तसे हा देह तुझा असे ॥",
       "जय जय रघुवीर समर्थ ॥"
     ]
+  },
+  {
+    title: "आरती जगदंबेची",
+    tag: "आश्विनशुद्ध पक्षी अंबा बैसली सिंहासनी",
+    keywords: "navratra jagdamba durga amba ghatasthapana aarti",
+    section: "navratra",
+    sectionLabel: "नवरात्र आरती",
+    body: [
+      "आश्विनशुध्द पक्षी अंबा बैसली सिंहासनी हो ।\nप्रतिपदेपासुनी घटस्थापना ती करूनी हो ।\nमूलमंत्रजप करूनी भोवती रक्षक ठेऊनी हो ।\nब्रह्मा विष्णू रूद्र आईचे पूजन करिती हो ।\nउदो बोला उदो अंबाबाई माऊलीचा हो ।\nउदोकारे गर्जती काय महिमा वर्णू तिचा हो ।।",
+      "द्वितियेचे दिवशी मिळती चौसष्ट योगिनी हो ।\nसकळांमध्ये श्रेष्ठ परशुरामाची जननी हो ।\nकस्तुरी मळवट भांगी शेंदूर भरूनी हो ।\nउदोकारे गर्जती सकळा चामुंडा मिळुनी हो ।\nउदो बोला ......",
+      "तृतीयेचे दिवशी अंबे शृंगार मांडिला हो ।\nमळवट पातळ चोळी कंठी हार मुक्ताफळा हो ।\nकंठीची पदके कासे पीतांबर पिवळा हो ।\nअष्टभुजा मिरवितो अंबे सुंदर दिसे लिला हो ।\nउदो बोला .....",
+      "चतुर्थीच्या दिवशी विश्वव्यापक जननी हो ।\nउपासका पाहसी अंबे प्रसन्न अंतःकरणी हो ।\nपूर्णकृपे तारिसी जगन्माते मनमोहिनी हो ।\nभक्तांच्या माऊली सुर ते येती लोटांगणी हो ।\nउदो बोला .....",
+      "पंचमीचे दिवशी व्रत ते उपांगललिता हो ।\nअर्धपाद्यपूजने तुजला भवानी स्तविती हो ।\nरात्रीचे समयी करिती जाग्रण हरिकथा हो ।\nआनंद प्रेम ते आले सद्भावे क्रीडता हो ।\nउदो बोला ......",
+      "षष्ठीचे दिवशी भक्ता आनंद वर्तला हो ।\nघेऊनी दिवट्या हस्ती हर्षे गोंधळ घातला हो ।\nकवडी एक अर्पिता देसी हार मुक्ताफळा हो ।\nजोगव मागता प्रसन्न झाली भक्तकुळा हो ।\nउदो बोला….",
+      "सप्तमीचे दिवशी सप्तशृंगगडावरी हो ।\nतेथे तू नांदसी भोवती पुष्पे नानापरी हो ।\nजाई जुई शेवंती पूजा रेखियली बरवी हो ।\nभक्त संकटी पडता झेलूनी घेसी वरचेवरी हो ।\nउदो बोला......",
+      "अष्टमीचे दिवशी अष्टभूजा नारायणी हो ।\nसह्याद्रीपर्वती पाहिली उभी जगज्जननी हो ।\nमन माझे मोहिले शरण आलो तुजलागुनी हो ।\nस्तनपान देऊनी सुखी केले अंतःकरणी हो ।\nउदो बोला......",
+      "नवमीचे दिवशी नव दिवसांचे पारणे हो ।\nसप्तशतीजपहोमहवने सद्भक्ती करूनी हो ।\nषड्स अन्ने नैवेद्यासी अर्पियली भोजनी हो ।\nआचार्य ब्राह्मणा तृप्त केले कृपेकरूनी हो ।\nउदो बोला.....",
+      "दशमीचे दिवशी अंबा निघे सिमोलंघनीहो ।\nसिंहारूढ करी दारूण शख्रे अंबेला घेऊनी हो ।\nशुंभ निशुंभादिक राक्षसा किती मारीसी रणी हो ।\nविप्रा रामदासा आश्रय दिधला तो चरणी हो ।\nउदो बोला......"
+    ]
+  },
+  {
+    title: "खंडोबाची आरती",
+    tag: "जेजुरीच्या खंडेराया जागराला या या",
+    keywords: "navratra khandoba malhari jejuri aarti",
+    section: "navratra",
+    sectionLabel: "नवरात्र आरती",
+    body: [
+      "जेजुरीच्या खंडेराया जागराला या या ।\nवाईच्या तू गणराया जागराला या या ।\nपरभणीच्या भैरी देवी जागराला या या ।\nजेजुरी गडा वाजे चौघडा वाजे चौघडा ।\nपुन धरती अलिकड गड जेजुरी पलिकड ।\nभानुबाईचा वेड लागला मल्हारी देव मल्हारी ।\nविसरून गेला कुणा गावाला ।\nभंडारी देव भंडारी ।\nमल्हारी मल्हारी माझा कैवार देव मल्हारी ।\nगळा घालितो मल्हारी ग देव माझा कैवारी ।\nनवलाख पायरी गडाला हो ।\nचिरा जोडिला खडकाला ।\nबोला हो कुणी बोला म्हाळसा राणीला ।\nभंडारा वाहू देवाला हो मल्हारी रायाला ।\nहेलकोट हेलकोट बोलती हो ।\nकुणी काय भंडारा उधळती ।\nमल्हारी मल्हारी माझा कैवारी देव मल्हारी ।\nगळा घालितो मल्हारी ग देव माझा मल्हारी ।।"
+    ]
+  },
+  {
+    title: "आरती मैराळाची",
+    tag: "पिवळे निशाण तुमचे पिवळे शिखर",
+    keywords: "navratra mairal khandoba pivla aarti",
+    section: "navratra",
+    sectionLabel: "नवरात्र आरती",
+    body: [
+      "पिवळे निशाण तुमचे पिवळे शिखर ।\nपिवळे देऊळ तुमचे पिवळे नगर ।\nपिवळे राज्य तुमचे राणी सुकुमार ।\nपिवळा कांचन पर्वत पिवळा भांडार ।\nजयदेव जयदेव जयश्री मैराळा ।\nशशिवर शंकर ढवळा त्याहूनी तो पिवळा ।।",
+      "आवडती बाणा धणगरणी बाळा ।\nपिवळ्या घोड्यावरी प्रल्हाद वेल्हाळा ।\nचोहाती मूर्ती देवाची सकळा ।\nदासीवाल्या मुरल्या त्याभोगी सोठाळ्या ।।",
+      "पिवळी जनयात्रा पिवळा बाजार ।\nपिवळे देणे घेणे घडमोड व्यवहार ।\nपिवळी काया तुमची पिवळा शृंगार ।\nहाती कंकण शोभे पिवळी तलवार ।।",
+      "मणी मल्ल दैत्या मातला पृथ्वीवर ।\nपिवळ्या देवाजीने केला संहार ।\nइंद्रादिकाशी काळीमा फार ।\nपिवळ्या देवाजीचा मोठा उपकार ।।",
+      "चंपाषष्ठीचा कुळधर्म केला ।\nपिवळ्या पुरणाची आरती देवाला ।\nलोभाने चालतो शिवदिन तो पिवळा ।\nत्यावरी कृपा करितो पिवळा मैराळा ।\nजयदेव जयदेव जयश्री मैराळा ।\nशशिवर शंकर ढवळा त्याहूनी तो पिवळा ।।"
+    ]
+  },
+  {
+    title: "जोगवा",
+    tag: "मिठापिठाचा जोगवा याग बायांनो दरबारी",
+    keywords: "navratra jogava tuljapur amba aarti",
+    section: "navratra",
+    sectionLabel: "नवरात्र आरती",
+    body: [
+      "मिठापिठाचा जोगवा याग बायानो दरबारी ।\nमला बाई जायाचं गुरुवारी ग तुळजापुराच्या बाजारी ।\nतुळजापुराल जाईन आईला नवस करीन ।\nआई अंबेला नवस फेडिन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा…..",
+      "तुळजापूराला जाईन आईचं हळदकुंकू घेईन ।\nआई अंबेला लीवीन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा…..",
+      "तुळजापुराला जाईन आईला ओटी घेईन ।\nआई अंबेला वाहिन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा…..",
+      "तुळजापुराला जाईन आईला बांगड्या आणीन ।\nआई अंबेला देईन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा…..",
+      "तुळजापुराला जाईन आईला साडी चोळी घेईन ।\nआई अंबेला देईन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा…..",
+      "तुळजापुराला जाईन आईला हार वेणी घेईन ।\nआई अंबेला घालीन ग परत माघारी येईन ।\nमिठापिठाचा जोगवा….."
+    ]
+  },
+  {
+    title: "फुलवरा",
+    tag: "फुलवरा अर्पिला तुज म्या फुलवरा अर्पिला",
+    keywords: "navratra fulwara amba jagdamba aarti",
+    section: "navratra",
+    sectionLabel: "नवरात्र आरती",
+    body: [
+      "फुलवरा अर्पिला तुज म्या फुलवरा अर्पिला ।\nहे आदिशक्ती मुल प्रकृति आद्यस्मृती विश्वजननी तुला ।\nफुलवरा अर्पिला तुजला…..",
+      "चैतन्याची स्फुर्ति ग माया महतत्त्व म्हणविती ।\nअवि सगुणरूपी अंबा नारायणा अदिशक्ती ।\nघटस्थापना करून त्रिगुण तिज पाय शोभती ।\nपिंडा हिची मृत्तीका नाभि कलसावरी ठेविला ।\nकळसावरी ठेविला…..",
+      "निराधार मंडप अंबेवर चांदवा शोभला ।\nपंचभुताचे धान्य मृत्तिका भिव मोड उगवला ।\nनवरात्र नवमाळ नविवध भक्तीभाव जडला ।\nअहंकृती रूप दैत्य बोकड धुपदिप जाळीसा ।\nधुपदिप जाळीला…..",
+      "होता विजयादशमी देरोवर कामक्रोध मर्दिनी ।\nप्रसादे करोती अलेले भक्त जना पोशीले ।\nउदोकारे गर्जुनी सिमा उल्लंघन केले ।\nरंक विजयाचा मळवट भांगी शेंदूर चर्चिला ।",
+      "ऐसी ही जगदंबा अंबा चंद्रभागे तिरी ।\nभक्तराजा कैवारी कटेवरी ठेवुनी विटेवरी ।\nहरिनामाचा गोंधळ सदोदित होतो महाकारी ।\nसद्गुरू सेवक अनन्य शरण भाव तेथ भुकेला ।"
+    ]
   }
 ];
 
@@ -883,7 +977,10 @@ function renderPage(idx, direction){
   pageTitle.textContent = a.title;
   // A body line prefixed with "## " is a sub-heading, not a verse — used by pages
   // that collect several separately-named prayers (see उत्सवी प्रार्थना).
-  pageContent.innerHTML = a.body.map(p => p.startsWith('## ')
+  const backLink = a.section
+    ? `<div class="section-back" onclick="openModalSection('${a.section}')">← ${a.sectionLabel} कडे परत</div>`
+    : '';
+  pageContent.innerHTML = backLink + a.body.map(p => p.startsWith('## ')
     ? `<h3 class="shlok-head">${p.slice(3)}</h3>`
     : `<p>${p}</p>`).join('');
   pageContent.scrollTop = 0;
@@ -984,26 +1081,75 @@ const modalCloseBtn = document.getElementById('modalCloseBtn');
 const modalList = document.getElementById('modalList');
 const modalSearchInput = document.getElementById('modalSearchInput');
 
+function modalItemHtml(a, idx, num){
+  return `
+    <div class="modal-item ${idx === current ? 'current' : ''}" data-idx="${idx}">
+      <div class="num">${num}</div>
+      <div class="txt">${a.title}<br><small style="color:#8a6f45;font-family:'Noto Sans Devanagari',sans-serif;font-size:11.5px;">${a.tag}</small></div>
+    </div>
+  `;
+}
+
+// null = top-level list. A section key = drilled into that section's own
+// numbered sublist, entered by tapping its folder row.
+let modalSection = null;
+
 function renderModalList(q){
   const ql = (q||'').toLowerCase().trim();
-  const items = aartis
-    .map((a, i) => ({a, i}))
-    .filter(o => !ql || matchScore(o.a, ql));
 
-  if(items.length === 0){
-    modalList.innerHTML = '<div class="no-results">काही सापडले नाही</div>';
+  // A search in progress always shows a flat, matching list — drilling into
+  // a section is for browsing, not for a targeted lookup.
+  if(ql){
+    modalSection = null;
+    const items = aartis.map((a, i) => ({a, i})).filter(o => matchScore(o.a, ql));
+    modalList.innerHTML = items.length === 0
+      ? '<div class="no-results">काही सापडले नाही</div>'
+      : items.map(o => modalItemHtml(o.a, o.i, o.i + 1)).join('');
     return;
   }
-  modalList.innerHTML = items.map(o => `
-    <div class="modal-item ${o.i === current ? 'current' : ''}" data-idx="${o.i}">
-      <div class="num">${o.i+1}</div>
-      <div class="txt">${o.a.title}<br><small style="color:#8a6f45;font-family:'Noto Sans Devanagari',sans-serif;font-size:11.5px;">${o.a.tag}</small></div>
-    </div>
-  `).join('');
+
+  if(modalSection){
+    const items = aartis.map((a, i) => ({a, i})).filter(o => o.a.section === modalSection);
+    modalList.innerHTML =
+      `<div class="modal-item modal-back" data-back="1">
+        <div class="num">←</div>
+        <div class="txt">मुख्य यादीकडे परत</div>
+      </div>` +
+      items.map((o, n) => modalItemHtml(o.a, o.i, n + 1)).join('');
+    return;
+  }
+
+  // Top level: each section collapses to one folder row, shown where its
+  // first member would otherwise have appeared.
+  const seenSections = new Set();
+  const rows = [];
+  aartis.forEach((a, i) => {
+    if(a.section){
+      if(seenSections.has(a.section)) return;
+      seenSections.add(a.section);
+      const count = aartis.filter(x => x.section === a.section).length;
+      rows.push(
+        `<div class="modal-item modal-folder" data-section="${a.section}">
+          <div class="num">📁</div>
+          <div class="txt">${a.sectionLabel}<br><small style="color:#8a6f45;font-family:'Noto Sans Devanagari',sans-serif;font-size:11.5px;">${count} आरत्या</small></div>
+        </div>`
+      );
+      return;
+    }
+    rows.push(modalItemHtml(a, i, i + 1));
+  });
+  modalList.innerHTML = rows.join('');
 }
 
 function openModal(){
   modalSearchInput.value = '';
+  modalSection = null;
+  renderModalList('');
+  modalOverlay.classList.add('show');
+}
+function openModalSection(section){
+  modalSearchInput.value = '';
+  modalSection = section;
   renderModalList('');
   modalOverlay.classList.add('show');
 }
@@ -1017,6 +1163,17 @@ modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) cl
 modalSearchInput.addEventListener('input', () => renderModalList(modalSearchInput.value));
 
 modalList.addEventListener('click', (e) => {
+  if(e.target.closest('.modal-item.modal-back')){
+    modalSection = null;
+    renderModalList('');
+    return;
+  }
+  const folder = e.target.closest('.modal-item.modal-folder[data-section]');
+  if(folder){
+    modalSection = folder.dataset.section;
+    renderModalList('');
+    return;
+  }
   const item = e.target.closest('.modal-item[data-idx]');
   if(!item) return;
   const idx = parseInt(item.dataset.idx, 10);

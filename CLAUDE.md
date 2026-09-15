@@ -188,6 +188,20 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   through to the SPA and arrive as HTML with a 200 — an `<audio>` element can only report
   that as a decode error. The mount sets no max-age: recordings get replaced while they are
   still being cut, and ETag revalidation keeps a reload honest.
+- **A group of aartis can share a `section` + `sectionLabel` field** (see the नवरात्र आरती
+  entries) to appear as one collapsed folder row in the अनुक्रमणिका (index modal) instead of
+  as separate rows. Tapping the folder drills the modal into a numbered (1..n) sublist for
+  just that section, with a "मुख्य यादीकडे परत" row to back out to the top-level list —
+  `modalSection` (null = top level, else the section key) is the only state this adds.
+  Grouped entries are still ordinary members of the flat `aartis` array otherwise: swipe,
+  prev/next, the "n / count" page indicator, audio-manifest numbering and search
+  (`matchScore`) all treat them exactly like any other aarti — a non-empty search query
+  always shows a flat matching list, never the folder, since drilling in is for browsing, not
+  for a targeted lookup. `renderPage()` adds a "← \<sectionLabel\> कडे परत" link above a
+  grouped aarti's content (only when `a.section` is set) that calls `openModalSection()` to
+  reopen the modal already drilled into that section. Reuse this field pair for any future
+  set of aartis that belong under one named heading — don't invent a second grouping
+  mechanism.
 - **Recordings are discovered from the folder, not listed in the array.** `server.js` serves
   `/aartisangrah/audio/manifest.json` — the directory listing, keyed by the number each
   filename starts with (`07-vitthal.mp3` is aarti 7; a bare `7.mp3` works too). The page

@@ -196,6 +196,21 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-15** — Aarti Sangrah content update: swapped aarti 9 (साईबाबा) for
+  श्री संत गजानन महाराजांची आरती and removed its recording (no matching audio supplied);
+  inserted हनुमान आरती as new aarti 11, pushing घालिन लोटांगण/मंत्रपुष्पांजली/उत्सवी प्रार्थना
+  down one slot each, with its recording renamed to lead with `11-`. Added a **नवरात्र आरती**
+  section — आरती जगदंबेची, खंडोबाची आरती, आरती मैराळाची, जोगवा, फुलवरा — as aartis 15-19.
+  This is the first grouped section in the reader: entries carry a `section` +
+  `sectionLabel` field, the अनुक्रमणिका (index modal) collapses same-section entries into one
+  folder row and drills into a numbered (1..n) sublist with a "मुख्य यादीकडे परत" row to back
+  out, and each grouped aarti's page shows a "← \<section\> कडे परत" link that reopens the
+  modal straight into that drilled view. Search still matches grouped entries directly and
+  bypasses the folder view, since a targeted lookup shouldn't require browsing. Swipe/prev-next
+  and the page-turn numbering stay fully linear across all 19 entries — grouping is purely an
+  index/modal concept, not a second navigation mode. All recordings renumbered to keep the
+  `NN-name.mp3` prefix aligned with each entry's new array position (see the Aarti Sangrah
+  section of CLAUDE.md for the manifest-matching rule this depends on).
 - **2026-09-15** — Split the supplied recording into its three aartis and shipped them:
   सुखकर्ता (1, 1:24), लवथवती विक्राळा (4, 1:58) and दुर्गे दुर्घट भारी (5, 1:26). Cut without
   re-encoding, at the quietest point near each stated boundary rather than at the stated

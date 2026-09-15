@@ -196,6 +196,19 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-15** — Added an installable, fully-offline copy of Aarti Sangrah at
+  `/aartisangrah/app` (`aartisangrah/app.html`, `manifest.webmanifest`, `sw.js`, `icons/`) for
+  distributing the reader directly to family/friends without an app store — "Add to Home
+  Screen" on Android or iOS installs it, and its service worker precaches the page and every
+  recording (~30 MB) on first visit so it needs no internet after that. Deliberately a separate
+  file from `index.html`, not a flag on it: the existing `/aartisangrah` link had to keep
+  behaving exactly as it does today for people already using it, so nothing PWA-related
+  (manifest link, meta tags, service-worker registration) was added there, and the service
+  worker registers with an explicit scope so it can never take control of that page even on a
+  device that has both links open. Caught and fixed a real bug in testing: the static mount
+  added to serve the manifest/icons/`sw.js` was 301-redirecting the plain `/aartisangrah` link
+  before `redirect: false` was added — see the Aarti Sangrah — offline app section of
+  CLAUDE.md for the full explanation and the invariants any future change here must preserve.
 - **2026-09-15** — Aarti Sangrah content update: swapped aarti 9 (साईबाबा) for
   श्री संत गजानन महाराजांची आरती and removed its recording (no matching audio supplied);
   inserted हनुमान आरती as new aarti 11, pushing घालिन लोटांगण/मंत्रपुष्पांजली/उत्सवी प्रार्थना

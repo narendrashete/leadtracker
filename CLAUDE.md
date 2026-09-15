@@ -29,7 +29,9 @@ Express (backend/server.js)
    ├── /api/stats     (requireAuth + requireAdmin — visitor counts)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
    ├── /aartisangrah  (public — serves aartisangrah/index.html verbatim, no API)
+   ├── /aartisangrah/app  (public — separate installable/offline copy, app.html)
    ├── /aartisangrah/audio/*  (public — static MP3 recordings, Range-capable)
+   ├── /aartisangrah/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -74,6 +76,10 @@ mokla-divas/
 aartisangrah/
   index.html           Aarti Sangrah — the Marathi aarti reader. One self-contained file,
                        no build step, no React, no API. Served at /aartisangrah.
+  app.html             Same reader, kept as a separate file, for installable/offline use.
+                       Served at /aartisangrah/app. See "Aarti Sangrah — offline app" below
+                       for why this is a second file rather than a flag on index.html.
+  manifest.webmanifest, sw.js, icons/   The offline app shell for app.html only.
   audio/               MP3 recordings, one per aarti that has one. The only part of
                        this app not inlined into the page. Served as static files.
 start.bat               local one-click launcher (runs the production build)
@@ -232,6 +238,44 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   nothing to stop it.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself, and to the recordings.
+
+## Aarti Sangrah — offline app (app.html)
+A second, separate copy of the reader — `aartisangrah/app.html`, served at `/aartisangrah/app`
+— exists purely so people can install it (Add to Home Screen) and use it with no internet at
+all. It is a deliberate fork of `index.html`, not a flag/query-param on it:
+- **`index.html` must never gain a manifest link, meta tags, or a service-worker registration
+  script.** The plain `/aartisangrah` link is what's already bookmarked and shared; a service
+  worker registered from that page would start intercepting its requests for everyone who
+  already uses it, which is exactly the regression this split exists to avoid. Any offline/PWA
+  feature is added to `app.html` only.
+- **The service worker registers with an explicit `{ scope: '/aartisangrah/app' }`.** Without
+  that, registering `sw.js` (which lives at `/aartisangrah/sw.js`) would default to controlling
+  everything under `/aartisangrah/`, including the plain page, on any device that happened to
+  open both links. The explicit scope is the only thing standing between this feature and that
+  regression — never drop it.
+- **`manifest.webmanifest`, `sw.js`, and `icons/` are shared files** served by a static mount at
+  `/aartisangrah` (`index: false, redirect: false` — see below), but only `app.html` references
+  them. Keeping them shared (rather than duplicated) is fine precisely because nothing loads
+  them unless it asks to.
+- **`redirect: false` on that static mount is load-bearing.** `express.static` mounted at
+  `/aartisangrah` treats a bare request for `/aartisangrah` as its own directory root and
+  301-redirects to `/aartisangrah/` by default — which broke the plain page the first time this
+  mount was added, before `redirect: false` was set. Any future static mount added under
+  `/aartisangrah` needs the same option, or the plain page breaks again.
+- **`sw.js`'s install step precaches every recording**, not just the page shell, by reading the
+  same `/aartisangrah/audio/manifest.json` the page itself reads — so the offline app plays
+  audio immediately after one online visit, not just after each track has been played once.
+  Bump `CACHE_VERSION` in `sw.js` whenever `app.html`, an icon, or the audio set changes, or
+  installed devices keep serving the old cached version.
+- **`sw.js` is served with `Cache-Control: no-cache`** (set in the static mount's
+  `setHeaders`) so the browser always re-checks it for updates rather than trusting a
+  long-lived cache — the standard gotcha with service-worker files.
+- Distribution model: there is no APK/IPA and nothing goes through an app store. The link
+  `/aartisangrah/app` is shared directly (WhatsApp, etc.); the recipient uses their browser's
+  own "Add to Home Screen" (Chrome on Android) or Share → "Add to Home Screen" (Safari on
+  iOS — Chrome-on-iOS cannot install PWAs, since it's also WebKit-based but lacks that share
+  action). The one online visit needed to install also downloads and caches the ~30 MB of
+  recordings; after that it works indefinitely with no network.
 
 ## Visitor Counting
 Server-side, in `analytics.js`, recorded on the two public pages and on the SPA's own

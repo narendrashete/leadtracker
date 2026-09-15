@@ -1,0 +1,16 @@
+{
+  "name": "आरती संग्रह",
+  "short_name": "आरती संग्रह",
+  "description": "शेटे परिवार आरती संग्रह — मराठी आरत्या, वाचन आणि ध्वनीसह",
+  "start_url": "/aartisangrah/app",
+  "scope": "/aartisangrah/app",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#efe0bc",
+  "theme_color": "#7A1B2E",
+  "lang": "mr",
+  "icons": [
+    { "src": "/aartisangrah/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/aartisangrah/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

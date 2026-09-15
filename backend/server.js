@@ -110,6 +110,24 @@ getDb().then(() => {
     res.status(404).type('text/plain').send('Recording not found.');
   });
 
+  // The offline app shell: manifest, service worker and home-screen icons.
+  // index:false AND redirect:false so a bare '/aartisangrah' request falls
+  // through to the plain-page route below instead of this middleware
+  // 301-redirecting it to '/aartisangrah/' (serve-static's default behavior
+  // for a directory-shaped path) — that redirect is what broke the existing
+  // link the first time this mount was added; never regress that.
+  app.use('/aartisangrah', express.static(path.resolve(__dirname, '..', 'aartisangrah'), {
+    index: false,
+    redirect: false,
+    setHeaders: (res, filePath) => {
+      // The service worker's own script must never be served from a stale
+      // cache, or a new version can't be discovered until far later than
+      // expected — the browser already re-checks it periodically, but a
+      // long-lived proxy/CDN cache-control would defeat that.
+      if (filePath.endsWith('sw.js')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  }));
+
   // Aarti Sangrah — a standalone reader page sharing this process the way the
   // calendar page does, but with no API and no tables of its own: it is one
   // self-contained HTML file, so it is served verbatim. Public (there is nothing
@@ -123,6 +141,24 @@ getDb().then(() => {
       // just navigating away while the page is still downloading.
       if (err && !res.headersSent) {
         res.status(500).type('text/plain').send('Aarti Sangrah page missing.');
+      }
+    });
+  });
+
+  // The installable, offline-capable copy of Aarti Sangrah — a separate page
+  // (app.html) at its own URL, kept apart from the plain /aartisangrah link
+  // on purpose: that link is what people already have bookmarked/shared, and
+  // it must keep behaving exactly as it always has. This one is meant to be
+  // shared as its own link to whoever wants to "install" the reader (Add to
+  // Home Screen) for offline use; its service worker is scoped to this path
+  // only (see app.html), so it can never take over the plain page even on
+  // the same phone.
+  app.get('/aartisangrah/app', (req, res) => {
+    recordVisit(req, 'aartisangrah');
+    const AARTI_APP_PAGE = path.resolve(__dirname, '..', 'aartisangrah', 'app.html');
+    res.sendFile(AARTI_APP_PAGE, (err) => {
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Aarti Sangrah (app) page missing.');
       }
     });
   });

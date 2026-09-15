@@ -82,6 +82,27 @@ getDb().then(() => {
   // asset served as a real file. No max-age: the files get replaced while the
   // recordings are still being cut, and ETag revalidation keeps that honest.
   // express.static answers Range requests, which is what lets the player seek.
+  // Which recordings exist. The page reads this and grows a player on each aarti
+  // that has one, so adding audio is dropping a numbered file in the folder —
+  // no code edit per aarti. Must sit AHEAD of the static mount, or a file
+  // literally named manifest.json would shadow the route.
+  app.get('/aartisangrah/audio/manifest.json', (req, res) => {
+    fs.readdir(AARTI_AUDIO, (err, files) => {
+      if (err) return res.json({});   // no folder yet is no recordings, not an error
+      const byAarti = {};
+      for (const name of (files || []).sort()) {
+        if (!/\.mp3$/i.test(name)) continue;
+        // A leading number names the aarti: 01-sukhkarta.mp3 is aarti 1. Sorted
+        // above so a duplicate prefix resolves to the same file every time.
+        const m = name.match(/^(\d{1,3})/);
+        if (!m) continue;
+        const n = String(parseInt(m[1], 10));
+        if (!byAarti[n]) byAarti[n] = '/aartisangrah/audio/' + encodeURIComponent(name);
+      }
+      res.json(byAarti);
+    });
+  });
+
   app.use('/aartisangrah/audio', express.static(AARTI_AUDIO));
   app.use('/aartisangrah/audio', (req, res) => {
     // Without this a missing track would fall through to the SPA and arrive as

@@ -689,10 +689,6 @@ const aartis = [
     title: "श्री गणपतीची आरती",
     tag: "सुखकर्ता दुःखहर्ता",
     keywords: "ganpati ganesh sukhkarta dukhharta mangalmurti aarti",
-    // Absolute path, so it resolves the same whether the page was reached as
-    // /aartisangrah or /aartisangrah/. Give an aarti this field and it gets a
-    // player; leave it off and the controls never render.
-    audio: "/aartisangrah/audio/01-sukhkarta.mp3",
     body: [
       "सुखकर्ता दुःखहर्ता वार्ता विघ्नाची। नुरवी पुरवी प्रेम कृपा जयाची ।\nसर्वांगी सुंदर उटी शेंदुराची । कंठी झळके माळ मुक्ताफळांची ।\nजय देव जय देव जय मंगलमूर्ती । दर्शनमात्रे मनकामना पुरती ।।धृ।।",
       "रत्नखचित फरा तूज गौरीकुमरा । चंदनाची उटी कुंकुमकेशरा\nहिरे जडित मुकुट शोभतो बरा । रुणझुणती नुपुरे चरणी घागरिया ॥१॥",
@@ -1275,6 +1271,25 @@ function stopAudio(){
 btnPlay.addEventListener('click', playAudio);
 btnPause.addEventListener('click', pauseAudio);
 btnStop.addEventListener('click', stopAudio);
+
+/* Which aartis have a recording is discovered at load rather than written into
+   the array above: the server lists aartisangrah/audio/, and a file whose name
+   starts with the aarti's number becomes that page's track. Dropping
+   07-vitthal.mp3 into the folder is the whole of adding audio to aarti 7.
+   If the fetch fails the reader simply has no players — never a broken one. */
+fetch('/aartisangrah/audio/manifest.json')
+  .then(r => (r.ok ? r.json() : {}))
+  .then(map => {
+    let currentGained = false;
+    for (const key of Object.keys(map)) {
+      const i = parseInt(key, 10) - 1;
+      if (i < 0 || i >= aartis.length) continue;   // a stray number names no aarti
+      aartis[i].audio = map[key];
+      if (i === current) currentGained = true;
+    }
+    if (currentGained) renderPage(current, null);  // the open page just grew a player
+  })
+  .catch(() => { /* no manifest, no players */ });
 
 /* init */
 renderPage(0, null);

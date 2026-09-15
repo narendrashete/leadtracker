@@ -188,11 +188,18 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   through to the SPA and arrive as HTML with a 200 — an `<audio>` element can only report
   that as a decode error. The mount sets no max-age: recordings get replaced while they are
   still being cut, and ETag revalidation keeps a reload honest.
-- **An aarti gets a player only if its entry carries an `audio` field** — an absolute path
-  like `/aartisangrah/audio/01-sukhkarta.mp3`, absolute so it resolves the same whether the
-  reader arrived at `/aartisangrah` or `/aartisangrah/`. Add the field and the MP3 to give
-  any aarti a player; leave it off and the controls never render. Only aarti 1 has one today
-  (see `PROJECT.md` — the rest of the recordings are still being cut).
+- **Recordings are discovered from the folder, not listed in the array.** `server.js` serves
+  `/aartisangrah/audio/manifest.json` — the directory listing, keyed by the number each
+  filename starts with (`07-vitthal.mp3` is aarti 7; a bare `7.mp3` works too). The page
+  fetches it at load and sets `audio` on the matching entries, so **adding a recording is
+  dropping a numbered MP3 into `aartisangrah/audio/`** — no code edit, no restart, since the
+  route reads the directory per request. Files with no leading number, and non-MP3s, are
+  ignored; a number past the end of the array is ignored too. If the fetch fails, no aarti
+  gets a player — never a broken one. That route must stay AHEAD of the static mount, or a
+  file literally named `manifest.json` would shadow it.
+- **`audio` on an entry is still what the player reads**, it is just written by the manifest
+  at load rather than typed into the array. Hard-coding one would work but would then drift
+  from the folder, so don't.
 - **The seek bar is a native `<input type="range">`** — drag, touch and arrow keys come for
   free, where a div-and-pointer-maths slider would reinvent all three. Its fill is a gradient
   driven by a `--p` custom property on WebKit (Firefox uses `::-moz-range-progress`). Two

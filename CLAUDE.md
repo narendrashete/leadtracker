@@ -434,6 +434,16 @@ HTML loads. Admin-only, shown on the **Visitors** screen.
 - **`recordVisit(req, page)` is called from the route, not from the browser.** Nothing to
   block, and it works for readers with JS off. It is wrapped in try/catch and swallows its
   own errors: counting is never worth failing a page load over.
+- **Each page surface gets its own key.** `aartisangrah` and `aartisangrah-app` are counted
+  separately, as are `kinetic-gem` and `kinetic-gem-app`, so the Visitors screen can tell
+  reading online from taking the app offline. Give any new surface its own key and a label in
+  `PAGE_LABELS` (`routes/stats.js`) — an unlabelled key still shows, under its raw name.
+- **What an `-app` count can and cannot mean.** Those service workers are cache-first, so
+  once the app is installed, opening it makes no request at all. The number therefore counts
+  *fetches of the app page* — the first open, plus the worker's own precache of that same URL
+  during install — which approximates installs, not how often it is then read offline.
+  Repeat offline use is unmeasurable by design, and one install typically shows as one
+  visitor with two views. Don't relabel this as "offline readers".
 - **`page_hits` holds one row per visitor per page per day**, with a `views` counter. Unique
   visitors for a day are that day's rows; views are their counters summed. The unique index
   on `(day, page, visitor)` is what makes a reload a view rather than a second visitor.

@@ -40,13 +40,29 @@ router.get('/', (req, res, next) => {
        GROUP BY day ORDER BY day`, [from]
     );
 
-    const pages = query(
+    const counted = query(
       `SELECT page,
               COUNT(*)   AS visitors,
               SUM(views) AS views
        FROM page_hits WHERE day >= ?
-       GROUP BY page ORDER BY SUM(views) DESC`, [from]
-    ).map(r => ({ ...r, label: PAGE_LABELS[r.page] || r.page }));
+       GROUP BY page`, [from]
+    );
+    const byPage = Object.fromEntries(counted.map(r => [r.page, r]));
+
+    // Every surface we can name is listed, even at zero. Grouping only over
+    // recorded rows means a page nobody has opened yet vanishes from the
+    // screen, and "no visits" then looks exactly like "counting is broken" —
+    // which is how the installable apps read on the day they were split out.
+    const pages = [
+      ...Object.keys(PAGE_LABELS).map(page => ({
+        page,
+        label: PAGE_LABELS[page],
+        visitors: (byPage[page] && byPage[page].visitors) || 0,
+        views: (byPage[page] && byPage[page].views) || 0
+      })),
+      // A key recorded before it had a label still shows, under its raw name.
+      ...counted.filter(r => !PAGE_LABELS[r.page]).map(r => ({ ...r, label: r.page }))
+    ].sort((a, b) => b.views - a.views || a.label.localeCompare(b.label));
 
     const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
     const todayRow = byDay[today] || { visitors: 0, views: 0 };

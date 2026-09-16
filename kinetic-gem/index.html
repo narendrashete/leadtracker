@@ -11,6 +11,7 @@
     margin:0; padding:0; width:100%; height:100%;
     background:#07070c;
     overflow:hidden;
+    overscroll-behavior:none;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-user-select:none; user-select:none;
     touch-action:none;
@@ -92,9 +93,9 @@
 </div>
 
 <div class="chrome" id="hint">
-  <div class="panel">
-    Drag the gem to pull &amp; stretch it &middot; scroll or pinch while dragging to press it in or pull it out &middot;
-    hold <b>Shift</b> and drag (or twist two fingers) to turn it &middot; drag empty space to orbit
+  <div class="panel" id="hintText">
+    Drag the gem to pull &amp; stretch it &middot; scroll while dragging to press it in or pull it out &middot;
+    hold <b>Shift</b> and drag to twist it &middot; drag empty space to orbit
   </div>
 </div>
 
@@ -277,7 +278,13 @@ let W = 0, H = 0, DPR = 1;
 let cx = 0, cy = 0;
 let yaw = 0.5, pitch = -0.28;
 let camDist = 560;
-const FOCAL = 780;
+// Focal length is derived from the viewport, not fixed: at a constant pixel
+// focal length the gem was wider than a phone screen — clipped at both edges,
+// with no background left to orbit-drag. Recomputed on resize so the gem is
+// always about half the smaller viewport axis, on a phone or a monitor.
+let FOCAL = 780;
+let projRadius = 200;   // the gem's approximate on-screen radius, in CSS px
+let hitSlop = 46;       // grab threshold, scaled to match
 let autoRotate = true;
 let lastInteraction = 0;
 
@@ -288,6 +295,9 @@ function resize(){
   canvas.style.width = W+'px'; canvas.style.height = H+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
   cx = W/2; cy = H/2;
+  projRadius = Math.min(W, H) * 0.26;
+  FOCAL = camDist * projRadius / R0;
+  hitSlop = clamp(projRadius * 0.22, 18, 46);
 }
 window.addEventListener('resize', resize);
 resize();
@@ -340,9 +350,9 @@ function beginGrab(vertexIndex, screenX, screenY){
     planeViewZ: viewCore.z,
     depthOffset: 0,
     twistAngle: 0,
+    anchorShift: { x:0, y:0, z:0 },
     primaryId: null,
     secondId: null,
-    pinchMode: null, // 'depth' | 'twist' | null
     pinchStartDist: 0,
     pinchStartAngle: 0,
   };
@@ -366,20 +376,24 @@ function updateGrabFromPointers(){
   if (!primary) return;
 
   if (grab.secondId != null && pointers.has(grab.secondId)){
+    // Pinch and twist at once, the way a map handles two fingers: spreading
+    // them pulls the grabbed spot toward you, closing them presses it in, and
+    // turning them twists it. These used to be separate modes chosen by how far
+    // apart the fingers landed, which was unusable on a phone — two fingers are
+    // never far apart on a 390px-wide screen, so twist was unreachable.
     const a = pointers.get(grab.primaryId), b = pointers.get(grab.secondId);
     const dx = b.x - a.x, dy = b.y - a.y;
     const dist = Math.hypot(dx, dy);
     const angle = Math.atan2(dy, dx);
-    if (grab.pinchMode === 'depth'){
-      grab.depthOffset = clamp(grab.depthOffset + (grab.pinchStartDist - dist) * 0.9, -R0*1.4, R0*1.4);
-      grab.pinchStartDist = dist;
-    } else if (grab.pinchMode === 'twist'){
-      let d = angle - grab.pinchStartAngle;
-      while (d > Math.PI) d -= Math.PI*2;
-      while (d < -Math.PI) d += Math.PI*2;
-      grab.twistAngle += d;
-      grab.pinchStartAngle = angle;
-    }
+
+    grab.depthOffset = clamp(grab.depthOffset + (grab.pinchStartDist - dist) * 0.9, -R0*1.4, R0*1.4);
+    grab.pinchStartDist = dist;
+
+    let d = angle - grab.pinchStartAngle;
+    while (d > Math.PI) d -= Math.PI*2;
+    while (d < -Math.PI) d += Math.PI*2;
+    grab.twistAngle += d;
+    grab.pinchStartAngle = angle;
   } else if (shiftHeld){
     // desktop twist: horizontal drag turns the grabbed cluster in place
     const dx = primary.x - (primary.lastX ?? primary.x);
@@ -407,8 +421,6 @@ function onPointerDown(e){
   if (grab && grab.primaryId != null && grab.secondId == null && pointers.size === 2){
     grab.secondId = e.pointerId;
     const a = pointers.get(grab.primaryId), b = pointers.get(grab.secondId);
-    const near = Math.hypot(b.x-a.x, b.y-a.y) < 140;
-    grab.pinchMode = near ? 'depth' : 'twist';
     grab.pinchStartDist = Math.hypot(b.x-a.x, b.y-a.y);
     grab.pinchStartAngle = Math.atan2(b.y-a.y, b.x-a.x);
     return;
@@ -416,7 +428,7 @@ function onPointerDown(e){
 
   if (grab || cameraDrag) return; // already busy with a primary gesture
 
-  const hit = nearestVertexToScreen(x, y, 46);
+  const hit = nearestVertexToScreen(x, y, hitSlop);
   if (hit >= 0){
     beginGrab(hit, x, y);
     grab.primaryId = e.pointerId;
@@ -441,19 +453,31 @@ function onPointerMove(e){
 }
 
 function endPointer(e){
+  const leaving = pointers.get(e.pointerId);
+  const leavingPos = leaving ? { x: leaving.x, y: leaving.y } : null;
   pointers.delete(e.pointerId);
   lastInteraction = performance.now();
   if (cameraDrag && cameraDrag.id === e.pointerId) cameraDrag = null;
   if (grab){
     if (e.pointerId === grab.secondId){
-      grab.secondId = null; grab.pinchMode = null;
+      grab.secondId = null;
     } else if (e.pointerId === grab.primaryId){
       if (grab.secondId != null){
         // promote the remaining finger to primary, keep the grab going
         grab.primaryId = grab.secondId;
-        grab.secondId = null; grab.pinchMode = null;
+        grab.secondId = null;
         const np = pointers.get(grab.primaryId);
-        if (np){ np.lastX = np.x; np.lastY = np.y; }
+        if (np){
+          // ...and re-anchor, or the gem would visibly snap across to the
+          // surviving finger. Lifting one finger of a pinch is routine on a
+          // phone, so it has to be seamless.
+          if (leavingPos){
+            const before = grabTargetWorld(leavingPos.x, leavingPos.y);
+            const after = grabTargetWorld(np.x, np.y);
+            grab.anchorShift = vadd(grab.anchorShift, vsub(before, after));
+          }
+          np.lastX = np.x; np.lastY = np.y;
+        }
       } else {
         grab = null;
       }
@@ -475,6 +499,23 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 const hintEl = document.getElementById('hint');
 let hintFaded = false;
+
+// A phone has no scroll wheel and no Shift key, so the desktop copy is useless
+// there — and the touch gestures it doesn't mention are the whole interface.
+const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+if (isTouch){
+  document.getElementById('hintText').innerHTML =
+    'Drag the gem to pull &amp; stretch it &middot; pinch two fingers on it to press in or pull out &middot; ' +
+    'twist two fingers to turn it &middot; drag the background to spin it';
+}
+
+// iOS Safari has ignored user-scalable=no since iOS 10, so without these a
+// two-finger press/twist zooms the whole page instead of reaching the gem.
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('touchmove', e => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
 
 // ---------- simulation step (fixed substeps of PBD) ----------
 const prePos = origPos.map(p => ({ x:p.x, y:p.y, z:p.z }));
@@ -546,7 +587,7 @@ function simSubstep(dt){
         const axis = vnorm(grab.core0);
         off = rotateAroundAxis(off, axis, grab.twistAngle);
       }
-      const desired = vadd(grabWorld, off);
+      const desired = vadd(vadd(grabWorld, grab.anchorShift), off);
       const s = w * GRAB_STIFFNESS;
       pos[i].x += (desired.x - pos[i].x) * s;
       pos[i].y += (desired.y - pos[i].y) * s;
@@ -628,7 +669,7 @@ function draw(now){
 
   // grounding shadow
   const breathe = 1 + Math.sin(idleT*0.6)*0.015;
-  const shR = 150*breathe;
+  const shR = projRadius*0.72*breathe;
   const sh = ctx.createRadialGradient(cx, cy+shR*1.05, shR*0.15, cx, cy+shR*1.05, shR*1.15);
   sh.addColorStop(0, 'rgba(0,0,0,0.45)');
   sh.addColorStop(1, 'rgba(0,0,0,0)');

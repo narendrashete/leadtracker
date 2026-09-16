@@ -321,13 +321,30 @@ antidote to doom-scrolling, not another feed.
   mouse/touch/pen share one code path): dragging the gem grabs the nearest visible vertex and
   a soft-falloff neighbourhood around it (`INFLUENCE_RADIUS`) and drives it toward the
   pointer, projected onto a camera-facing plane at the grab depth — this alone gives
-  pull/stretch. Scroll (desktop) or a two-finger pinch near the same spot (touch) moves that
-  plane along the camera axis for press/pull-toward-viewer. Shift+drag (desktop) or a
-  two-finger rotate gesture away from the grab point (touch) twists the grabbed neighbourhood
-  around the axis from the centre to the grab point (`grab.twistAngle`,
-  `rotateAroundAxis`). Dragging empty space orbits the camera instead of grabbing — hit-testing
-  picks the nearest on-screen, camera-facing vertex within a pixel threshold, and "no vertex
-  within threshold" is what means "background."
+  pull/stretch. Scroll (desktop) moves that plane along the camera axis for
+  press/pull-toward-viewer, and Shift+drag (desktop) twists the grabbed neighbourhood around
+  the axis from the centre to the grab point (`grab.twistAngle`, `rotateAroundAxis`). **Two
+  fingers do both at once**, the way a map handles pinch-and-rotate: the distance between them
+  drives depth, their angle drives twist, read on every move. These were once separate touch
+  modes picked by how far apart the fingers landed (>140px meant twist) — on a 390px-wide
+  phone two fingers are never that far apart, so twist was simply unreachable; don't
+  reintroduce a mode split here. Dragging empty space orbits the camera instead of grabbing —
+  hit-testing picks the nearest on-screen, camera-facing vertex within `hitSlop`, and "no
+  vertex within threshold" is what means "background."
+- **Everything sized in screen pixels scales to the viewport** (`resize()`): `FOCAL` is derived
+  from `projRadius` (≈26% of the smaller viewport axis) rather than being a constant, and
+  `hitSlop` follows it. With a fixed focal length the gem was *wider than a phone screen* —
+  clipped at both edges, with no background left to orbit-drag. Anything new that is measured
+  in CSS pixels (the grounding shadow already is) belongs in that same derivation, not
+  hardcoded. Distances in world units (`INFLUENCE_RADIUS`, `R0`) are viewport-independent by
+  construction and must stay that way.
+- **Touch needs three things the desktop path doesn't**, all easy to regress: the hint copy is
+  swapped for touch-specific wording behind `(pointer: coarse)` (a phone has no wheel and no
+  Shift key, so the desktop copy documents nothing it can do); `gesturestart`/`gesturechange`
+  and a multi-touch `touchmove` are `preventDefault`ed, because **iOS Safari has ignored
+  `user-scalable=no` since iOS 10** and would otherwise zoom the page instead of passing the
+  two-finger gesture to the gem; and lifting one finger of a pinch re-anchors the grab
+  (`grab.anchorShift`) so the gem doesn't snap across to the surviving finger.
 - **Colour is baked to the mesh's rest topology, not the camera view** (`baseHue`, computed
   once from each vertex's original icosphere position), so the colour pattern visibly
   stretches and distorts WITH a deformation instead of just being a static paint job — a

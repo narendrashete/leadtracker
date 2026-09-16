@@ -200,6 +200,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — Made Kinetic Gem work properly on a phone. Three real bugs: the gem was
+  sized with a fixed pixel focal length, so on a 390px-wide screen it was *wider than the
+  viewport* (clipped at both edges, no background left to orbit-drag) — `FOCAL` and the grab
+  threshold are now derived from the viewport on resize; the two-finger press/twist gestures
+  were separate modes chosen by how far apart the fingers landed, making twist unreachable on
+  a phone, and now run simultaneously like a map's pinch-and-rotate; and iOS Safari would have
+  zoomed the page instead of passing the gesture through, since it ignores `user-scalable=no`.
+  Also re-anchors the grab when one finger of a pinch lifts, and shows touch-specific hint
+  copy. Verified at iPhone viewport with touch emulation: 60fps idle and dragging.
 - **2026-09-16** — Added Kinetic Gem, a colourful soft-body toy you twist, stretch, press,
   pull and push into new shapes with the mouse or touch: `kinetic-gem/index.html` (one
   self-contained file — canvas-2D PBD physics + rasteriser, no three.js/WebGL, no external

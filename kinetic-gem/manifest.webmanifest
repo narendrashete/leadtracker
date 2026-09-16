@@ -1,7 +1,7 @@
 {
-  "name": "Kinetic Gem",
-  "short_name": "Kinetic Gem",
-  "description": "A colourful soft-body shape you twist, stretch, press, pull and push into new forms.",
+  "name": "PrimeGem",
+  "short_name": "PrimeGem",
+  "description": "A colourful soft-body shape you twist, stretch, press, pull and push into new forms. By Prime Computers.",
   "start_url": "/kinetic-gem/app",
   "scope": "/kinetic-gem/app",
   "display": "standalone",

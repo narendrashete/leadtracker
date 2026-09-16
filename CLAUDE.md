@@ -86,10 +86,12 @@ aartisangrah/
   audio/               MP3 recordings, one per aarti that has one. The only part of
                        this app not inlined into the page. Served as static files.
 kinetic-gem/
-  index.html           Kinetic Gem — a colourful soft-body toy you twist, stretch, press,
+  index.html           PrimeGem — a colourful soft-body toy you twist, stretch, press,
                        pull and push into new shapes. One self-contained file, no build
                        step, no React, no API, no external libraries (its own canvas-2D
-                       physics/renderer, not three.js — see "Kinetic Gem" below for why).
+                       physics/renderer, not three.js — see "PrimeGem" below for why).
+                       Folder/URL keep the old "kinetic-gem" name on purpose — see
+                       that section; installed phones launch that exact path.
                        Served at /kinetic-gem, and at /kinetic-gem/app with PWA tags
                        injected — ONE file for both, unlike Aarti Sangrah's two.
   manifest.webmanifest, sw.js, icons/   The offline app shell for /kinetic-gem/app only.
@@ -288,10 +290,18 @@ all. It is a deliberate fork of `index.html`, not a flag/query-param on it:
   action). The one online visit needed to install also downloads and caches the ~30 MB of
   recordings; after that it works indefinitely with no network.
 
-## Kinetic Gem (interactive soft-body toy)
+## PrimeGem (interactive soft-body toy)
 A fourth app sharing this repo and this Express process for hosting only, the same way Mokla
 Divas and Aarti Sangrah do: no tables, no API, no accounts, one self-contained
-`kinetic-gem/index.html` (markup, CSS and JS in one file). It renders a faceted, colourful
+`kinetic-gem/index.html` (markup, CSS and JS in one file).
+- **The product is "PrimeGem"; the folder and URL are still `kinetic-gem`.** It shipped as
+  "Kinetic Gem" and was installed on phones at `/kinetic-gem/app` before being renamed. The
+  manifest's `start_url`/`scope` and the service worker's scope all point at that path, and an
+  installed PWA keeps launching the URL it was installed with — so renaming the route would
+  strand every installed copy at a dead link (offline included, since the worker's scope would
+  no longer match). The user-visible name lives in `<title>`, the masthead `<h1>`, the manifest
+  `name`/`short_name` and `apple-mobile-web-app-title`. Don't "tidy" the path to match the
+  name without a migration plan and a reinstall. It renders a faceted, colourful
 blob you twist, stretch, press, pull and push with the mouse/touch; after every gesture it
 settles into a new shape rather than snapping back to a sphere, so it keeps looking different.
 The intent is a tactile, screensaver-calm toy — no score, no timer, no notifications — as an
@@ -364,10 +374,18 @@ antidote to doom-scrolling, not another feed.
   accumulated from forces — standard PBD, and the reason the gem has any "bounce" at all after
   you let go: a constraint that only ever moves position, with nothing translating that into
   velocity, has no way to carry the motion into the next frame.
+- **The "Developed by Prime Computers" credit is a link, and the logo is inlined** as a
+  base64 PNG data URI like the Aarti Sangrah seal — the page must make zero external requests,
+  both to stay self-contained and because the service worker precaches a fixed shell list that
+  an external image would have to be added to. The logo sits on a light chip because the brand
+  navy (`#1e1455`) is about 2.9:1 against this page's near-black ground, i.e. unreadable;
+  recolouring someone's logo to fit a dark theme is not the fix. The credit deliberately does
+  NOT fade with the instructions panel (`#hint.faded .panel` targets the panel only) — the
+  hint is transient guidance, the attribution is not.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself.
 
-## Kinetic Gem — installable app (/kinetic-gem/app)
+## PrimeGem — installable app (/kinetic-gem/app)
 Installable and fully offline (Add to Home Screen), the same distribution model as the Aarti
 Sangrah app: no APK/IPA, no app store, just a link people install from their browser. It
 solves the same problem the Aarti app does and obeys the same scope rule — but it is **one
@@ -541,9 +559,9 @@ pm2 reload leadtracker
 "
 ```
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
-The calendar, Aarti Sangrah and Kinetic Gem pages need no build step (they are plain HTML, not
+The calendar, Aarti Sangrah and PrimeGem pages need no build step (they are plain HTML, not
 part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any of them. Aarti
-Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Kinetic Gem
+Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
 them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching

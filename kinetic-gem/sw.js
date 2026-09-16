@@ -1,10 +1,10 @@
-// Kinetic Gem offline cache, for the installable page at /kinetic-gem/app
+// PrimeGem offline cache, for the installable page at /kinetic-gem/app
 // only — see that page's registration call for the explicit scope that keeps
 // this from ever touching the plain /kinetic-gem link. Bump CACHE_VERSION
 // whenever the page, the manifest or an icon changes: activate() drops every
 // older-versioned cache, so a stale version never lingers once a device
 // reconnects.
-const CACHE_VERSION = 'gem-v1';
+const CACHE_VERSION = 'gem-v2';
 const CACHE_NAME = 'kinetic-gem-' + CACHE_VERSION;
 
 // The whole app is one self-contained HTML file with no external requests —

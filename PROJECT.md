@@ -28,10 +28,11 @@ address/city/state to leads.
 - Aarti Sangrah: a Marathi aarti reader (18 aartis) hosted by the same Express process at
   `/aartisangrah`, reachable from the sidebar. Standalone single HTML file — no API, no
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
-- Kinetic Gem: a colourful interactive soft-body toy (twist/stretch/press/pull/push) hosted by
-  the same Express process at `/kinetic-gem`, reachable from the sidebar. Standalone single
+- PrimeGem: a colourful interactive soft-body toy (twist/stretch/press/pull/push) hosted by
+  the same Express process at `/kinetic-gem` (path keeps the old name — installed phones
+  launch it), reachable from the sidebar. Standalone single
   HTML file, own canvas-2D physics/renderer — no API, no tables, no auth. See `CLAUDE.md` →
-  Kinetic Gem. Also installable and fully offline at `/kinetic-gem/app` (Add to Home Screen on
+  PrimeGem. Also installable and fully offline at `/kinetic-gem/app` (Add to Home Screen on
   Android/iOS) — the same file with PWA tags injected, not a forked copy.
 
 ## Features In Progress
@@ -201,6 +202,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — Renamed the toy from "Kinetic Gem" to **PrimeGem** and branded it: new
+  `<title>`, masthead, manifest `name`/`short_name` and `apple-mobile-web-app-title` (so the
+  home-screen label changes too), plus a "Developed by Prime Computers" credit on the page
+  linking to `https://www.primecomputers.co.in`, with the logo inlined as a base64 PNG data
+  URI so the page still makes zero external requests. `CACHE_VERSION` bumped to `gem-v2` —
+  without that, already-installed phones would keep showing the old name. **The folder and
+  URL stay `kinetic-gem`**: the app was installed at `/kinetic-gem/app`, and the manifest
+  `start_url`/`scope` and the service-worker scope all point there, so renaming the path
+  would strand every installed copy.
 - **2026-09-16** — Made Kinetic Gem installable and fully offline at `/kinetic-gem/app`
   (`manifest.webmanifest`, `sw.js`, `icons/`), same Add-to-Home-Screen distribution as the
   Aarti Sangrah app. Unlike that one it is **not** a forked second HTML file: the route serves

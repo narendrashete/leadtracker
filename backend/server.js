@@ -165,7 +165,7 @@ getDb().then(() => {
     });
   });
 
-  // The Kinetic Gem offline app shell: manifest, service worker and
+  // The PrimeGem offline app shell: manifest, service worker and
   // home-screen icons. index:false AND redirect:false for the same reason as
   // the Aarti mount above — without redirect:false, serve-static treats a bare
   // '/kinetic-gem' as a directory root and 301s it to '/kinetic-gem/', which
@@ -178,7 +178,7 @@ getDb().then(() => {
     },
   }));
 
-  // Kinetic Gem — a colourful soft-body toy sharing this process the way the
+  // PrimeGem — a colourful soft-body toy sharing this process the way the
   // calendar and Aarti Sangrah pages do, but with no API and no tables of its
   // own: one self-contained HTML file (canvas-2D physics + rendering, no
   // external libraries), so it is served verbatim. Public and ahead of the
@@ -190,7 +190,7 @@ getDb().then(() => {
       // lands here with headers already sent, and answering again would crash
       // the process.
       if (err && !res.headersSent) {
-        res.status(500).type('text/plain').send('Kinetic Gem page missing.');
+        res.status(500).type('text/plain').send('PrimeGem page missing.');
       }
     });
   });
@@ -213,7 +213,7 @@ getDb().then(() => {
     // is added to the home screen, which is the only way to install on iOS.
     '<meta name="apple-mobile-web-app-capable" content="yes">' +
     '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">' +
-    '<meta name="apple-mobile-web-app-title" content="Kinetic Gem">' +
+    '<meta name="apple-mobile-web-app-title" content="PrimeGem">' +
     '<link rel="apple-touch-icon" href="/kinetic-gem/icons/apple-touch-icon-180.png">' +
     '<link rel="icon" href="/kinetic-gem/icons/icon-192.png">' +
     '<script>' +
@@ -228,7 +228,7 @@ getDb().then(() => {
   app.get('/kinetic-gem/app', (req, res) => {
     recordVisit(req, 'kinetic-gem');
     fs.readFile(GEM_PAGE, 'utf8', (err, html) => {
-      if (err) return res.status(500).type('text/plain').send('Kinetic Gem page missing.');
+      if (err) return res.status(500).type('text/plain').send('PrimeGem page missing.');
       res.type('html').send(html.replace('</head>', GEM_APP_HEAD + '</head>'));
     });
   });
@@ -253,8 +253,8 @@ getDb().then(() => {
     console.log('');
     console.log(`  Open in browser: http://localhost:${PORT}`);
     console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
-    console.log(`  Kinetic Gem:     http://localhost:${PORT}/kinetic-gem`);
-    console.log(`  Kinetic Gem app: http://localhost:${PORT}/kinetic-gem/app  (installable)`);
+    console.log(`  PrimeGem:        http://localhost:${PORT}/kinetic-gem`);
+    console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

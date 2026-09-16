@@ -48,7 +48,7 @@ export default function Sidebar() {
           Aarti Sangrah
         </a>
 
-        {/* Kinetic Gem — another standalone page served by this same Express
+        {/* PrimeGem — another standalone page served by this same Express
             process, not a React route, so it is a plain link like Aarti Sangrah. */}
         <a
           href="/kinetic-gem"
@@ -57,7 +57,7 @@ export default function Sidebar() {
           style={navStyle({ isActive: false })}
         >
           <span style={{ fontSize: 16 }}>💎</span>
-          Kinetic Gem
+          PrimeGem
         </a>
 
         {/* Admin-only: Users */}

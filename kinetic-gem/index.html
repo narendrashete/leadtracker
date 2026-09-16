@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kinetic Gem</title>
-<meta name="description" content="A colourful soft-body shape you twist, stretch, press, pull and push into new forms.">
+<title>PrimeGem</title>
+<meta name="description" content="A colourful soft-body shape you twist, stretch, press, pull and push into new forms. By Prime Computers.">
 <style>
   :root{ color-scheme: dark; }
   html,body{
@@ -63,6 +63,10 @@
   #hint{
     bottom:0; padding-bottom:max(16px, env(safe-area-inset-bottom));
   }
+  #hint .stack{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    max-width:min(92vw, 560px);
+  }
   #hint .panel{
     pointer-events:none;
     background:rgba(15,15,22,0.4);
@@ -77,7 +81,40 @@
     max-width:min(92vw, 560px);
     transition:opacity 0.6s ease;
   }
+  /* Only the instructions fade once you start playing — the credit is
+     attribution, so it holds its own steady opacity and never dims out. */
   #hint.faded .panel{ opacity:0.28; }
+
+  .credit-row{
+    display:flex; align-items:center; gap:9px;
+  }
+  .credit-label{
+    font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+    color:rgba(235,235,245,0.5);
+    white-space:nowrap;
+  }
+  /* The brand navy is #1e1455 — about 2.9:1 against this page's near-black
+     ground, i.e. unreadable. The logo sits on a light chip so it keeps its
+     real colours instead of being recoloured or washed out. */
+  .credit{
+    pointer-events:auto;
+    display:inline-flex; align-items:center;
+    padding:5px 10px;
+    border-radius:10px;
+    background:rgba(246,248,252,0.94);
+    border:1px solid rgba(255,255,255,0.16);
+    box-shadow:0 4px 16px rgba(0,0,0,0.45);
+    transition:background 0.15s ease, transform 0.15s ease;
+  }
+  .credit:hover{ background:#fff; transform:translateY(-1px); }
+  .credit:active{ transform:translateY(0); }
+  .credit:focus-visible{ outline:2px solid #4facfe; outline-offset:3px; }
+  .credit-logo{ display:block; height:18px; width:auto; }
+
+  @media (prefers-reduced-motion: reduce){
+    .credit{ transition:none; }
+    #hint .panel{ transition:none; }
+  }
 
   #liveregion{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 </style>
@@ -87,15 +124,23 @@
 
 <div class="chrome" id="topbar">
   <div class="panel">
-    <h1><span class="dot"></span>Kinetic Gem</h1>
+    <h1><span class="dot"></span>PrimeGem</h1>
     <button id="resetBtn" type="button">Reset</button>
   </div>
 </div>
 
 <div class="chrome" id="hint">
-  <div class="panel" id="hintText">
-    Drag the gem to pull &amp; stretch it &middot; scroll while dragging to press it in or pull it out &middot;
-    hold <b>Shift</b> and drag to twist it &middot; drag empty space to orbit
+  <div class="stack">
+    <div class="panel" id="hintText">
+      Drag the gem to pull &amp; stretch it &middot; scroll while dragging to press it in or pull it out &middot;
+      hold <b>Shift</b> and drag to twist it &middot; drag empty space to orbit
+    </div>
+    <div class="credit-row">
+      <span class="credit-label">Developed by</span>
+      <a class="credit" href="https://www.primecomputers.co.in" target="_blank" rel="noopener noreferrer">
+        <img class="credit-logo" src="data:image/png;base64,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" alt="Prime Computers" width="200" height="70">
+      </a>
+    </div>
   </div>
 </div>
 
@@ -106,7 +151,11 @@
 "use strict";
 
 /* ----------------------------------------------------------------------
-   Kinetic Gem — a colourful soft-body toy.
+   PrimeGem — a colourful soft-body toy, by Prime Computers.
+
+   The folder and URL are still "kinetic-gem": the app was installed on
+   phones under that path, and start_url/scope/service-worker scope all
+   point at it. Renaming the path would strand every installed copy.
 
    Rendered with a hand-rolled canvas-2D rasteriser rather than WebGL/three.js
    on purpose: this file has to stay a single self-contained page with zero

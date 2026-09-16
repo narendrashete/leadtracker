@@ -48,6 +48,18 @@ export default function Sidebar() {
           Aarti Sangrah
         </a>
 
+        {/* Kinetic Gem — another standalone page served by this same Express
+            process, not a React route, so it is a plain link like Aarti Sangrah. */}
+        <a
+          href="/kinetic-gem"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={navStyle({ isActive: false })}
+        >
+          <span style={{ fontSize: 16 }}>💎</span>
+          Kinetic Gem
+        </a>
+
         {/* Admin-only: Users */}
         {user?.role === 'admin' && (
           <NavLink to="/users" style={navStyle}>

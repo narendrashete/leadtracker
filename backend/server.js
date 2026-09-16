@@ -17,6 +17,7 @@ const FRONTEND_DIST = path.resolve(__dirname, '..', 'frontend', 'dist');
 const CALENDAR_PAGE = path.resolve(__dirname, '..', 'mokla-divas', 'index.html');
 const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html');
 const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
+const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -163,6 +164,23 @@ getDb().then(() => {
     });
   });
 
+  // Kinetic Gem — a colourful soft-body toy sharing this process the way the
+  // calendar and Aarti Sangrah pages do, but with no API and no tables of its
+  // own: one self-contained HTML file (canvas-2D physics + rendering, no
+  // external libraries), so it is served verbatim. Public and ahead of the
+  // SPA fallback, or React would swallow the URL.
+  app.get('/kinetic-gem', (req, res) => {
+    recordVisit(req, 'kinetic-gem');
+    res.sendFile(GEM_PAGE, (err) => {
+      // See the Aarti Sangrah route above: a client that disconnects mid-transfer
+      // lands here with headers already sent, and answering again would crash
+      // the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Kinetic Gem page missing.');
+      }
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -183,6 +201,7 @@ getDb().then(() => {
     console.log('');
     console.log(`  Open in browser: http://localhost:${PORT}`);
     console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
+    console.log(`  Kinetic Gem:     http://localhost:${PORT}/kinetic-gem`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

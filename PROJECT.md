@@ -28,6 +28,10 @@ address/city/state to leads.
 - Aarti Sangrah: a Marathi aarti reader (18 aartis) hosted by the same Express process at
   `/aartisangrah`, reachable from the sidebar. Standalone single HTML file — no API, no
   tables, no auth. See `CLAUDE.md` → Aarti Sangrah.
+- Kinetic Gem: a colourful interactive soft-body toy (twist/stretch/press/pull/push) hosted by
+  the same Express process at `/kinetic-gem`, reachable from the sidebar. Standalone single
+  HTML file, own canvas-2D physics/renderer — no API, no tables, no auth. See `CLAUDE.md` →
+  Kinetic Gem.
 
 ## Features In Progress
 - **Aarti audio playback** — the player is live, and which aartis have one is driven by the
@@ -196,6 +200,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — Added Kinetic Gem, a colourful soft-body toy you twist, stretch, press,
+  pull and push into new shapes with the mouse or touch: `kinetic-gem/index.html` (one
+  self-contained file — canvas-2D PBD physics + rasteriser, no three.js/WebGL, no external
+  libraries) and a public `/kinetic-gem` route in `server.js` serving it verbatim ahead of the
+  SPA fallback, plus a **Kinetic Gem** sidebar entry (plain `<a target="_blank">`, same
+  pattern as Aarti Sangrah). No API, no tables, no auth — shares the repo and Express process
+  for hosting only. See `CLAUDE.md` → Kinetic Gem for the physics/interaction design.
 - **2026-09-15** — Added an installable, fully-offline copy of Aarti Sangrah at
   `/aartisangrah/app` (`aartisangrah/app.html`, `manifest.webmanifest`, `sw.js`, `icons/`) for
   distributing the reader directly to family/friends without an app store — "Add to Home

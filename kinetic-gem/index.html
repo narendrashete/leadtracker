@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Kinetic Gem</title>
+<meta name="description" content="A colourful soft-body shape you twist, stretch, press, pull and push into new forms.">
+<style>
+  :root{ color-scheme: dark; }
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:#07070c;
+    overflow:hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-user-select:none; user-select:none;
+    touch-action:none;
+  }
+  #stage{ position:fixed; inset:0; display:block; touch-action:none; }
+
+  .chrome{
+    position:fixed; left:0; right:0; z-index:5;
+    display:flex; justify-content:center;
+    pointer-events:none;
+  }
+  #topbar{ top:0; padding-top:max(16px, env(safe-area-inset-top)); }
+  #topbar .panel{
+    pointer-events:auto;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(20,20,30,0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    padding:9px 16px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.35);
+  }
+  #topbar h1{
+    margin:0; font-size:14px; font-weight:600; letter-spacing:0.02em;
+    color:#f2f2f7;
+    display:flex; align-items:center; gap:8px;
+  }
+  #topbar h1 .dot{
+    width:9px; height:9px; border-radius:50%;
+    background: conic-gradient(from 0deg, #ff5f6d, #ffc371, #47e0a7, #4facfe, #c471f5, #ff5f6d);
+    box-shadow:0 0 10px rgba(255,255,255,0.4);
+  }
+  #resetBtn{
+    pointer-events:auto;
+    border:1px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.06);
+    color:#e8e8ef;
+    font-size:12.5px; font-weight:600;
+    padding:7px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    letter-spacing:0.01em;
+    transition:background 0.15s, transform 0.1s;
+  }
+  #resetBtn:hover{ background:rgba(255,255,255,0.14); }
+  #resetBtn:active{ transform:scale(0.94); }
+
+  #hint{
+    bottom:0; padding-bottom:max(16px, env(safe-area-inset-bottom));
+  }
+  #hint .panel{
+    pointer-events:none;
+    background:rgba(15,15,22,0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px;
+    padding:8px 16px;
+    color:rgba(235,235,245,0.72);
+    font-size:12px;
+    text-align:center;
+    max-width:min(92vw, 560px);
+    transition:opacity 0.6s ease;
+  }
+  #hint.faded .panel{ opacity:0.28; }
+
+  #liveregion{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div class="chrome" id="topbar">
+  <div class="panel">
+    <h1><span class="dot"></span>Kinetic Gem</h1>
+    <button id="resetBtn" type="button">Reset</button>
+  </div>
+</div>
+
+<div class="chrome" id="hint">
+  <div class="panel">
+    Drag the gem to pull &amp; stretch it &middot; scroll or pinch while dragging to press it in or pull it out &middot;
+    hold <b>Shift</b> and drag (or twist two fingers) to turn it &middot; drag empty space to orbit
+  </div>
+</div>
+
+<div id="liveregion" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ----------------------------------------------------------------------
+   Kinetic Gem — a colourful soft-body toy.
+
+   Rendered with a hand-rolled canvas-2D rasteriser rather than WebGL/three.js
+   on purpose: this file has to stay a single self-contained page with zero
+   build step and zero external dependencies (same rule as aartisangrah and
+   mokla-divas), and a few thousand flat-shaded triangles rasterise plenty
+   fast on canvas2D without pulling in a 3D library.
+
+   The physics is Position-Based Dynamics (PBD) on a geodesic icosphere:
+     - edge-length constraints keep the surface coherent (a spring mesh),
+     - a per-vertex "shape memory" spring pulls gently toward a remembered
+       rest position, which itself slowly drifts toward wherever the gem
+       currently sits (plasticity) and, more slowly still, back toward a
+       perfect sphere (regularisation) — so every poke leaves a little of
+       itself behind, but the gem can never wander into an ugly degenerate
+       shape if you leave it alone,
+     - a volume/pressure term keeps it feeling inflated rather than
+       collapsing when squeezed, and gives the classic "squish here, bulge
+       there" balloon behaviour.
+   None of this needs a global rotation fit (shape matching): the object is
+   recentred to the origin every frame and the memory springs pull toward
+   FIXED object-space directions, so any attempted whole-body spin is itself
+   just another elastic deformation the mesh resists — which is exactly what
+   "twist" should feel like for a toy, not something to cancel out.
+---------------------------------------------------------------------- */
+
+// ---------- geometry: geodesic icosphere ----------
+function buildIcosphere(detail, radius){
+  const t = (1 + Math.sqrt(5)) / 2;
+  const raw = [
+    [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
+    [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
+    [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1],
+  ];
+  const verts = raw.map(v => {
+    const len = Math.hypot(v[0], v[1], v[2]);
+    return [v[0]/len, v[1]/len, v[2]/len];
+  });
+  let faces = [
+    [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
+    [1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],
+    [3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],
+    [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
+  ];
+  const midCache = new Map();
+  function midpoint(a, b){
+    const key = a < b ? a + '_' + b : b + '_' + a;
+    const cached = midCache.get(key);
+    if (cached !== undefined) return cached;
+    const va = verts[a], vb = verts[b];
+    let mx = (va[0]+vb[0])/2, my = (va[1]+vb[1])/2, mz = (va[2]+vb[2])/2;
+    const len = Math.hypot(mx, my, mz);
+    mx/=len; my/=len; mz/=len;
+    verts.push([mx, my, mz]);
+    const idx = verts.length - 1;
+    midCache.set(key, idx);
+    return idx;
+  }
+  for (let d = 0; d < detail; d++){
+    const next = [];
+    for (const [a,b,c] of faces){
+      const ab = midpoint(a,b), bc = midpoint(b,c), ca = midpoint(c,a);
+      next.push([a,ab,ca], [b,bc,ab], [c,ca,bc], [ab,bc,ca]);
+    }
+    faces = next;
+  }
+  const positions = verts.map(v => ({ x: v[0]*radius, y: v[1]*radius, z: v[2]*radius }));
+  return { positions, faces };
+}
+
+function buildEdges(faces){
+  const seen = new Set();
+  const edges = [];
+  for (const f of faces){
+    for (let i = 0; i < 3; i++){
+      let a = f[i], b = f[(i+1)%3];
+      if (a > b){ const tmp = a; a = b; b = tmp; }
+      const key = a + '_' + b;
+      if (!seen.has(key)){ seen.add(key); edges.push([a, b]); }
+    }
+  }
+  return edges;
+}
+
+// ---------- small vector helpers ----------
+function vsub(a,b){ return { x:a.x-b.x, y:a.y-b.y, z:a.z-b.z }; }
+function vadd(a,b){ return { x:a.x+b.x, y:a.y+b.y, z:a.z+b.z }; }
+function vscale(a,s){ return { x:a.x*s, y:a.y*s, z:a.z*s }; }
+function vlen(a){ return Math.hypot(a.x, a.y, a.z); }
+function vnorm(a){ const l = vlen(a) || 1e-9; return { x:a.x/l, y:a.y/l, z:a.z/l }; }
+function vdot(a,b){ return a.x*b.x + a.y*b.y + a.z*b.z; }
+function vcross(a,b){ return { x:a.y*b.z-a.z*b.y, y:a.z*b.x-a.x*b.z, z:a.x*b.y-a.y*b.x }; }
+function vlerp(a,b,t){ return { x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t }; }
+function clamp(v,lo,hi){ return v<lo?lo:(v>hi?hi:v); }
+
+// Rodrigues' rotation of vector v around unit axis k by angle (radians).
+function rotateAroundAxis(v, k, angle){
+  const c = Math.cos(angle), s = Math.sin(angle);
+  const kv = vdot(k, v);
+  const kxv = vcross(k, v);
+  return {
+    x: v.x*c + kxv.x*s + k.x*kv*(1-c),
+    y: v.y*c + kxv.y*s + k.y*kv*(1-c),
+    z: v.z*c + kxv.z*s + k.z*kv*(1-c),
+  };
+}
+// Rotate a vector about the world Y axis, then about the (already-Y-rotated) X axis.
+function rotY(v, a){ const s=Math.sin(a), c=Math.cos(a); return { x:v.x*c+v.z*s, y:v.y, z:-v.x*s+v.z*c }; }
+function rotX(v, a){ const s=Math.sin(a), c=Math.cos(a); return { x:v.x, y:v.y*c-v.z*s, z:v.y*s+v.z*c }; }
+
+// ---------- build the mesh ----------
+const DETAIL = 3;
+const R0 = 150;
+const mesh = buildIcosphere(DETAIL, R0);
+const N = mesh.positions.length;
+const faces = mesh.faces;
+const edges = buildEdges(faces);
+
+const pos = mesh.positions.map(p => ({ x:p.x, y:p.y, z:p.z }));
+const vel = mesh.positions.map(() => ({ x:0, y:0, z:0 }));
+const restPos = mesh.positions.map(p => ({ x:p.x, y:p.y, z:p.z }));
+const origPos = mesh.positions.map(p => ({ x:p.x, y:p.y, z:p.z }));
+
+const edgeRest = edges.map(([a,b]) => vlen(vsub(mesh.positions[a], mesh.positions[b])));
+
+const baseHue = origPos.map(p => {
+  const h1 = (Math.atan2(p.z, p.x) / Math.PI) * 180 + 180;      // 0..360 around the equator
+  const h2 = (p.y / R0) * 60;                                    // small pole-to-pole shift
+  return (h1 + h2 + 360) % 360;
+});
+
+function polyhedronVolume(points){
+  let v = 0;
+  for (const [a,b,c] of faces){
+    v += vdot(points[a], vcross(points[b], points[c]));
+  }
+  return v / 6;
+}
+const V0 = polyhedronVolume(origPos);
+let targetVolume = V0;
+
+const restFaceArea = faces.map(([a,b,c]) => {
+  const ab = vsub(origPos[b], origPos[a]);
+  const ac = vsub(origPos[c], origPos[a]);
+  return vlen(vcross(ab, ac)) * 0.5;
+});
+
+// ---------- tunables ----------
+const DAMPING = 0.945;
+const EDGE_STIFFNESS = 0.46;
+const GOAL_STIFFNESS = 0.05;
+const PRESSURE_K = 0.42;
+const PLASTIC_RATE = 0.010;
+const REGULARIZE_RATE = 0.00065;
+const VOLUME_PLASTIC_RATE = 0.02;
+const VOLUME_REGULARIZE_RATE = 0.001;
+const SOLVER_ITERS = 3;
+const FIXED_DT = 1/90;
+const MAX_SUBSTEPS = 4;
+const MAX_RADIUS = R0 * 2.4;
+const GRAB_STIFFNESS = 0.46;
+const INFLUENCE_RADIUS = R0 * 0.72;
+
+let resetBlend = 0; // 0..1, eases the "Reset" gesture
+
+// ---------- camera ----------
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+let cx = 0, cy = 0;
+let yaw = 0.5, pitch = -0.28;
+let camDist = 560;
+const FOCAL = 780;
+let autoRotate = true;
+let lastInteraction = 0;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.round(W*DPR); canvas.height = Math.round(H*DPR);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  cx = W/2; cy = H/2;
+}
+window.addEventListener('resize', resize);
+resize();
+
+function worldToView(p){ return rotX(rotY(p, yaw), pitch); }
+function viewToWorld(p){ return rotY(rotX(p, -pitch), -yaw); }
+function project(v){
+  const z = v.z + camDist;
+  const scale = FOCAL / Math.max(z, 1);
+  return { x: cx + v.x*scale, y: cy - v.y*scale, z, scale };
+}
+
+// ---------- interaction state ----------
+const pointers = new Map(); // id -> {x,y}
+let cameraDrag = null;      // {id}
+let grab = null;            // active grab/twist/press state
+let shiftHeld = false;
+
+window.addEventListener('keydown', e => { if (e.key === 'Shift') shiftHeld = true; });
+window.addEventListener('keyup',   e => { if (e.key === 'Shift') shiftHeld = false; });
+
+function nearestVertexToScreen(sx, sy, thresholdPx){
+  let best = -1, bestDist = thresholdPx, bestZ = Infinity;
+  for (let i = 0; i < N; i++){
+    const v = worldToView(pos[i]);
+    const p = project(v);
+    if (p.z <= 5) continue;
+    const dx = p.x - sx, dy = p.y - sy;
+    const d = Math.hypot(dx, dy);
+    if (d <= thresholdPx && v.z < bestZ){ best = i; bestZ = v.z; bestDist = d; }
+  }
+  return best;
+}
+
+function beginGrab(vertexIndex, screenX, screenY){
+  const core = pos[vertexIndex];
+  const indices = [], weights = [], offsets = [];
+  for (let i = 0; i < N; i++){
+    const d = vlen(vsub(pos[i], core));
+    if (d <= INFLUENCE_RADIUS){
+      const t = d / INFLUENCE_RADIUS;
+      const w = 0.5 * (1 + Math.cos(Math.PI * t)); // 1 at core -> 0 at edge
+      indices.push(i); weights.push(w); offsets.push(vsub(pos[i], core));
+    }
+  }
+  const viewCore = worldToView(core);
+  grab = {
+    indices, weights, offsets,
+    core0: { x: core.x, y: core.y, z: core.z },
+    planeViewZ: viewCore.z,
+    depthOffset: 0,
+    twistAngle: 0,
+    primaryId: null,
+    secondId: null,
+    pinchMode: null, // 'depth' | 'twist' | null
+    pinchStartDist: 0,
+    pinchStartAngle: 0,
+  };
+}
+
+function grabTargetWorld(screenX, screenY){
+  const z = grab.planeViewZ + grab.depthOffset;
+  const scale = FOCAL / Math.max(z + camDist, 1);
+  const vx = (screenX - cx) / scale;
+  const vy = (cy - screenY) / scale;
+  return viewToWorld({ x: vx, y: vy, z });
+}
+
+function screenPos(id){ const p = pointers.get(id); return p ? [p.x, p.y] : null; }
+
+function updateGrabFromPointers(){
+  if (!grab) return;
+  const ids = [...pointers.keys()];
+  if (grab.primaryId == null) return;
+  const primary = pointers.get(grab.primaryId);
+  if (!primary) return;
+
+  if (grab.secondId != null && pointers.has(grab.secondId)){
+    const a = pointers.get(grab.primaryId), b = pointers.get(grab.secondId);
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    if (grab.pinchMode === 'depth'){
+      grab.depthOffset = clamp(grab.depthOffset + (grab.pinchStartDist - dist) * 0.9, -R0*1.4, R0*1.4);
+      grab.pinchStartDist = dist;
+    } else if (grab.pinchMode === 'twist'){
+      let d = angle - grab.pinchStartAngle;
+      while (d > Math.PI) d -= Math.PI*2;
+      while (d < -Math.PI) d += Math.PI*2;
+      grab.twistAngle += d;
+      grab.pinchStartAngle = angle;
+    }
+  } else if (shiftHeld){
+    // desktop twist: horizontal drag turns the grabbed cluster in place
+    const dx = primary.x - (primary.lastX ?? primary.x);
+    grab.twistAngle += dx * 0.012;
+  }
+  primary.lastX = primary.x; primary.lastY = primary.y;
+}
+
+canvas.addEventListener('wheel', e => {
+  if (grab){
+    grab.depthOffset = clamp(grab.depthOffset + e.deltaY * 0.55, -R0*1.4, R0*1.4);
+    e.preventDefault();
+  } else {
+    camDist = clamp(camDist + e.deltaY * 0.6, 320, 1100);
+  }
+}, { passive: false });
+
+function onPointerDown(e){
+  canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  const x = e.clientX, y = e.clientY;
+  pointers.set(e.pointerId, { x, y, lastX:x, lastY:y });
+  lastInteraction = performance.now();
+  autoRotate = false;
+
+  if (grab && grab.primaryId != null && grab.secondId == null && pointers.size === 2){
+    grab.secondId = e.pointerId;
+    const a = pointers.get(grab.primaryId), b = pointers.get(grab.secondId);
+    const near = Math.hypot(b.x-a.x, b.y-a.y) < 140;
+    grab.pinchMode = near ? 'depth' : 'twist';
+    grab.pinchStartDist = Math.hypot(b.x-a.x, b.y-a.y);
+    grab.pinchStartAngle = Math.atan2(b.y-a.y, b.x-a.x);
+    return;
+  }
+
+  if (grab || cameraDrag) return; // already busy with a primary gesture
+
+  const hit = nearestVertexToScreen(x, y, 46);
+  if (hit >= 0){
+    beginGrab(hit, x, y);
+    grab.primaryId = e.pointerId;
+  } else {
+    cameraDrag = { id: e.pointerId };
+  }
+}
+
+function onPointerMove(e){
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  p.x = e.clientX; p.y = e.clientY;
+  lastInteraction = performance.now();
+
+  if (cameraDrag && cameraDrag.id === e.pointerId){
+    const dx = e.movementX || 0, dy = e.movementY || 0;
+    yaw += dx * 0.0072;
+    pitch = clamp(pitch + dy * 0.0072, -1.25, 1.25);
+    return;
+  }
+  if (grab) updateGrabFromPointers();
+}
+
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  lastInteraction = performance.now();
+  if (cameraDrag && cameraDrag.id === e.pointerId) cameraDrag = null;
+  if (grab){
+    if (e.pointerId === grab.secondId){
+      grab.secondId = null; grab.pinchMode = null;
+    } else if (e.pointerId === grab.primaryId){
+      if (grab.secondId != null){
+        // promote the remaining finger to primary, keep the grab going
+        grab.primaryId = grab.secondId;
+        grab.secondId = null; grab.pinchMode = null;
+        const np = pointers.get(grab.primaryId);
+        if (np){ np.lastX = np.x; np.lastY = np.y; }
+      } else {
+        grab = null;
+      }
+    }
+  }
+}
+
+canvas.addEventListener('pointerdown', onPointerDown);
+window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('pointerup', endPointer);
+window.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resetBlend = 1;
+  grab = null; cameraDrag = null;
+  lastInteraction = performance.now();
+});
+
+const hintEl = document.getElementById('hint');
+let hintFaded = false;
+
+// ---------- simulation step (fixed substeps of PBD) ----------
+const prePos = origPos.map(p => ({ x:p.x, y:p.y, z:p.z }));
+
+function simSubstep(dt){
+  // remember where each point started so the constraint solve below can hand
+  // its net displacement back as velocity (classic PBD) — without this the
+  // gem would have no bounce: constraints move position directly, and a
+  // spring that only ever moves position but never updates velocity has no
+  // way to carry that motion (or momentum) into the next frame.
+  for (let i = 0; i < N; i++){
+    prePos[i].x = pos[i].x; prePos[i].y = pos[i].y; prePos[i].z = pos[i].z;
+  }
+
+  // integrate
+  for (let i = 0; i < N; i++){
+    vel[i].x *= DAMPING; vel[i].y *= DAMPING; vel[i].z *= DAMPING;
+    pos[i].x += vel[i].x * dt;
+    pos[i].y += vel[i].y * dt;
+    pos[i].z += vel[i].z * dt;
+  }
+
+  // grab target for this substep
+  let grabWorld = null;
+  if (grab && grab.primaryId != null){
+    const sp = pointers.get(grab.primaryId);
+    if (sp) grabWorld = grabTargetWorld(sp.x, sp.y);
+  }
+
+  for (let iter = 0; iter < SOLVER_ITERS; iter++){
+    // edge constraints
+    for (let e = 0; e < edges.length; e++){
+      const a = edges[e][0], b = edges[e][1];
+      const pa = pos[a], pb = pos[b];
+      const dx = pb.x-pa.x, dy = pb.y-pa.y, dz = pb.z-pa.z;
+      const dist = Math.hypot(dx,dy,dz) || 1e-6;
+      const rest = edgeRest[e];
+      const diff = (dist - rest) / dist * 0.5 * EDGE_STIFFNESS;
+      const cx_ = dx*diff, cy_ = dy*diff, cz_ = dz*diff;
+      pa.x += cx_; pa.y += cy_; pa.z += cz_;
+      pb.x -= cx_; pb.y -= cy_; pb.z -= cz_;
+    }
+    // shape-memory goal spring
+    for (let i = 0; i < N; i++){
+      const g = restPos[i];
+      pos[i].x += (g.x - pos[i].x) * GOAL_STIFFNESS;
+      pos[i].y += (g.y - pos[i].y) * GOAL_STIFFNESS;
+      pos[i].z += (g.z - pos[i].z) * GOAL_STIFFNESS;
+    }
+  }
+
+  // volume / pressure
+  const vol = polyhedronVolume(pos);
+  const diff = (targetVolume - vol) / Math.max(Math.abs(targetVolume), 1);
+  if (Number.isFinite(diff)){
+    const push = clamp(diff, -0.6, 0.6) * PRESSURE_K;
+    for (let i = 0; i < N; i++){
+      const n = vnorm(pos[i]);
+      pos[i].x += n.x * push; pos[i].y += n.y * push; pos[i].z += n.z * push;
+    }
+  }
+
+  // grab constraint — applied last so the pointer always wins locally
+  if (grab && grabWorld){
+    for (let k = 0; k < grab.indices.length; k++){
+      const i = grab.indices[k], w = grab.weights[k];
+      let off = grab.offsets[k];
+      if (grab.twistAngle){
+        const axis = vnorm(grab.core0);
+        off = rotateAroundAxis(off, axis, grab.twistAngle);
+      }
+      const desired = vadd(grabWorld, off);
+      const s = w * GRAB_STIFFNESS;
+      pos[i].x += (desired.x - pos[i].x) * s;
+      pos[i].y += (desired.y - pos[i].y) * s;
+      pos[i].z += (desired.z - pos[i].z) * s;
+    }
+  }
+
+  // recentre (absorb net drift so the gem stays put and memory directions stay meaningful)
+  let mx=0,my=0,mz=0;
+  for (let i=0;i<N;i++){ mx+=pos[i].x; my+=pos[i].y; mz+=pos[i].z; }
+  mx/=N; my/=N; mz/=N;
+  for (let i=0;i<N;i++){ pos[i].x-=mx; pos[i].y-=my; pos[i].z-=mz; }
+
+  // safety clamp against runaway numerics
+  for (let i=0;i<N;i++){
+    const p = pos[i];
+    const l = Math.hypot(p.x,p.y,p.z);
+    if (!Number.isFinite(l) || l > MAX_RADIUS){
+      const n = l>1e-6 ? vscale(p, MAX_RADIUS/l) : origPos[i];
+      p.x = Number.isFinite(n.x)?n.x:origPos[i].x;
+      p.y = Number.isFinite(n.y)?n.y:origPos[i].y;
+      p.z = Number.isFinite(n.z)?n.z:origPos[i].z;
+      vel[i].x=vel[i].y=vel[i].z=0;
+    }
+  }
+
+  // velocity from net displacement this substep (integration + every constraint)
+  const invDt = 1 / dt;
+  for (let i=0;i<N;i++){
+    vel[i].x = (pos[i].x - prePos[i].x) * invDt;
+    vel[i].y = (pos[i].y - prePos[i].y) * invDt;
+    vel[i].z = (pos[i].z - prePos[i].z) * invDt;
+  }
+
+  // plasticity: memory drifts toward where the gem actually is, and — much more
+  // slowly — back toward the pristine sphere, so play always leaves a trace but
+  // idle time heals it.
+  const plasticRate = resetBlend > 0 ? 0.10 : PLASTIC_RATE;
+  const regularizeRate = resetBlend > 0 ? 0.10 : REGULARIZE_RATE;
+  for (let i=0;i<N;i++){
+    restPos[i].x += (pos[i].x - restPos[i].x) * plasticRate;
+    restPos[i].y += (pos[i].y - restPos[i].y) * plasticRate;
+    restPos[i].z += (pos[i].z - restPos[i].z) * plasticRate;
+    restPos[i].x += (origPos[i].x - restPos[i].x) * regularizeRate;
+    restPos[i].y += (origPos[i].y - restPos[i].y) * regularizeRate;
+    restPos[i].z += (origPos[i].z - restPos[i].z) * regularizeRate;
+  }
+  const volPlastic = resetBlend > 0 ? 0.15 : VOLUME_PLASTIC_RATE;
+  const volReg = resetBlend > 0 ? 0.15 : VOLUME_REGULARIZE_RATE;
+  targetVolume += (vol - targetVolume) * volPlastic;
+  targetVolume += (V0 - targetVolume) * volReg;
+  targetVolume = clamp(targetVolume, V0*0.35, V0*2.2);
+
+  if (resetBlend > 0) resetBlend = Math.max(0, resetBlend - 0.02);
+}
+
+// ---------- render ----------
+const viewCache = new Array(N);
+const projCache = new Array(N);
+const faceOrder = faces.map((_, i) => i);
+const faceDepth = new Float64Array(faces.length);
+const faceVisible = new Uint8Array(faces.length);
+
+let idleT = 0;
+
+function draw(now){
+  idleT += 1/60;
+  const idleSince = now - lastInteraction;
+  if (!grab && !cameraDrag && idleSince > 2200) autoRotate = true;
+  if (autoRotate) yaw += 0.0016;
+
+  // background
+  const bg = ctx.createRadialGradient(cx, cy*0.92, Math.min(W,H)*0.05, cx, cy, Math.max(W,H)*0.75);
+  bg.addColorStop(0, '#14141f');
+  bg.addColorStop(0.55, '#0b0b12');
+  bg.addColorStop(1, '#050508');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // grounding shadow
+  const breathe = 1 + Math.sin(idleT*0.6)*0.015;
+  const shR = 150*breathe;
+  const sh = ctx.createRadialGradient(cx, cy+shR*1.05, shR*0.15, cx, cy+shR*1.05, shR*1.15);
+  sh.addColorStop(0, 'rgba(0,0,0,0.45)');
+  sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy+shR*1.05, shR*1.15, shR*0.32, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  for (let i = 0; i < N; i++){
+    const v = worldToView(pos[i]);
+    viewCache[i] = v;
+    projCache[i] = project(v);
+  }
+
+  const lightDir = vnorm({ x:-0.45, y:0.62, z:-0.55 });
+  const hueShift = (now * 0.006) % 360;
+
+  for (let f = 0; f < faces.length; f++){
+    const [a,b,c] = faces[f];
+    const va = viewCache[a], vb = viewCache[b], vc = viewCache[c];
+    const e1 = vsub(vb, va), e2 = vsub(vc, va);
+    const n = vcross(e1, e2);
+    const centerZ = (va.z+vb.z+vc.z)/3;
+    const view = { x:(va.x+vb.x+vc.x)/3, y:(va.y+vb.y+vc.y)/3, z: centerZ+camDist };
+    const facing = vdot(n, view);
+    faceVisible[f] = facing < 0 ? 1 : 0;
+    faceDepth[f] = centerZ;
+  }
+  faceOrder.sort((i,j) => faceDepth[j] - faceDepth[i]);
+
+  for (const f of faceOrder){
+    if (!faceVisible[f]) continue;
+    const [a,b,c] = faces[f];
+    const pa = projCache[a], pb = projCache[b], pc = projCache[c];
+    if (pa.z <= 2 || pb.z <= 2 || pc.z <= 2) continue;
+
+    const va = viewCache[a], vb = viewCache[b], vc = viewCache[c];
+    const nrm = vnorm(vcross(vsub(vb,va), vsub(vc,va)));
+    const light = clamp(vdot(nrm, vscale(lightDir,-1)) * 0.5 + 0.55, 0.08, 1.15);
+
+    const curArea = vlen(vcross(vsub(pos[b],pos[a]), vsub(pos[c],pos[a]))) * 0.5;
+    const restArea = restFaceArea[f] || 1e-6;
+    const stretch = clamp(curArea / restArea, 0.4, 2.4);
+
+    const hue = (baseHue[a] + baseHue[b] + baseHue[c]) / 3 + hueShift * 0.4;
+    const sat = clamp(68 + (stretch-1) * 34, 48, 98);
+    const light2 = clamp(52 * light + 6 + (stretch-1) * 16, 12, 84);
+
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.lineTo(pb.x, pb.y);
+    ctx.lineTo(pc.x, pc.y);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light2}%)`;
+    ctx.fill();
+    ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${clamp(light2-16,4,90)}%, 0.55)`;
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+// ---------- main loop: fixed-step physics decoupled from render rate ----------
+let lastT = performance.now();
+let acc = 0;
+function tick(now){
+  let dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > 0.1) dt = 0.1;
+  acc += dt;
+  let steps = 0;
+  while (acc >= FIXED_DT && steps < MAX_SUBSTEPS){
+    simSubstep(FIXED_DT);
+    acc -= FIXED_DT;
+    steps++;
+  }
+  if (!hintFaded && (grab || cameraDrag)){
+    hintFaded = true;
+    hintEl.classList.add('faded');
+  }
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame(tick);
+requestAnimationFrame(draw);
+
+})();
+</script>
+</body>
+</html>

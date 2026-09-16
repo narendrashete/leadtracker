@@ -32,6 +32,7 @@ Express (backend/server.js)
    ├── /aartisangrah/app  (public — separate installable/offline copy, app.html)
    ├── /aartisangrah/audio/*  (public — static MP3 recordings, Range-capable)
    ├── /aartisangrah/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
+   ├── /kinetic-gem   (public — serves kinetic-gem/index.html verbatim, no API)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -82,6 +83,12 @@ aartisangrah/
   manifest.webmanifest, sw.js, icons/   The offline app shell for app.html only.
   audio/               MP3 recordings, one per aarti that has one. The only part of
                        this app not inlined into the page. Served as static files.
+kinetic-gem/
+  index.html           Kinetic Gem — a colourful soft-body toy you twist, stretch, press,
+                       pull and push into new shapes. One self-contained file, no build
+                       step, no React, no API, no external libraries (its own canvas-2D
+                       physics/renderer, not three.js — see "Kinetic Gem" below for why).
+                       Served at /kinetic-gem.
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -277,8 +284,70 @@ all. It is a deliberate fork of `index.html`, not a flag/query-param on it:
   action). The one online visit needed to install also downloads and caches the ~30 MB of
   recordings; after that it works indefinitely with no network.
 
+## Kinetic Gem (interactive soft-body toy)
+A fourth app sharing this repo and this Express process for hosting only, the same way Mokla
+Divas and Aarti Sangrah do: no tables, no API, no accounts, one self-contained
+`kinetic-gem/index.html` (markup, CSS and JS in one file). It renders a faceted, colourful
+blob you twist, stretch, press, pull and push with the mouse/touch; after every gesture it
+settles into a new shape rather than snapping back to a sphere, so it keeps looking different.
+The intent is a tactile, screensaver-calm toy — no score, no timer, no notifications — as an
+antidote to doom-scrolling, not another feed.
+- **No three.js/WebGL — a hand-rolled canvas-2D rasteriser instead.** Consistent with this
+  project's "no build step, no external dependency" rule for these standalone pages (Aarti
+  Sangrah's only external request is Google Fonts; this page makes none at all). A geodesic
+  icosphere at a modest subdivision level renders as flat-shaded triangles via
+  `ctx.fill()`/painter's-algorithm depth sort — plenty fast for ~1300 faces at 60fps, and it
+  means the page works completely offline with zero CDN dependency. Don't reach for a 3D
+  library here without a real reason; this is not a case where "no build step" was accidental.
+- **Physics is Position-Based Dynamics (PBD) on the icosphere's edges** (`EDGE_STIFFNESS`,
+  a distance constraint per edge) **plus a per-vertex "shape memory" spring** pulling gently
+  toward a remembered rest position (`restPos`, `GOAL_STIFFNESS`) **plus a volume/pressure
+  term** (`targetVolume`, `PRESSURE_K`) that keeps it feeling inflated rather than collapsing
+  when squeezed — the classic "squish here, bulge there" balloon behaviour.
+- **No global rotation fit (shape matching) — deliberately.** The mesh is recentred to the
+  origin every frame and the memory springs pull toward FIXED object-space directions, so a
+  one-sided grab-and-move is itself just another elastic deformation the mesh resists, which
+  is exactly what "twist" should feel like for a toy. Don't add a polar-decomposition/shape-
+  matching step to "fix" whole-body spin; it isn't a bug, it's the design.
+- **"Every action becomes a new shape" is plasticity, not randomness.** `restPos` (and
+  `targetVolume`) drift a little toward wherever the gem currently sits every frame
+  (`PLASTIC_RATE` / `VOLUME_PLASTIC_RATE`), so play leaves a lasting trace instead of fully
+  springing back. A second, much slower drift (`REGULARIZE_RATE` / `VOLUME_REGULARIZE_RATE`)
+  pulls `restPos` back toward the pristine sphere, so an abandoned gem self-heals over
+  minutes instead of accumulating into an ugly shape forever. Reuse this two-rate
+  plastic/regularize pattern for any future "remembers what you did, but not permanently"
+  behaviour — don't invent a history/undo stack for it.
+- **Interaction model** (`onPointerDown`/`onPointerMove`/`endPointer`, Pointer Events so
+  mouse/touch/pen share one code path): dragging the gem grabs the nearest visible vertex and
+  a soft-falloff neighbourhood around it (`INFLUENCE_RADIUS`) and drives it toward the
+  pointer, projected onto a camera-facing plane at the grab depth — this alone gives
+  pull/stretch. Scroll (desktop) or a two-finger pinch near the same spot (touch) moves that
+  plane along the camera axis for press/pull-toward-viewer. Shift+drag (desktop) or a
+  two-finger rotate gesture away from the grab point (touch) twists the grabbed neighbourhood
+  around the axis from the centre to the grab point (`grab.twistAngle`,
+  `rotateAroundAxis`). Dragging empty space orbits the camera instead of grabbing — hit-testing
+  picks the nearest on-screen, camera-facing vertex within a pixel threshold, and "no vertex
+  within threshold" is what means "background."
+- **Colour is baked to the mesh's rest topology, not the camera view** (`baseHue`, computed
+  once from each vertex's original icosphere position), so the colour pattern visibly
+  stretches and distorts WITH a deformation instead of just being a static paint job — a
+  vertex that's been pulled out shows its true stretch through both shape and glow (the
+  `stretch` term brightens/saturates a face whose current area exceeds its rest area). A slow
+  global hue rotation (`hueShift`, time-based) keeps it cycling through the palette even at
+  rest, and the camera auto-orbits after ~2s of no interaction — both exist so the "colourful"
+  and "attractive" requirement holds even for someone just watching, not only touching.
+- **Fixed-timestep sub-stepping** (`FIXED_DT`, `MAX_SUBSTEPS` in `tick()`) decouples the PBD
+  solve from the display's actual frame rate, so the spring stiffness constants feel the same
+  on a 60Hz or 120Hz screen. Velocity is derived from a substep's net positional change
+  (`prePos` captured before integrate+solve, `vel = (pos-prePos)/dt` after) rather than
+  accumulated from forces — standard PBD, and the reason the gem has any "bounce" at all after
+  you let go: a constraint that only ever moves position, with nothing translating that into
+  velocity, has no way to carry the motion into the next frame.
+- No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
+  change to the page itself.
+
 ## Visitor Counting
-Server-side, in `analytics.js`, recorded on the two public pages and on the SPA's own
+Server-side, in `analytics.js`, recorded on the three public pages and on the SPA's own
 HTML loads. Admin-only, shown on the **Visitors** screen.
 - **`recordVisit(req, page)` is called from the route, not from the browser.** Nothing to
   block, and it works for readers with JS off. It is wrapped in try/catch and swallows its
@@ -408,9 +477,10 @@ pm2 reload leadtracker
 "
 ```
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
-The calendar and Aarti Sangrah pages need no build step (they are plain HTML, not part of
-the Vite bundle), so a `git pull` + `pm2 reload` ships a change to either. Aarti Sangrah is
-then live at `https://leadtracker.primecomputers.co.in/aartisangrah`. The **Calendar Links** admin
+The calendar, Aarti Sangrah and Kinetic Gem pages need no build step (they are plain HTML, not
+part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any of them. Aarti
+Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Kinetic Gem
+at `https://leadtracker.primecomputers.co.in/kinetic-gem`. The **Calendar Links** admin
 page is React, so any change touching `frontend/src` still needs the `npm run build` step
 above. To find the calendar links after a
 deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines 40` and look

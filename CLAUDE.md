@@ -434,6 +434,12 @@ HTML loads. Admin-only, shown on the **Visitors** screen.
 - **`recordVisit(req, page)` is called from the route, not from the browser.** Nothing to
   block, and it works for readers with JS off. It is wrapped in try/catch and swallows its
   own errors: counting is never worth failing a page load over.
+- **Every labelled page is listed, even at zero.** The breakdown groups over recorded rows,
+  so a surface nobody has opened would vanish from the screen entirely — and "no visits"
+  then looks exactly like "counting is broken", which is how the installable apps read on
+  the day they were split out. `routes/stats.js` fills in a zero row for each key in
+  `PAGE_LABELS`, so adding a label is also what makes a new surface visible before its first
+  visit.
 - **Each page surface gets its own key.** `aartisangrah` and `aartisangrah-app` are counted
   separately, as are `kinetic-gem` and `kinetic-gem-app`, so the Visitors screen can tell
   reading online from taking the app offline. Give any new surface its own key and a label in

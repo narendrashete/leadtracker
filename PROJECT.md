@@ -202,6 +202,9 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — The Visitors breakdown now lists every labelled page even at zero. It
+  previously grouped only over recorded rows, so the newly split installable-app surfaces
+  were absent until someone opened them — indistinguishable from the counter being broken.
 - **2026-09-16** — Split the Visitors breakdown so the online reader and the installable app
   are counted separately (`aartisangrah` vs `aartisangrah-app`, and the same for PrimeGem);
   both previously recorded under one key and collapsed into a single bar. The `-app` figure

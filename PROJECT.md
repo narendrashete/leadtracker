@@ -31,7 +31,8 @@ address/city/state to leads.
 - Kinetic Gem: a colourful interactive soft-body toy (twist/stretch/press/pull/push) hosted by
   the same Express process at `/kinetic-gem`, reachable from the sidebar. Standalone single
   HTML file, own canvas-2D physics/renderer — no API, no tables, no auth. See `CLAUDE.md` →
-  Kinetic Gem.
+  Kinetic Gem. Also installable and fully offline at `/kinetic-gem/app` (Add to Home Screen on
+  Android/iOS) — the same file with PWA tags injected, not a forked copy.
 
 ## Features In Progress
 - **Aarti audio playback** — the player is live, and which aartis have one is driven by the
@@ -200,6 +201,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — Made Kinetic Gem installable and fully offline at `/kinetic-gem/app`
+  (`manifest.webmanifest`, `sw.js`, `icons/`), same Add-to-Home-Screen distribution as the
+  Aarti Sangrah app. Unlike that one it is **not** a forked second HTML file: the route serves
+  the same `index.html` with PWA head tags injected, the way the calendar route injects
+  `window.__CAL__`, because the gem is one physics file under active tuning and two copies
+  would drift. Service worker scoped explicitly to `/kinetic-gem/app`, so the plain
+  `/kinetic-gem` link is never intercepted (verified: `controller === null` there). Icons are
+  rendered from the gem's own renderer. Verified at iPhone viewport: worker registers, shell
+  caches, and an offline reload still renders and deforms under touch.
 - **2026-09-16** — Made Kinetic Gem work properly on a phone. Three real bugs: the gem was
   sized with a fixed pixel focal length, so on a 390px-wide screen it was *wider than the
   viewport* (clipped at both edges, no background left to orbit-drag) — `FOCAL` and the grab

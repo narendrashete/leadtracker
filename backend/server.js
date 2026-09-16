@@ -18,6 +18,7 @@ const CALENDAR_PAGE = path.resolve(__dirname, '..', 'mokla-divas', 'index.html')
 const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html');
 const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
 const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html');
+const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -164,6 +165,19 @@ getDb().then(() => {
     });
   });
 
+  // The Kinetic Gem offline app shell: manifest, service worker and
+  // home-screen icons. index:false AND redirect:false for the same reason as
+  // the Aarti mount above — without redirect:false, serve-static treats a bare
+  // '/kinetic-gem' as a directory root and 301s it to '/kinetic-gem/', which
+  // breaks the plain page.
+  app.use('/kinetic-gem', express.static(GEM_DIR, {
+    index: false,
+    redirect: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('sw.js')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  }));
+
   // Kinetic Gem — a colourful soft-body toy sharing this process the way the
   // calendar and Aarti Sangrah pages do, but with no API and no tables of its
   // own: one self-contained HTML file (canvas-2D physics + rendering, no
@@ -178,6 +192,44 @@ getDb().then(() => {
       if (err && !res.headersSent) {
         res.status(500).type('text/plain').send('Kinetic Gem page missing.');
       }
+    });
+  });
+
+  // The installable, offline-capable copy, at its own URL so its service
+  // worker can be scoped to this path alone and never intercept the plain
+  // /kinetic-gem link above.
+  //
+  // Aarti Sangrah solves this with a second HTML file (app.html). This one
+  // injects instead, the way the calendar route injects window.__CAL__,
+  // because the gem is one 900-line physics file under active tuning: a
+  // forked copy would drift from the original within a session or two, and
+  // the only thing the installable version actually needs is a handful of
+  // head tags. The plain route above still sends the file untouched.
+  const GEM_APP_HEAD =
+    '<link rel="manifest" href="/kinetic-gem/manifest.webmanifest">' +
+    '<meta name="theme-color" content="#07070c">' +
+    '<meta name="mobile-web-app-capable" content="yes">' +
+    // iOS Safari ignores most of the manifest but honours these when the page
+    // is added to the home screen, which is the only way to install on iOS.
+    '<meta name="apple-mobile-web-app-capable" content="yes">' +
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">' +
+    '<meta name="apple-mobile-web-app-title" content="Kinetic Gem">' +
+    '<link rel="apple-touch-icon" href="/kinetic-gem/icons/apple-touch-icon-180.png">' +
+    '<link rel="icon" href="/kinetic-gem/icons/icon-192.png">' +
+    '<script>' +
+    "if('serviceWorker' in navigator){window.addEventListener('load',function(){" +
+    // The explicit scope is load-bearing: registering a worker that lives at
+    // /kinetic-gem/sw.js would otherwise default to controlling everything
+    // under /kinetic-gem/, and this must never reach the plain page.
+    "navigator.serviceWorker.register('/kinetic-gem/sw.js',{scope:'/kinetic-gem/app'});" +
+    '});}' +
+    '</script>';
+
+  app.get('/kinetic-gem/app', (req, res) => {
+    recordVisit(req, 'kinetic-gem');
+    fs.readFile(GEM_PAGE, 'utf8', (err, html) => {
+      if (err) return res.status(500).type('text/plain').send('Kinetic Gem page missing.');
+      res.type('html').send(html.replace('</head>', GEM_APP_HEAD + '</head>'));
     });
   });
 
@@ -202,6 +254,7 @@ getDb().then(() => {
     console.log(`  Open in browser: http://localhost:${PORT}`);
     console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
     console.log(`  Kinetic Gem:     http://localhost:${PORT}/kinetic-gem`);
+    console.log(`  Kinetic Gem app: http://localhost:${PORT}/kinetic-gem/app  (installable)`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

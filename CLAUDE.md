@@ -33,6 +33,8 @@ Express (backend/server.js)
    ├── /aartisangrah/audio/*  (public — static MP3 recordings, Range-capable)
    ├── /aartisangrah/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    ├── /kinetic-gem   (public — serves kinetic-gem/index.html verbatim, no API)
+   ├── /kinetic-gem/app  (public — same file + injected PWA tags, installable)
+   ├── /kinetic-gem/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -88,7 +90,9 @@ kinetic-gem/
                        pull and push into new shapes. One self-contained file, no build
                        step, no React, no API, no external libraries (its own canvas-2D
                        physics/renderer, not three.js — see "Kinetic Gem" below for why).
-                       Served at /kinetic-gem.
+                       Served at /kinetic-gem, and at /kinetic-gem/app with PWA tags
+                       injected — ONE file for both, unlike Aarti Sangrah's two.
+  manifest.webmanifest, sw.js, icons/   The offline app shell for /kinetic-gem/app only.
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -363,6 +367,49 @@ antidote to doom-scrolling, not another feed.
 - No build step (it is not part of the Vite bundle), so a `git pull` + `pm2 reload` ships a
   change to the page itself.
 
+## Kinetic Gem — installable app (/kinetic-gem/app)
+Installable and fully offline (Add to Home Screen), the same distribution model as the Aarti
+Sangrah app: no APK/IPA, no app store, just a link people install from their browser. It
+solves the same problem the Aarti app does and obeys the same scope rule — but it is **one
+file, not a fork**, and that difference is deliberate:
+- **`/kinetic-gem/app` serves `index.html` with a handful of head tags injected**
+  (`GEM_APP_HEAD` in `server.js`): manifest link, theme-color, the Apple meta tags iOS needs,
+  and the service-worker registration. The plain `/kinetic-gem` route still `sendFile`s the
+  same file untouched, so that link is byte-identical to what it always was.
+- **Why injected rather than forked into an `app.html`.** Aarti Sangrah forked because its
+  plain link was already bookmarked and circulated, so `index.html` could not be touched at
+  all. Kinetic Gem had not shipped yet when this was added, so that constraint never applied
+  — and the gem is one ~900-line physics file under active tuning, where two copies would
+  drift within a session or two, while the installable version needs nothing but those head
+  tags. The repo already had the pattern: the calendar route injects `window.__CAL__` the same
+  way. **Don't "align" this with Aarti Sangrah by forking it** — that would trade a real
+  maintenance cost for a consistency that buys nothing.
+- **The service worker still registers with an explicit `{ scope: '/kinetic-gem/app' }`**, and
+  this is as load-bearing here as it is there: `sw.js` lives at `/kinetic-gem/sw.js`, so
+  without the explicit scope it would default to controlling everything under
+  `/kinetic-gem/` — and the plain page would start being intercepted for anyone who opened
+  both links. Verified: after installing the app, the plain page reports
+  `navigator.serviceWorker.controller === null`. Never drop that option.
+- **`redirect: false` on the static mount is the same trap as Aarti's**, and for the same
+  reason: `express.static` mounted at `/kinetic-gem` would 301 a bare `/kinetic-gem` to
+  `/kinetic-gem/` and break the plain page. `index: false` too.
+- **`sw.js` is served with `Cache-Control: no-cache`** (the mount's `setHeaders`), the standard
+  service-worker gotcha.
+- **Bump `CACHE_VERSION` in `sw.js` whenever `index.html`, the manifest or an icon changes**,
+  or installed devices keep serving the old version — `activate()` drops every older-versioned
+  cache. This matters more here than for Aarti, because tuning a physics constant changes the
+  same `index.html` the worker has cached.
+- **The shell list IS the whole app.** The page makes no external requests at all — no fonts,
+  no audio, no library — so `SHELL_URLS` (page + manifest + icons) is everything, and there is
+  nothing to discover at install time the way Aarti's worker discovers recordings.
+- **The icons are rendered from the gem's own code**, not drawn by hand: the generator reuses
+  the icosphere build, hue mapping and shading so the icon is literally the thing it opens. It
+  widens the hue mapping (one viewing angle would otherwise show only half the wheel), lifts
+  the ambient floor (a moody shadow side is mud at 48px), keeps the lobing gentle and convex
+  (a deeper dip makes the painter's-algorithm sort leak far-side faces as confetti), and
+  recentres the deformed mesh (lobing moves the centroid, and a maskable icon is cropped about
+  its centre). Regenerating means re-running that generator, not editing a PNG.
+
 ## Visitor Counting
 Server-side, in `analytics.js`, recorded on the three public pages and on the SPA's own
 HTML loads. Admin-only, shown on the **Visitors** screen.
@@ -497,7 +544,11 @@ pm2 reload leadtracker
 The calendar, Aarti Sangrah and Kinetic Gem pages need no build step (they are plain HTML, not
 part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any of them. Aarti
 Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Kinetic Gem
-at `https://leadtracker.primecomputers.co.in/kinetic-gem`. The **Calendar Links** admin
+at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
+`/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
+them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching
+`sw.js` — without that, installed phones keep serving the version they cached, however many
+times you redeploy. The **Calendar Links** admin
 page is React, so any change touching `frontend/src` still needs the `npm run build` step
 above. To find the calendar links after a
 deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines 40` and look

@@ -1,0 +1,16 @@
+{
+  "name": "Kinetic Gem",
+  "short_name": "Kinetic Gem",
+  "description": "A colourful soft-body shape you twist, stretch, press, pull and push into new forms.",
+  "start_url": "/kinetic-gem/app",
+  "scope": "/kinetic-gem/app",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07070c",
+  "theme_color": "#07070c",
+  "lang": "en",
+  "icons": [
+    { "src": "/kinetic-gem/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/kinetic-gem/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

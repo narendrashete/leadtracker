@@ -202,6 +202,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-16** — Split the Visitors breakdown so the online reader and the installable app
+  are counted separately (`aartisangrah` vs `aartisangrah-app`, and the same for PrimeGem);
+  both previously recorded under one key and collapsed into a single bar. The `-app` figure
+  approximates installs rather than offline readers — the service worker is cache-first, so
+  opens after installation never reach the server. Hits recorded before this change stay
+  under the online key and cannot be separated retroactively.
 - **2026-09-16** — Renamed the toy from "Kinetic Gem" to **PrimeGem** and branded it: new
   `<title>`, masthead, manifest `name`/`short_name` and `apple-mobile-web-app-title` (so the
   home-screen label changes too), plus a "Developed by Prime Computers" credit on the page

@@ -10,9 +10,12 @@ router.use(requireAdmin);
 // Friendly names for the pages we count. Anything not listed still appears,
 // under its raw key, rather than being silently dropped.
 const PAGE_LABELS = {
-  aartisangrah: 'Aarti Sangrah',
-  calendar:     'Mokla Divas calendar',
-  leadtracker:  'Lead Tracker app'
+  aartisangrah:       'Aarti Sangrah — online',
+  'aartisangrah-app': 'Aarti Sangrah — installed app',
+  'kinetic-gem':      'PrimeGem — online',
+  'kinetic-gem-app':  'PrimeGem — installed app',
+  calendar:           'Mokla Divas calendar',
+  leadtracker:        'Lead Tracker app'
 };
 
 function daysBack(n) {

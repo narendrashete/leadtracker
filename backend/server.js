@@ -156,7 +156,13 @@ getDb().then(() => {
   // only (see app.html), so it can never take over the plain page even on
   // the same phone.
   app.get('/aartisangrah/app', (req, res) => {
-    recordVisit(req, 'aartisangrah');
+    // Its own key, so the Visitors screen can separate people reading online
+    // from people taking the app offline. Note what this can and cannot see:
+    // the service worker is cache-first, so once installed the app opens with
+    // no request at all. This counts fetches of the page — the first open and
+    // the worker's own precache of it — which is close to installs, not to how
+    // often it is then read offline. That is unmeasurable by design.
+    recordVisit(req, 'aartisangrah-app');
     const AARTI_APP_PAGE = path.resolve(__dirname, '..', 'aartisangrah', 'app.html');
     res.sendFile(AARTI_APP_PAGE, (err) => {
       if (err && !res.headersSent) {
@@ -226,7 +232,9 @@ getDb().then(() => {
     '</script>';
 
   app.get('/kinetic-gem/app', (req, res) => {
-    recordVisit(req, 'kinetic-gem');
+    // Same split as Aarti Sangrah above, and the same caveat about a
+    // cache-first worker making repeat offline opens invisible.
+    recordVisit(req, 'kinetic-gem-app');
     fs.readFile(GEM_PAGE, 'utf8', (err, html) => {
       if (err) return res.status(500).type('text/plain').send('PrimeGem page missing.');
       res.type('html').send(html.replace('</head>', GEM_APP_HEAD + '</head>'));

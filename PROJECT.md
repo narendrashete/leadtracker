@@ -202,6 +202,16 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-21** — Added a "सभासद यादी संपादन" (roster edit) tab to the Shete Navratri admin
+  page (`/shetenavratri/admin.html`, shared login with the Lead Tracker admin account). Until
+  now the admin queue only approved/rejected *new* member requests
+  (`routes/sheteAdmin.js`); there was no way to correct a name or mobile number already in
+  `shete_members` short of a manual DB edit. Added `GET /api/shete-admin/members` (full
+  roster) and `PATCH /api/shete-admin/members/:id` (update name/name_en/village/village_en/
+  mobile, with mobile-uniqueness and format checks), both behind the existing
+  requireAuth+requireAdmin router. `members.html` already reads the live `shete_members` table
+  via `/api/shete/members/approved`, so a save in the new tab appears on the public page
+  immediately — no redeploy needed.
 - **2026-09-21** — Moved the two unnumbered recordings (आरती सप्रेम जय जय विठ्ठल, जय देव जय देव
   दत्त अवधूता) out of `aartisangrah/audio/` into a git-ignored `audio/archived/`. They had no
   matching aarti, so the manifest could never surface them, yet 7.3 MB shipped on every pull.

@@ -35,6 +35,8 @@ Express (backend/server.js)
    ├── /kinetic-gem   (public — serves kinetic-gem/index.html verbatim, no API)
    ├── /kinetic-gem/app  (public — same file + injected PWA tags, installable)
    ├── /kinetic-gem/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
+   ├── /shetenavratri (public — serves shetenavratri/index.html + members/history/gallery
+   │                   pages + assets/, no API, no build step)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -95,6 +97,16 @@ kinetic-gem/
                        Served at /kinetic-gem, and at /kinetic-gem/app with PWA tags
                        injected — ONE file for both, unlike Aarti Sangrah's two.
   manifest.webmanifest, sw.js, icons/   The offline app shell for /kinetic-gem/app only.
+shetenavratri/
+  index.html            Shete Parivar Navratri — public family site: dashboard home,
+                       plain HTML pages, no build step, no React, no API.
+  members.html          सभासद यादी — 66-member directory (assets/js/members-data.js),
+                       bilingual (Devanagari + English) search, Call/WhatsApp icon
+                       buttons (tel:/wa.me), copy/right-click blocked on names & numbers.
+  history.html          आत्तापर्यंतची नवरात्री झालेली यादी — placeholder, content pending.
+  gallery.html           क्षणचित्रे — photo collage + modal viewer (mock placeholders
+                       until real photos are supplied).
+  assets/                css/js shared by all four pages.
 start.bat               local one-click launcher (runs the production build)
 ```
 

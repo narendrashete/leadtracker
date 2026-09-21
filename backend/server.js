@@ -19,6 +19,8 @@ const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html'
 const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
 const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html');
 const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
+const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
+const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -241,6 +243,30 @@ getDb().then(() => {
     });
   });
 
+  // Shete Parivar Navratri — a public member directory + info site sharing this
+  // process the way Aarti Sangrah and PrimeGem do: no API, no tables of its own,
+  // plain static files (multiple pages + an assets/ folder, unlike those two's
+  // single-file apps). index:false AND redirect:false for the same reason as the
+  // other static mounts above — without redirect:false, serve-static treats a bare
+  // '/shetenavratri' as a directory root and 301s it to '/shetenavratri/', which
+  // breaks the plain link.
+  app.use('/shetenavratri', express.static(SHETE_DIR, {
+    index: false,
+    redirect: false,
+  }));
+
+  app.get('/shetenavratri', (req, res) => {
+    recordVisit(req, 'shetenavratri');
+    res.sendFile(SHETE_PAGE, (err) => {
+      // A client that disconnects mid-transfer lands here with headers already
+      // sent — answering again would throw ERR_HTTP_HEADERS_SENT and crash the
+      // process. See the Aarti Sangrah route above for the same guard.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Shete Parivar Navratri page missing.');
+      }
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -263,6 +289,7 @@ getDb().then(() => {
     console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
     console.log(`  PrimeGem:        http://localhost:${PORT}/kinetic-gem`);
     console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
+    console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

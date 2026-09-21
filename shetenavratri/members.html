@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>सभासद यादी — शेटे परिवार नवरात्री</title>
+<link rel="stylesheet" href="/shetenavratri/assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/shetenavratri/" class="back-link">←</a>
+  <div>
+    <h1>सभासद यादी</h1>
+    <div class="sub">Members List</div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="sicon">🔍</span>
+      <input type="text" id="searchInput" placeholder="नाव / गाव शोधा... (search name or village)">
+    </div>
+    <div class="result-count" id="resultCount"></div>
+  </div>
+
+  <div class="member-list" id="memberList"></div>
+  <div class="no-results" id="noResults" style="display:none;">🔍 कोणताही सभासद सापडला नाही<br><span style="font-size:12px;">No member found</span></div>
+</div>
+
+<script src="/shetenavratri/assets/js/members-data.js"></script>
+<script src="/shetenavratri/assets/js/protect.js"></script>
+<script src="/shetenavratri/assets/js/members.js"></script>
+</body>
+</html>

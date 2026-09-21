@@ -31,6 +31,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="gallery">फोटो विनंत्या <span id="galleryCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="members">सभासद विनंत्या <span id="membersCount" class="badge"></span></button>
+    <button class="admin-tab" data-tab="roster">सभासद यादी संपादन</button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -49,6 +50,11 @@
     </div>
     <div id="membersList" class="request-list"></div>
     <div class="no-results" id="membersEmpty" style="display:none;">✅ सर्व सभासद विनंत्या पूर्ण झाल्या</div>
+  </section>
+
+  <section id="rosterTab" class="admin-section" style="display:none;">
+    <input type="text" id="rosterSearch" class="roster-search" placeholder="नाव, गाव किंवा मोबाईल शोधा...">
+    <div id="rosterList" class="request-list"></div>
   </section>
 </div>
 

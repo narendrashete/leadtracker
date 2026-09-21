@@ -17,14 +17,35 @@
 </header>
 
 <div class="page">
-  <p style="font-size:12px;color:var(--text-soft);margin-top:0;">फोटोंवर क्लिक करून मोठे पाहा. सध्या नमुना (mock) फोटो दाखवले आहेत — प्रत्यक्ष फोटो नंतर अपडेट केले जातील.</p>
+  <p style="font-size:12px;color:var(--text-soft);margin-top:0;">फोटोंवर क्लिक करून मोठे पाहा. सभासदांनी पाठवलेले व Admin ने मंजूर केलेले फोटो इथे दिसतात.</p>
+  <div class="loading-note" id="loadingNote">फोटो लोड होत आहेत...</div>
   <div class="collage" id="collage"></div>
+  <div class="no-results" id="noPhotos" style="display:none;">📸 अजून एकही फोटो मंजूर झालेला नाही</div>
+</div>
+
+<button class="fab" id="uploadFab" aria-label="फोटो अपलोड करा">📤</button>
+
+<div class="modal-overlay form-overlay" id="uploadOverlay">
+  <div class="form-sheet">
+    <button class="modal-close" id="uploadClose">✕</button>
+    <h2>फोटो अपलोड करा</h2>
+    <p class="form-hint">फक्त सभासद यादीतील मोबाईल क्रमांकानेच फोटो अपलोड करता येईल. Admin मंजुरीनंतर फोटो गॅलरीत दिसेल.</p>
+    <form id="uploadForm">
+      <label>फोटो निवडा (JPG/PNG/WebP) *<input type="file" id="uPhoto" accept="image/jpeg,image/png,image/webp" required></label>
+      <label>कॅप्शन / वर्णन (Marathi/English) *<input type="text" id="uCaption" required maxlength="200" placeholder="उदा. गरबा रात्र"></label>
+      <label>वर्ष (Year) *<input type="number" id="uYear" required min="1990" placeholder="उदा. 2025"></label>
+      <label>संपर्क क्रमांक (Mobile) *<input type="tel" id="uMobile" required pattern="[0-9]{10}" maxlength="10" placeholder="10 अंकी मोबाईल क्रमांक"></label>
+      <div class="form-msg" id="uploadMsg"></div>
+      <button type="submit" class="form-submit">अपलोड करा</button>
+    </form>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
   <button class="modal-close" id="modalClose">✕</button>
   <button class="modal-nav prev" id="modalPrev">‹</button>
   <img id="modalImg" src="" alt="फोटो">
+  <div class="modal-caption" id="modalCaption"></div>
   <button class="modal-nav next" id="modalNext">›</button>
 </div>
 

@@ -3,6 +3,9 @@
   const searchEl = document.getElementById('searchInput');
   const countEl = document.getElementById('resultCount');
   const noResultsEl = document.getElementById('noResults');
+  const loadingEl = document.getElementById('loadingNote');
+
+  let MEMBERS_DATA = [];
 
   function waLink(mobile) {
     return 'https://wa.me/91' + mobile;
@@ -10,13 +13,18 @@
   function telLink(mobile) {
     return 'tel:+91' + mobile;
   }
+  function escapeHtml(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
 
   // Official-style glyphs (white line-art) so buttons read clearly on their colored circles,
   // same pairing as the PrimeTT contacts page (PhoneOutlined + WhatsAppOutlined).
   const CALL_ICON =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg>';
   // Classic WhatsApp glyph: rounded speech-bubble outline with a phone handset inside,
-  // matching the familiar app icon look (per Narendra's reference image).
+  // matching the familiar app icon look.
   const WA_ICON =
     '<svg viewBox="0 0 32 32" width="20" height="20" fill="none" aria-hidden="true">' +
     '<path d="M16 6.5c-5.25 0-9.5 4.25-9.5 9.5 0 1.72.46 3.34 1.27 4.73L6.5 25.5l4.94-1.24A9.44 9.44 0 0 0 16 25.5c5.25 0 9.5-4.25 9.5-9.5S21.25 6.5 16 6.5z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>' +
@@ -40,8 +48,8 @@
       card.innerHTML =
         '<div class="sr">' + m.sr + '</div>' +
         '<div class="member-info">' +
-          '<div class="mname">' + m.name + '</div>' +
-          '<div class="mvillage">📍 ' + m.village + '</div>' +
+          '<div class="mname">' + escapeHtml(m.name) + '</div>' +
+          '<div class="mvillage">📍 ' + escapeHtml(m.village) + '</div>' +
           '<div class="mmobile">' + formatMobile(m.mobile) + '</div>' +
         '</div>' +
         '<div class="contact-actions">' +
@@ -80,5 +88,72 @@
     render(filterMembers(searchEl.value));
   });
 
-  render(MEMBERS_DATA);
+  fetch('/api/shete/members/approved')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      MEMBERS_DATA = data;
+      loadingEl.style.display = 'none';
+      render(MEMBERS_DATA);
+    })
+    .catch(function () {
+      loadingEl.textContent = 'सभासद यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';
+    });
+
+  // ---- Add-member request form ----
+  const fab = document.getElementById('addMemberFab');
+  const overlay = document.getElementById('addMemberOverlay');
+  const form = document.getElementById('addMemberForm');
+  const msgEl = document.getElementById('addMemberMsg');
+
+  fab.addEventListener('click', function () {
+    msgEl.textContent = '';
+    msgEl.className = 'form-msg';
+    form.reset();
+    overlay.classList.add('open');
+  });
+  document.getElementById('addMemberClose').addEventListener('click', function () {
+    overlay.classList.remove('open');
+  });
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('mName').value.trim();
+    const village = document.getElementById('mVillage').value.trim();
+    const mobile = document.getElementById('mMobile').value.trim();
+
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      msgEl.textContent = 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+
+    const submitBtn = form.querySelector('.form-submit');
+    submitBtn.disabled = true;
+    fetch('/api/shete/members/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, village: village, mobile: mobile }),
+    })
+      .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+      .then(function (res) {
+        submitBtn.disabled = false;
+        if (!res.ok) {
+          msgEl.textContent = res.body.error || 'काहीतरी चूक झाली.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        msgEl.textContent = res.body.message;
+        msgEl.className = 'form-msg success';
+        form.reset();
+        setTimeout(function () { overlay.classList.remove('open'); }, 1800);
+      })
+      .catch(function () {
+        submitBtn.disabled = false;
+        msgEl.textContent = 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.';
+        msgEl.className = 'form-msg error';
+      });
+  });
 })();

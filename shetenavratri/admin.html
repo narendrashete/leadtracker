@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Admin — शेटे परिवार नवरात्री</title>
+<link rel="stylesheet" href="/shetenavratri/assets/css/style.css">
+<link rel="stylesheet" href="/shetenavratri/assets/css/admin.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/shetenavratri/" class="back-link">←</a>
+  <div>
+    <h1>Admin — मंजुरी</h1>
+    <div class="sub">Shete Navratri Approvals</div>
+  </div>
+</header>
+
+<div class="page" id="loginView">
+  <div class="admin-login">
+    <h2>Admin Login</h2>
+    <label>Username<input type="text" id="loginUser" autocomplete="username"></label>
+    <label>Password<input type="password" id="loginPass" autocomplete="current-password"></label>
+    <div class="form-msg" id="loginMsg"></div>
+    <button class="form-submit" id="loginBtn">Login</button>
+  </div>
+</div>
+
+<div class="page" id="adminView" style="display:none;">
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="gallery">फोटो विनंत्या <span id="galleryCount" class="badge"></span></button>
+    <button class="admin-tab" data-tab="members">सभासद विनंत्या <span id="membersCount" class="badge"></span></button>
+  </div>
+
+  <section id="galleryTab" class="admin-section">
+    <div class="admin-actions">
+      <label class="select-all"><input type="checkbox" id="gallerySelectAll"> सर्व निवडा</label>
+      <button class="bulk-btn" id="galleryBulkApprove">निवडलेले मंजूर करा</button>
+    </div>
+    <div id="galleryList" class="request-list"></div>
+    <div class="no-results" id="galleryEmpty" style="display:none;">✅ सर्व फोटो विनंत्या पूर्ण झाल्या</div>
+  </section>
+
+  <section id="membersTab" class="admin-section" style="display:none;">
+    <div class="admin-actions">
+      <label class="select-all"><input type="checkbox" id="membersSelectAll"> सर्व निवडा</label>
+      <button class="bulk-btn" id="membersBulkApprove">निवडलेले मंजूर करा</button>
+    </div>
+    <div id="membersList" class="request-list"></div>
+    <div class="no-results" id="membersEmpty" style="display:none;">✅ सर्व सभासद विनंत्या पूर्ण झाल्या</div>
+  </section>
+</div>
+
+<div class="modal-overlay" id="previewOverlay">
+  <button class="modal-close" id="previewClose">✕</button>
+  <img id="previewImg" src="" alt="फोटो">
+  <div class="modal-caption" id="previewCaption"></div>
+</div>
+
+<script src="/shetenavratri/assets/js/admin.js"></script>
+</body>
+</html>

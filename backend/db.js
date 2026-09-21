@@ -31,6 +31,80 @@ const CALENDAR_SEED_GROUPS = [
   }
 ];
 
+// Initial roster for the Shete Parivar Navratri member directory. Seeded once
+// into shete_members; after that the list is edited through the site's own
+// add-member request + admin-approval flow, so changing this has no effect on
+// a live DB. Carried over from the original members-data.js the site shipped
+// with (66 members, transcribed from the 2025 collection register).
+const SHETE_MEMBERS_SEED = [
+{name:"श्री. रामचंद्र पंढरीनाथ शेटे",nameEn:"Ramchandra Pandharinath Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9822896296"},
+{name:"श्री. नरेंद्र रामचंद्र शेटे",nameEn:"Narendra Ramchandra Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9820101355"},
+{name:"श्री. नितीन रामचंद्र शेटे",nameEn:"Nitin Ramchandra Shete",village:"भिवंडी",villageEn:"Bhiwandi",mobile:"9822778545"},
+{name:"श्री. सुनील पंढरीनाथ शेटे",nameEn:"Sunil Pandharinath Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9930253573"},
+{name:"श्री. प्रसाद नंदकुमार शेटे",nameEn:"Prasad Nandkumar Shete",village:"अंबाडी",villageEn:"Ambadi",mobile:"8605657111"},
+{name:"श्री. मनोज सुधाकर शेटे",nameEn:"Manoj Sudhakar Shete",village:"कर्जत",villageEn:"Karjat",mobile:"9022168494"},
+{name:"श्री. विजय अनंत शेटे",nameEn:"Vijay Anant Shete",village:"उल्हासनगर",villageEn:"Ulhasnagar",mobile:"9041168227"},
+{name:"श्री. विलास मोरेश्वर शेटे",nameEn:"Vilas Moreshwar Shete",village:"देवरंग",villageEn:"Devrang",mobile:"9529053063"},
+{name:"श्री. नवीन रामचंद्र शेटे",nameEn:"Navin Ramchandra Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9730086818"},
+{name:"श्री. विनोद गजानन शेटे",nameEn:"Vinod Gajanan Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9969029805"},
+{name:"श्री. अल्पेश अरुण शेटे",nameEn:"Alpesh Arun Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"8097514868"},
+{name:"श्री. सुनील दत्तात्रय शेटे",nameEn:"Sunil Dattatray Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9172616166"},
+{name:"श्री. सर्जेराव हरकानाथ शेटे",nameEn:"Sarjerao Harkanath Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9987236358"},
+{name:"श्री. योगेश बाबू शेटे",nameEn:"Yogesh Babu Shete",village:"अंबाडी",villageEn:"Ambadi",mobile:"9673727050"},
+{name:"श्री. त्र्यंबकांत रामचंद्र शेटे",nameEn:"Tryambakant Ramchandra Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9220152808"},
+{name:"श्री. मोहन विश्वनाथ शेटे",nameEn:"Mohan Vishwanath Shete",village:"भिवंडी",villageEn:"Bhiwandi",mobile:"9028265888"},
+{name:"श्री. चंद्रकांत पंढरीनाथ शेटे",nameEn:"Chandrakant Pandharinath Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"7620764784"},
+{name:"श्री. समीर चंद्रकांत शेटे",nameEn:"Sameer Chandrakant Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9922495797"},
+{name:"श्री. बिपिन चंद्रकांत शेटे",nameEn:"Bipin Chandrakant Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9665371380"},
+{name:"श्री. सुधीर पंढरीनाथ शेटे",nameEn:"Sudhir Pandharinath Shete",village:"टिटवाळा",villageEn:"Titwala",mobile:"9029813910"},
+{name:"श्री. सुधीर बळीराम शेटे",nameEn:"Sudhir Baliram Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"7768929444"},
+{name:"श्री. विलास बळीराम शेटे",nameEn:"Vilas Baliram Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"8655464268"},
+{name:"श्री. उदय गजानन शेटे",nameEn:"Uday Gajanan Shete",village:"कुळगाव",villageEn:"Kulgaon",mobile:"8484872796"},
+{name:"श्री. शिवराज विकास शेटे",nameEn:"Shivraj Vikas Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"7276641118"},
+{name:"श्री. रोहित नंदकुमार शेटे",nameEn:"Rohit Nandkumar Shete",village:"भिवंडी",villageEn:"Bhiwandi",mobile:"9226976766"},
+{name:"श्री. रविंद्र भिमनाथ शेटे",nameEn:"Ravindra Bhimnath Shete",village:"मुरबाड",villageEn:"Murbad",mobile:"9226124141"},
+{name:"श्री. साईनाथ दत्तात्रय शेटे",nameEn:"Sainath Dattatray Shete",village:"मुरबाड",villageEn:"Murbad",mobile:"9764661669"},
+{name:"श्री. मिलिंद पांडुरंग शेटे",nameEn:"Milind Pandurang Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9227973363"},
+{name:"श्री. राजेश अनंत शेटे",nameEn:"Rajesh Anant Shete",village:"अंबरनाथ",villageEn:"Ambernath",mobile:"9890641537"},
+{name:"श्री. दिगंबर मालचंद्र शेटे",nameEn:"Digambar Malchandra Shete",village:"मुरबाड",villageEn:"Murbad",mobile:"7039975438"},
+{name:"श्री. संतोष मुरलीधर शेटे",nameEn:"Santosh Muralidhar Shete",village:"उल्हासनगर",villageEn:"Ulhasnagar",mobile:"9960332566"},
+{name:"श्री. योगेश मुरलीधर शेटे",nameEn:"Yogesh Muralidhar Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"9224413542"},
+{name:"श्री. महेश सदानंद शेटे",nameEn:"Mahesh Sadanand Shete",village:"नेतीवली",villageEn:"Netivali",mobile:"9867386723"},
+{name:"श्री. अरुण सदानंद शेटे",nameEn:"Arun Sadanand Shete",village:"देवरंग",villageEn:"Devrang",mobile:"9320301053"},
+{name:"श्री. स्वप्नील पद्माकर शेटे",nameEn:"Swapnil Padmakar Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9699761517"},
+{name:"श्री. दत्तात्रय नारायण शेटे",nameEn:"Dattatray Narayan Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9819654242"},
+{name:"श्री. प्रमोद गजानन शेटे",nameEn:"Pramod Gajanan Shete",village:"मुरबाड",villageEn:"Murbad",mobile:"8850834532"},
+{name:"श्री. मिलिंद मुरलीधर शेटे",nameEn:"Milind Muralidhar Shete",village:"विठ्ठलवाडी",villageEn:"Vitthalwadi",mobile:"7498046149"},
+{name:"श्री. किरण काशिनाथ शेटे",nameEn:"Kiran Kashinath Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"8805347590"},
+{name:"श्री. योगेश विश्वनाथ शेटे",nameEn:"Yogesh Vishwanath Shete",village:"भिवंडी",villageEn:"Bhiwandi",mobile:"9822270707"},
+{name:"श्री. गुरुनाथ द्वारकानाथ शेटे",nameEn:"Gurunath Dwarkanath Shete",village:"सुरडा",villageEn:"Surda",mobile:"9421627743"},
+{name:"श्री. बाळकृष्ण बाबू शेटे",nameEn:"Balkrishna Babu Shete",village:"ढलोंडा",villageEn:"Dhalonda",mobile:"9028296961"},
+{name:"श्री. ओंकार मुरलीधर शेटे",nameEn:"Omkar Muralidhar Shete",village:"अंबरनाथ",villageEn:"Ambernath",mobile:"7768887974"},
+{name:"श्री. दिनेश मेघराज शेटे",nameEn:"Dinesh Meghraj Shete",village:"डोंबिवली",villageEn:"Dombivli",mobile:"9823587946"},
+{name:"श्री. राजेंद्र मोरेश्वर शेटे",nameEn:"Rajendra Moreshwar Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9833410701"},
+{name:"श्री. श्रीनाथ सूर्यकांत शेटे",nameEn:"Shrinath Suryakant Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"8007951369"},
+{name:"श्री. अनिरुद्ध सूर्यकांत शेटे",nameEn:"Aniruddha Suryakant Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"7722080550"},
+{name:"श्री. कृष्णदास सदानंद शेटे",nameEn:"Krishnadas Sadanand Shete",village:"बदलापूर",villageEn:"Badlapur",mobile:"8698858558"},
+{name:"श्री. महेश मधुकर शेटे",nameEn:"Mahesh Madhukar Shete",village:"वडगाव",villageEn:"Wadgaon",mobile:"9960816183"},
+{name:"श्री. निखिलेश अनिल शेटे",nameEn:"Nikhilesh Anil Shete",village:"वासिंद",villageEn:"Vasind",mobile:"9028663031"},
+{name:"श्री. सुनील शांताराम शेटे",nameEn:"Sunil Shantaram Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"8976903137"},
+{name:"श्री. विजय रमेश शेटे",nameEn:"Vijay Ramesh Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9623683435"},
+{name:"श्री. गिरीश गुरुनाथ शेटे",nameEn:"Girish Gurunath Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9769551942"},
+{name:"श्री. प्राशिल निखिल शेटे",nameEn:"Prashil Nikhil Shete",village:"ठाणे",villageEn:"Thane",mobile:"9987888388"},
+{name:"श्री. मंजिरी गोविंद शेटे",nameEn:"Manjiri Govind Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9226466108"},
+{name:"श्री. मनोज मधुकर शेटे",nameEn:"Manoj Madhukar Shete",village:"वडगाव",villageEn:"Wadgaon",mobile:"9049434137"},
+{name:"श्री. मनोज मेघराज शेटे",nameEn:"Manoj Meghraj Shete",village:"खोपोली",villageEn:"Khopoli",mobile:"8793538450"},
+{name:"कै. मोहन चंद्रकांत शेटे",nameEn:"Mohan Chandrakant Shete",village:"विठ्ठलवाडी",villageEn:"Vitthalwadi",mobile:"9323474369"},
+{name:"श्री. प्रमोद गजानन शेटे",nameEn:"Pramod Gajanan Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9819242132"},
+{name:"श्री. गुरुनाथ द्वारकानाथ शेटे",nameEn:"Gurunath Dwarkanath Shete",village:"देवरंग",villageEn:"Devrang",mobile:"8655385355"},
+{name:"श्री. सुरेश नारायण शेटे",nameEn:"Suresh Narayan Shete",village:"भिवंडी",villageEn:"Bhiwandi",mobile:"7219573730"},
+{name:"श्री. सुनील शांताराम शेटे",nameEn:"Sunil Shantaram Shete",village:"वासिंद",villageEn:"Vasind",mobile:"9324484800"},
+{name:"सौ. लक्ष्मी पंकज शेटे",nameEn:"Laxmi Pankaj Shete",village:"वासिंद",villageEn:"Vasind",mobile:"8080005505"},
+{name:"श्री. मंगेश शांताराम शेटे",nameEn:"Mangesh Shantaram Shete",village:"वासिंद",villageEn:"Vasind",mobile:"9766920125"},
+{name:"कु. मयूर संगेश शेटे",nameEn:"Mayur Sangesh Shete",village:"वासिंद",villageEn:"Vasind",mobile:"8983662652"},
+{name:"श्री. प्रशांत रघुनाथ शेटे",nameEn:"Prashant Raghunath Shete",village:"कल्याण",villageEn:"Kalyan",mobile:"9699907943"}
+];
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
@@ -216,6 +290,56 @@ async function getDb() {
     _db.run(`CREATE UNIQUE INDEX IF NOT EXISTS calendar_groups_share_code
              ON calendar_groups (share_code)`);
   } catch { /* index already exists */ }
+
+  // Shete Parivar Navratri: member directory + photo gallery, both gated by an
+  // admin-approval queue. Shares this database file only for storage — no
+  // relation to leads/calendar. `shete_members` is the live, public roster;
+  // `shete_member_requests` and `shete_gallery` hold submissions until an admin
+  // approves them (rows for shete_gallery only ever reach 'approved' by an
+  // admin action — there is no auto-approve path).
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      name_en TEXT,
+      village TEXT NOT NULL,
+      village_en TEXT,
+      mobile TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_member_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      village TEXT NOT NULL,
+      mobile TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      reviewed_at TEXT
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_gallery (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      image_file TEXT NOT NULL,
+      caption TEXT NOT NULL,
+      year INTEGER NOT NULL,
+      mobile TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      reviewed_at TEXT
+    )
+  `);
+
+  if (query(`SELECT id FROM shete_members`).length === 0) {
+    for (const m of SHETE_MEMBERS_SEED) {
+      _db.run(
+        `INSERT INTO shete_members (name, name_en, village, village_en, mobile) VALUES (?,?,?,?,?)`,
+        [m.name, m.nameEn, m.village, m.villageEn, m.mobile]
+      );
+    }
+  }
 
   // Seed admin if not exists
   const existing = query(`SELECT id FROM users WHERE username = 'admin'`);

@@ -30,6 +30,8 @@ getDb().then(() => {
   const calendarRouter = require('./routes/calendar');
   const calendarAdminRouter = require('./routes/calendarAdmin');
   const statsRouter    = require('./routes/stats');
+  const sheteRouter      = require('./routes/shete');
+  const sheteAdminRouter = require('./routes/sheteAdmin');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -50,6 +52,16 @@ getDb().then(() => {
   app.use('/api/followups', requireAuth, followupsRouter);
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
   app.use('/api/stats',     statsRouter); // stats router applies requireAuth + requireAdmin itself
+
+  // Public: Shete Parivar Navratri — member directory + photo gallery, both
+  // gated by an admin queue. Unauthenticated on purpose, same as /api/calendar:
+  // the site itself is open to anyone, submissions just land in a pending
+  // table instead of going live.
+  app.use('/api/shete', sheteRouter);
+  // Protected: reviewing/approving those submissions. Deliberately a separate
+  // mount from /api/shete, same split as /api/calendar-admin, so the public
+  // surface can never approve its own requests.
+  app.use('/api/shete-admin', sheteAdminRouter); // applies requireAuth + requireAdmin itself
 
   // Anything under /api that matched no route above is a 404 in JSON. Without
   // this it falls through to the SPA fallback and answers 200 with React's HTML,

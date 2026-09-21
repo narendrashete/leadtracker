@@ -1,47 +1,52 @@
 (function () {
-  // Mock gallery images generated as inline SVG placeholders (festive colors).
-  // Replace this array with real photo URLs/paths later, e.g. "assets/img/photo1.jpg".
-  const colors = ['#7a1024', '#e8622c', '#e8b04b', '#3f8f6b', '#6a4c9c', '#c0293f', '#2f6f9e', '#a8763e', '#b23a6b'];
-  const icons = ['🪔', '🎊', '🥁', '💃', '🌸', '🕉️', '✨', '🎶', '🙏'];
-
-  function mockSvg(i) {
-    const c = colors[i % colors.length];
-    const icon = icons[i % icons.length];
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">' +
-      '<rect width="300" height="300" fill="' + c + '"/>' +
-      '<circle cx="150" cy="150" r="90" fill="rgba(255,255,255,0.12)"/>' +
-      '<text x="50%" y="54%" font-size="100" text-anchor="middle" dominant-baseline="middle">' + icon + '</text>' +
-      '</svg>';
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
-
-  const GALLERY_IMAGES = Array.from({ length: 9 }, function (_, i) { return mockSvg(i); });
-
   const collage = document.getElementById('collage');
+  const loadingEl = document.getElementById('loadingNote');
+  const noPhotosEl = document.getElementById('noPhotos');
   const overlay = document.getElementById('modalOverlay');
   const modalImg = document.getElementById('modalImg');
+  const modalCaption = document.getElementById('modalCaption');
+
+  let PHOTOS = [];
   let current = 0;
 
-  GALLERY_IMAGES.forEach(function (src, i) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.innerHTML = '<img src="' + src + '" alt="क्षणचित्र ' + (i + 1) + '">';
-    cell.addEventListener('click', function () { openModal(i); });
-    collage.appendChild(cell);
-  });
+  function escapeHtml(s) {
+    return (s || '').toString().replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function renderCollage() {
+    collage.innerHTML = '';
+    if (PHOTOS.length === 0) {
+      noPhotosEl.style.display = 'block';
+      return;
+    }
+    noPhotosEl.style.display = 'none';
+    PHOTOS.forEach(function (p, i) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.innerHTML = '<img src="' + p.url + '" alt="' + escapeHtml(p.caption) + '" loading="lazy">';
+      cell.addEventListener('click', function () { openModal(i); });
+      collage.appendChild(cell);
+    });
+  }
 
   function openModal(i) {
     current = i;
-    modalImg.src = GALLERY_IMAGES[current];
+    showCurrent();
     overlay.classList.add('open');
+  }
+  function showCurrent() {
+    const p = PHOTOS[current];
+    modalImg.src = p.url;
+    modalCaption.textContent = p.caption + ' — ' + p.year;
   }
   function closeModal() {
     overlay.classList.remove('open');
   }
   function show(delta) {
-    current = (current + delta + GALLERY_IMAGES.length) % GALLERY_IMAGES.length;
-    modalImg.src = GALLERY_IMAGES[current];
+    current = (current + delta + PHOTOS.length) % PHOTOS.length;
+    showCurrent();
   }
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
@@ -55,5 +60,102 @@
     if (e.key === 'Escape') closeModal();
     if (e.key === 'ArrowLeft') show(-1);
     if (e.key === 'ArrowRight') show(1);
+  });
+
+  function loadGallery() {
+    fetch('/api/shete/gallery/approved')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        PHOTOS = data;
+        loadingEl.style.display = 'none';
+        renderCollage();
+      })
+      .catch(function () {
+        loadingEl.textContent = 'फोटो लोड करता आले नाहीत. कृपया पुन्हा प्रयत्न करा.';
+      });
+  }
+  loadGallery();
+
+  // ---- Upload form ----
+  const fab = document.getElementById('uploadFab');
+  const uOverlay = document.getElementById('uploadOverlay');
+  const form = document.getElementById('uploadForm');
+  const msgEl = document.getElementById('uploadMsg');
+  const yearInput = document.getElementById('uYear');
+  yearInput.max = new Date().getFullYear();
+
+  fab.addEventListener('click', function () {
+    msgEl.textContent = '';
+    msgEl.className = 'form-msg';
+    form.reset();
+    uOverlay.classList.add('open');
+  });
+  document.getElementById('uploadClose').addEventListener('click', function () {
+    uOverlay.classList.remove('open');
+  });
+  uOverlay.addEventListener('click', function (e) {
+    if (e.target === uOverlay) uOverlay.classList.remove('open');
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const photoFile = document.getElementById('uPhoto').files[0];
+    const caption = document.getElementById('uCaption').value.trim();
+    const year = document.getElementById('uYear').value;
+    const mobile = document.getElementById('uMobile').value.trim();
+    const maxYear = new Date().getFullYear();
+
+    if (!photoFile) {
+      msgEl.textContent = 'कृपया एक फोटो निवडा.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+    if (!caption) {
+      msgEl.textContent = 'कॅप्शन आवश्यक आहे.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+    const yearNum = parseInt(year, 10);
+    if (!yearNum || yearNum < 1990 || yearNum > maxYear) {
+      msgEl.textContent = 'वर्ष 1990 ते ' + maxYear + ' दरम्यान असावे.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(mobile)) {
+      msgEl.textContent = 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('photo', photoFile);
+    fd.append('caption', caption);
+    fd.append('year', String(yearNum));
+    fd.append('mobile', mobile);
+
+    const submitBtn = form.querySelector('.form-submit');
+    submitBtn.disabled = true;
+    msgEl.textContent = 'अपलोड होत आहे...';
+    msgEl.className = 'form-msg';
+
+    fetch('/api/shete/gallery/request', { method: 'POST', body: fd })
+      .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+      .then(function (res) {
+        submitBtn.disabled = false;
+        if (!res.ok) {
+          msgEl.textContent = res.body.error || 'काहीतरी चूक झाली.';
+          msgEl.className = 'form-msg error';
+          return;
+        }
+        msgEl.textContent = res.body.message;
+        msgEl.className = 'form-msg success';
+        form.reset();
+        setTimeout(function () { uOverlay.classList.remove('open'); }, 1800);
+      })
+      .catch(function () {
+        submitBtn.disabled = false;
+        msgEl.textContent = 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.';
+        msgEl.className = 'form-msg error';
+      });
   });
 })();

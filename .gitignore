@@ -10,3 +10,8 @@ frontend/src.zip
 # nothing here is committed, pulled or deployed, and the app cannot see it either
 # (the audio manifest only picks up .mp3 files whose name starts with a number).
 aartisangrah/audio/archived/
+
+# User-submitted gallery photos, referenced only by shete_gallery rows in
+# leads.db (also git-ignored). Content, not code — never committed, persists
+# across deploys because git pull never touches untracked files.
+shetenavratri/uploads/

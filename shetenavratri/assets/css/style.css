@@ -369,12 +369,123 @@ button{font-family:inherit;}
 .modal-nav.prev{left:14px;}
 .modal-nav.next{right:14px;}
 
+.modal-caption{
+  color:#fff;
+  text-align:center;
+  font-size:13px;
+  margin-top:10px;
+  max-width:90vw;
+}
+
 /* Disable long-press callout / drag-copy on protected text globally within member cards */
 .protected{
   -webkit-user-select:none;
   user-select:none;
   -webkit-touch-callout:none;
 }
+
+/* ---------- Loading / floating action button ---------- */
+.loading-note{
+  text-align:center;
+  color:var(--text-soft);
+  font-size:13px;
+  padding:24px 0;
+}
+.fab{
+  position:fixed;
+  right:20px;
+  bottom:24px;
+  width:56px;height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--orange),var(--maroon));
+  color:#fff;
+  font-size:24px;
+  border:none;
+  box-shadow:0 6px 18px rgba(122,16,36,0.4);
+  display:flex;align-items:center;justify-content:center;
+  z-index:60;
+}
+.fab:active{transform:scale(0.94);}
+
+/* ---------- Submission forms (add member / upload photo) ---------- */
+.form-overlay{align-items:flex-end;}
+.form-sheet{
+  background:var(--cream);
+  width:100%;
+  max-width:480px;
+  border-radius:22px 22px 0 0;
+  padding:22px 20px 28px;
+  position:relative;
+  max-height:88vh;
+  overflow-y:auto;
+}
+@media (min-width:600px){
+  .form-overlay{align-items:center;}
+  .form-sheet{border-radius:22px;}
+}
+.form-sheet h2{
+  margin:0 0 6px;
+  font-size:19px;
+  color:var(--maroon-dark);
+}
+.form-hint{
+  font-size:12px;
+  color:var(--text-soft);
+  margin:0 0 16px;
+}
+.form-sheet .modal-close{
+  position:absolute;
+  top:14px;right:14px;
+  width:32px;height:32px;
+  background:rgba(122,16,36,0.1);
+  color:var(--maroon-dark);
+  font-size:16px;
+}
+#addMemberForm label,
+#uploadForm label{
+  display:block;
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--maroon-dark);
+  margin-bottom:14px;
+}
+#addMemberForm input,
+#uploadForm input{
+  display:block;
+  width:100%;
+  margin-top:6px;
+  padding:11px 13px;
+  border-radius:10px;
+  border:1px solid #e2d3c0;
+  font-size:14px;
+  font-family:inherit;
+  background:#fff;
+  color:var(--text);
+}
+#addMemberForm input:focus,
+#uploadForm input:focus{
+  outline:2px solid var(--gold);
+  border-color:var(--gold);
+}
+.form-msg{
+  min-height:18px;
+  font-size:12.5px;
+  margin-bottom:10px;
+}
+.form-msg.error{color:#c0293f;font-weight:600;}
+.form-msg.success{color:#2f8f4e;font-weight:600;}
+.form-submit{
+  width:100%;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));
+  color:#fff;
+  font-weight:700;
+  font-size:15px;
+  font-family:inherit;
+}
+.form-submit:disabled{opacity:0.6;}
 
 @media (min-width:600px){
   .dashboard{grid-template-columns:1fr 1fr;max-width:560px;}

@@ -25,11 +25,28 @@
     <div class="result-count" id="resultCount"></div>
   </div>
 
+  <div class="loading-note" id="loadingNote">सभासद यादी लोड होत आहे...</div>
   <div class="member-list" id="memberList"></div>
   <div class="no-results" id="noResults" style="display:none;">🔍 कोणताही सभासद सापडला नाही<br><span style="font-size:12px;">No member found</span></div>
 </div>
 
-<script src="/shetenavratri/assets/js/members-data.js"></script>
+<button class="fab" id="addMemberFab" aria-label="सभासद जोडा">➕</button>
+
+<div class="modal-overlay form-overlay" id="addMemberOverlay">
+  <div class="form-sheet">
+    <button class="modal-close" id="addMemberClose">✕</button>
+    <h2>नवीन सभासद नोंदणी</h2>
+    <p class="form-hint">विनंती Admin कडून मंजूर झाल्यावर सभासद यादीत दिसेल.</p>
+    <form id="addMemberForm">
+      <label>नाव (Name) *<input type="text" id="mName" required maxlength="80"></label>
+      <label>गावाचे नाव (Village) *<input type="text" id="mVillage" required maxlength="60"></label>
+      <label>संपर्क क्रमांक (Mobile) *<input type="tel" id="mMobile" required pattern="[0-9]{10}" maxlength="10" placeholder="10 अंकी मोबाईल क्रमांक"></label>
+      <div class="form-msg" id="addMemberMsg"></div>
+      <button type="submit" class="form-submit">विनंती पाठवा</button>
+    </form>
+  </div>
+</div>
+
 <script src="/shetenavratri/assets/js/protect.js"></script>
 <script src="/shetenavratri/assets/js/members.js"></script>
 </body>

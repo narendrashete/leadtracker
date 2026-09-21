@@ -202,6 +202,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-21** — Moved the two unnumbered recordings (आरती सप्रेम जय जय विठ्ठल, जय देव जय देव
+  दत्त अवधूता) out of `aartisangrah/audio/` into a git-ignored `audio/archived/`. They had no
+  matching aarti, so the manifest could never surface them, yet 7.3 MB shipped on every pull.
+  They stay local until they are numbered; the copies are recoverable from history either way.
 - **2026-09-16** — The Visitors breakdown now lists every labelled page even at zero. It
   previously grouped only over recorded rows, so the newly split installable-app surfaces
   were absent until someone opened them — indistinguishable from the counter being broken.

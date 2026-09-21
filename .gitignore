@@ -5,3 +5,8 @@ backend/server_test.log
 frontend/dist/
 .env
 frontend/src.zip
+
+# Recordings parked until they are numbered and matched to an aarti. Local only:
+# nothing here is committed, pulled or deployed, and the app cannot see it either
+# (the audio manifest only picks up .mp3 files whose name starts with a number).
+aartisangrah/audio/archived/

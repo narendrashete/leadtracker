@@ -230,6 +230,13 @@ matching both Devanagari titles and the Latin `keywords` field on each entry.
   ignored; a number past the end of the array is ignored too. If the fetch fails, no aarti
   gets a player — never a broken one. That route must stay AHEAD of the static mount, or a
   file literally named `manifest.json` would shadow it.
+- **`aartisangrah/audio/archived/` is a local parking spot and is git-ignored.** Recordings
+  that exist but have no aarti to belong to yet live there rather than in `audio/` itself, so
+  they are neither committed nor deployed — they were shipping several MB to the server on
+  every pull while being unreachable, since the manifest skips anything without a leading
+  number. Nothing reads that folder: the manifest ignores it (a directory is not an `.mp3`),
+  and a fresh clone will not have it at all. Move a file up into `audio/` with a number in
+  front when its aarti is ready. Don't commit it back, and don't `git add -f` past the ignore.
 - **`audio` on an entry is still what the player reads**, it is just written by the manifest
   at load rather than typed into the array. Hard-coding one would work but would then drift
   from the folder, so don't.

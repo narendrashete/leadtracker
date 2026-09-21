@@ -60,6 +60,34 @@ export default function Sidebar() {
           PrimeGem
         </a>
 
+        {/* Shete Parivar Navratri — another standalone page served by this same
+            Express process, not a React route, so it is a plain link like the
+            two above. */}
+        <a
+          href="/shetenavratri"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={navStyle({ isActive: false })}
+        >
+          <span style={{ fontSize: 16 }}>🪔</span>
+          Shete Navratri
+        </a>
+
+        {/* Admin-only: the approval queue for Shete Navratri's public photo/
+            member submissions. A plain link (its own login screen, not a React
+            route) placed alongside the other admin-only pages below. */}
+        {user?.role === 'admin' && (
+          <a
+            href="/shetenavratri/admin.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={navStyle({ isActive: false })}
+          >
+            <span style={{ fontSize: 16 }}>✅</span>
+            Shete Navratri Admin
+          </a>
+        )}
+
         {/* Admin-only: Users */}
         {user?.role === 'admin' && (
           <NavLink to="/users" style={navStyle}>

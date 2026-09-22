@@ -202,6 +202,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-22** — Fixed the Navratri gallery photo caption, which appeared as a narrow sideways
+  column clipped at the right edge of the lightbox. `.modal-overlay` is `display:flex` with the
+  default row direction, so the photo and `.modal-caption` were flex siblings sharing the width
+  and the caption got whatever the photo did not take. Set `flex-direction:column` so the
+  caption stacks under the photo, trimmed the image to `max-height:76vh` to leave room for it,
+  and gave the caption `line-height:1.5`, `max-width:min(90vw,640px)`, `padding:0 60px` (clear
+  of the nav arrows) and `flex-shrink:0`. CSS only — `gallery.js` still builds the text as
+  `caption — year`. `admin.html`'s `#previewOverlay` reuses the same classes, so it is fixed
+  too. Verified in Chromium at 390px and 1280px, with both a short and a two-line caption.
 - **2026-09-22** — Moved the Navratri history list from a static JS array to a new
   `shete_history` DB table (id, name, village, year — nullable village/year for entries like
   sr 31 that have no recorded detail yet), one-time seeded from the same 31-entry transcription

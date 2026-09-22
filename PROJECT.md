@@ -202,6 +202,17 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-22** — Extended PrimeGem's "Developed by Prime Computers" credit (clickable logo
+  linking to `https://www.primecomputers.co.in`, inlined as the same base64 PNG data URI so
+  no page gains an external request) to Aarti Sangrah and the Navratri site. Aarti Sangrah:
+  added a `.credit-row` under the masthead's `.sub` line in both `index.html` and `app.html`
+  (kept identical, per that section's fork rule), with a light chip behind the logo — the
+  brand navy is unreadable straight on the maroon masthead gradient, the same fix the gem
+  credit already uses for its near-black background. Navratri: added a `.footer-credit` row
+  under `index.html`'s existing `©` footer note, styled in `assets/css/style.css`; the site's
+  cream background is already light enough that the logo needed no chip. Not added to
+  `members.html`/`history.html`/`gallery.html` — the homepage footer is the site's one
+  attribution spot, same as the single credit on PrimeGem's page.
 - **2026-09-22** — Fixed the Navratri gallery photo caption, which appeared as a narrow sideways
   column clipped at the right edge of the lightbox. `.modal-overlay` is `display:flex` with the
   default row direction, so the photo and `.modal-caption` were flex siblings sharing the width

@@ -107,4 +107,92 @@ router.post('/members/bulk-approve', (req, res) => {
   res.json({ ok: true, approved: count });
 });
 
+// ---- Member roster (edit already-approved entries) ----
+
+const MOBILE_RE = /^[0-9]{10}$/;
+
+router.get('/members', (req, res) => {
+  const rows = query(
+    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile
+     FROM shete_members ORDER BY id`
+  );
+  res.json(rows);
+});
+
+router.patch('/members/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_members WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'सभासद सापडला नाही.' });
+
+  const name = (req.body.name || '').toString().trim();
+  const nameEn = (req.body.nameEn || '').toString().trim();
+  const village = (req.body.village || '').toString().trim();
+  const villageEn = (req.body.villageEn || '').toString().trim();
+  const mobile = (req.body.mobile || '').toString().trim();
+
+  if (!name || !village) return res.status(400).json({ error: 'नाव आणि गाव आवश्यक आहे.' });
+  if (!MOBILE_RE.test(mobile)) return res.status(400).json({ error: 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.' });
+  const dupe = query(`SELECT id FROM shete_members WHERE mobile = ? AND id != ?`, [mobile, id]);
+  if (dupe.length) return res.status(409).json({ error: 'हा मोबाईल क्रमांक आधीच दुसऱ्या सभासदाकडे आहे.' });
+
+  run(
+    `UPDATE shete_members SET name = ?, name_en = ?, village = ?, village_en = ?, mobile = ? WHERE id = ?`,
+    [name, nameEn || null, village, villageEn || null, mobile, id]
+  );
+  res.json({ ok: true });
+});
+
+// ---- History list (add/edit/delete) ----
+
+function parseYear(raw) {
+  const s = (raw === undefined || raw === null || raw === '') ? null : raw;
+  if (s === null) return null;
+  const y = Number(s);
+  return Number.isInteger(y) ? y : NaN;
+}
+
+router.get('/history', (req, res) => {
+  const rows = query(
+    `SELECT id, name, village, year
+     FROM shete_history ORDER BY (year IS NULL), year ASC, id ASC`
+  );
+  res.json(rows);
+});
+
+router.post('/history', (req, res) => {
+  const name = (req.body.name || '').toString().trim();
+  const village = (req.body.village || '').toString().trim();
+  const year = parseYear(req.body.year);
+
+  if (!name) return res.status(400).json({ error: 'यजमानाचे नाव आवश्यक आहे.' });
+  if (Number.isNaN(year)) return res.status(400).json({ error: 'वर्ष वैध क्रमांक असावा.' });
+
+  run(`INSERT INTO shete_history (name, village, year) VALUES (?,?,?)`, [name, village || null, year]);
+  res.json({ ok: true });
+});
+
+router.patch('/history/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_history WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+
+  const name = (req.body.name || '').toString().trim();
+  const village = (req.body.village || '').toString().trim();
+  const year = parseYear(req.body.year);
+
+  if (!name) return res.status(400).json({ error: 'यजमानाचे नाव आवश्यक आहे.' });
+  if (Number.isNaN(year)) return res.status(400).json({ error: 'वर्ष वैध क्रमांक असावा.' });
+
+  run(`UPDATE shete_history SET name = ?, village = ?, year = ? WHERE id = ?`, [name, village || null, year, id]);
+  res.json({ ok: true });
+});
+
+router.delete('/history/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_history WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+  run(`DELETE FROM shete_history WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
 module.exports = router;

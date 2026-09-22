@@ -178,8 +178,36 @@ button{font-family:inherit;}
   text-align:center;
   font-size:11.5px;
   color:var(--text-soft);
+  padding:0 24px 8px;
+}
+
+.footer-credit{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
   padding:0 24px 28px;
 }
+.footer-credit .credit-label{
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--text-soft);
+}
+.footer-credit .credit{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:8px;
+  background:#fff;
+  border:1px solid rgba(122,16,36,0.12);
+  box-shadow:var(--shadow);
+  transition:transform 0.15s ease;
+}
+.footer-credit .credit:hover{ transform:translateY(-1px); }
+.footer-credit .credit:active{ transform:translateY(0); }
+.footer-credit .credit-logo{ display:block; height:16px; width:auto; }
 
 /* ---------- Generic page container ---------- */
 .page{
@@ -293,27 +321,36 @@ button{font-family:inherit;}
 }
 
 /* ---------- History page ---------- */
-.history-card{
+.history-list{display:flex;flex-direction:column;gap:10px;}
+.history-item{
   background:#fff;
-  border-radius:16px;
-  box-shadow:var(--shadow);
-  padding:24px 20px;
-  text-align:center;
-  color:var(--text-soft);
-  margin-top:20px;
-}
-.history-card .big{font-size:38px;margin-bottom:10px;}
-.year-list{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
-.year-item{
-  background:#fff;
-  border-radius:12px;
-  padding:14px 16px;
+  border-radius:14px;
   box-shadow:0 3px 10px rgba(122,16,36,0.08);
+  padding:12px 14px;
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  font-weight:600;
-  color:var(--maroon-dark);
+  gap:12px;
+}
+.history-item .hsr{
+  width:30px;height:30px;
+  border-radius:50%;
+  background:var(--maroon);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.history-item .hinfo{flex:1;min-width:0;font-size:13px;color:var(--text);}
+.history-item .hname{font-weight:700;color:var(--maroon-dark);}
+.history-item .hvillage{font-size:11.5px;color:var(--text-soft);margin-top:2px;}
+.history-item .hyear{
+  font-weight:700;
+  font-size:15px;
+  color:var(--maroon);
+  flex-shrink:0;
+  min-width:44px;
+  text-align:right;
 }
 
 /* ---------- Gallery ---------- */
@@ -337,6 +374,12 @@ button{font-family:inherit;}
   position:fixed;inset:0;
   background:rgba(20,5,8,0.9);
   display:none;
+  /* Column, so the caption sits UNDER the photo. As a row it was a flex sibling
+     of the image, left with whatever width the photo did not take — which on a
+     phone is almost none, so the caption broke to one word per line and ran off
+     the edge. The close and nav buttons are absolutely positioned, so the
+     direction does not affect them. */
+  flex-direction:column;
   align-items:center;justify-content:center;
   z-index:100;
   padding:20px;
@@ -344,7 +387,9 @@ button{font-family:inherit;}
 .modal-overlay.open{display:flex;}
 .modal-overlay img{
   max-width:100%;
-  max-height:80vh;
+  /* Leaves room below for the caption now that the two are stacked; at 80vh a
+     two-line caption could be pushed off a short screen. */
+  max-height:76vh;
   border-radius:10px;
   box-shadow:0 10px 40px rgba(0,0,0,0.5);
 }
@@ -378,8 +423,13 @@ button{font-family:inherit;}
   color:#fff;
   text-align:center;
   font-size:13px;
-  margin-top:10px;
-  max-width:90vw;
+  line-height:1.5;
+  margin-top:12px;
+  max-width:min(90vw, 640px);
+  /* Clear of the nav arrows, which sit 14px from each edge and are 44px wide. */
+  padding:0 60px;
+  /* Never squeezed by a tall photo — the caption is the shorter of the two. */
+  flex-shrink:0;
 }
 
 /* Disable long-press callout / drag-copy on protected text globally within member cards */

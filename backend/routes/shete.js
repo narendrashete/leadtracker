@@ -80,6 +80,17 @@ router.get('/gallery/approved', (req, res) => {
   res.json(rows.map(r => ({ id: r.id, url: galleryUrl(r.imageFile), caption: r.caption, year: r.year })));
 });
 
+// Public: the Navratri history list, edited from the admin page directly
+// (no request/approval queue — this is the admin's own record, not something
+// friends submit). Ordered by year, with sr 31's null year sorted to the end.
+router.get('/history', (req, res) => {
+  const rows = query(
+    `SELECT id, name, village, year
+     FROM shete_history ORDER BY (year IS NULL), year ASC, id ASC`
+  );
+  res.json(rows.map((r, i) => ({ ...r, sr: i + 1 })));
+});
+
 // Public: submit a photo for the gallery. Gated on membership — the mobile
 // number must already be in shete_members — but even a match only reaches the
 // pending queue; nothing here ever writes status='approved'.

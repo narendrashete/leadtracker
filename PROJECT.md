@@ -202,6 +202,54 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-22** — Extended PrimeGem's "Developed by Prime Computers" credit (clickable logo
+  linking to `https://www.primecomputers.co.in`, inlined as the same base64 PNG data URI so
+  no page gains an external request) to Aarti Sangrah and the Navratri site. Aarti Sangrah:
+  added a `.credit-row` under the masthead's `.sub` line in both `index.html` and `app.html`
+  (kept identical, per that section's fork rule), with a light chip behind the logo — the
+  brand navy is unreadable straight on the maroon masthead gradient, the same fix the gem
+  credit already uses for its near-black background. Navratri: added a `.footer-credit` row
+  under `index.html`'s existing `©` footer note, styled in `assets/css/style.css`; the site's
+  cream background is already light enough that the logo needed no chip. Not added to
+  `members.html`/`history.html`/`gallery.html` — the homepage footer is the site's one
+  attribution spot, same as the single credit on PrimeGem's page.
+- **2026-09-22** — Fixed the Navratri gallery photo caption, which appeared as a narrow sideways
+  column clipped at the right edge of the lightbox. `.modal-overlay` is `display:flex` with the
+  default row direction, so the photo and `.modal-caption` were flex siblings sharing the width
+  and the caption got whatever the photo did not take. Set `flex-direction:column` so the
+  caption stacks under the photo, trimmed the image to `max-height:76vh` to leave room for it,
+  and gave the caption `line-height:1.5`, `max-width:min(90vw,640px)`, `padding:0 60px` (clear
+  of the nav arrows) and `flex-shrink:0`. CSS only — `gallery.js` still builds the text as
+  `caption — year`. `admin.html`'s `#previewOverlay` reuses the same classes, so it is fixed
+  too. Verified in Chromium at 390px and 1280px, with both a short and a two-line caption.
+- **2026-09-22** — Moved the Navratri history list from a static JS array to a new
+  `shete_history` DB table (id, name, village, year — nullable village/year for entries like
+  sr 31 that have no recorded detail yet), one-time seeded from the same 31-entry transcription
+  as the previous static version. Added `GET /api/shete/history` (public, ordered by year with
+  nulls last) and, in `sheteAdmin.js`, `GET/POST /history` + `PATCH/DELETE /history/:id` behind
+  requireAuth+requireAdmin. `history.html`/`history.js` now fetch live instead of shipping the
+  data in the JS file. New "इतिहास यादी" tab in `/shetenavratri/admin.html` lets the admin add a
+  new year, edit an existing entry, or delete one — same live-edit pattern as the सभासद यादी
+  संपादन tab added the same day. No request/approval queue here (unlike members/gallery) since
+  this is the admin's own record, not something friends submit.
+- **2026-09-22** — Filled in the `history.html` (आत्तापर्यंतची नवरात्री झालेली यादी) placeholder
+  with the actual record: 31 entries (यजमान + वर्ष + गाव), transcribed from a supplied register
+  PDF, 1991–2020 plus one pending entry (sr 31, year/village not yet supplied). Static data
+  array in a new `assets/js/history.js` (no DB table, no API — same "plain HTML, no build
+  step" pattern as the rest of this page and gallery.html), with a search box matching
+  members.html's, filtering by name/village/year. Superseded the same day by the DB-backed
+  version above. Replaced the unused `.history-card`/`.year-list`/`.year-item` placeholder CSS
+  with `.history-list`/`.history-item` styled like `.member-card`.
+- **2026-09-21** — Added a "सभासद यादी संपादन" (roster edit) tab to the Shete Navratri admin
+  page (`/shetenavratri/admin.html`, shared login with the Lead Tracker admin account). Until
+  now the admin queue only approved/rejected *new* member requests
+  (`routes/sheteAdmin.js`); there was no way to correct a name or mobile number already in
+  `shete_members` short of a manual DB edit. Added `GET /api/shete-admin/members` (full
+  roster) and `PATCH /api/shete-admin/members/:id` (update name/name_en/village/village_en/
+  mobile, with mobile-uniqueness and format checks), both behind the existing
+  requireAuth+requireAdmin router. `members.html` already reads the live `shete_members` table
+  via `/api/shete/members/approved`, so a save in the new tab appears on the public page
+  immediately — no redeploy needed.
 - **2026-09-21** — Moved the two unnumbered recordings (आरती सप्रेम जय जय विठ्ठल, जय देव जय देव
   दत्त अवधूता) out of `aartisangrah/audio/` into a git-ignored `audio/archived/`. They had no
   matching aarti, so the manifest could never surface them, yet 7.3 MB shipped on every pull.

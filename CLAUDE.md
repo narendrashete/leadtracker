@@ -654,6 +654,16 @@ function rather than reimplementing the rule.
   target before the real hosting choice was made; this caused a documentation/reality
   mismatch that was corrected in commit `4b8e718`. Prevention: this file's Deployment Notes
   section is the source of truth — verify against it before writing new deploy docs.
+- **A flex overlay that stacks a caption under an image needs `flex-direction:column`.**
+  `.modal-overlay` (the Navratri gallery lightbox, and the admin preview that reuses its
+  classes) is `display:flex`, so with the default row direction the `<img>` and
+  `.modal-caption` are flex *siblings competing for width* — the caption gets only what the
+  photo leaves, which on a phone is almost nothing, so it wrapped to one word per line down
+  the right edge and ran off screen. It read as "the caption is sideways and cut". The close
+  and nav buttons are `position:absolute`, so they gave no hint that the container was a row.
+  Prevention: when a caption/label is meant to sit *below* media inside a flex container, set
+  the direction explicitly rather than relying on the visual result at desktop width, and
+  check it at 390px — at 1280px the row layout looks almost correct.
 
 ## Known Technical Constraints
 - No native-module packages (node-gyp fails on this machine's network/cert setup).

@@ -31,6 +31,44 @@ const CALENDAR_SEED_GROUPS = [
   }
 ];
 
+// Initial list for the Shete Parivar Navratri history page (यजमान + वर्ष + गाव).
+// Seeded once into shete_history; after that the list is edited from the admin
+// page directly. Transcribed from the Shete Kutumbiya register PDF (sr 1-31);
+// sr 31 had no year/village recorded in the source.
+const SHETE_HISTORY_SEED = [
+  { name: 'रामचंद्र शेटे', year: 1991, village: 'कुळगाव' },
+  { name: 'चंद्रकांत शेटे', year: 1992, village: 'कुळगाव' },
+  { name: 'साईनाथ शेटे', year: 1993, village: 'कल्याण' },
+  { name: 'पदमाकर शेटे', year: 1994, village: 'कल्याण' },
+  { name: 'शांताराम शेटे', year: 1995, village: 'कल्याण' },
+  { name: 'दत्तात्रय शेटे', year: 1996, village: 'मुरबाड' },
+  { name: 'दिनेश शेटे', year: 1997, village: 'खोपोली' },
+  { name: 'विनोद शेटे', year: 1998, village: 'कल्याण' },
+  { name: 'सुधाकर शेटे', year: 1999, village: 'अंबरनाथ' },
+  { name: 'ऋषिकांत शेटे', year: 2000, village: 'कल्याण' },
+  { name: 'रामचंद्र शेटे', year: 2001, village: 'कुळगाव' },
+  { name: 'चंद्रकांत शेटे', year: 2002, village: 'मुरबाड' },
+  { name: 'दत्तात्रय शेटे', year: 2003, village: 'मुरबाड' },
+  { name: 'दत्तात्रय द्वा. शेटे', year: 2004, village: 'मुरबाड' },
+  { name: 'प्रमोद शेटे', year: 2005, village: 'कल्याण' },
+  { name: 'विश्वनाथ शेटे', year: 2006, village: 'भिवंडी' },
+  { name: 'कृष्णा शेटे', year: 2007, village: 'भिवंडी' },
+  { name: 'सुभाष शेटे', year: 2008, village: 'भिवंडी' },
+  { name: 'नंदकुमार शेटे', year: 2009, village: 'भिवंडी' },
+  { name: 'अरुण शेटे', year: 2010, village: 'कल्याण' },
+  { name: 'दत्तात्रय शेटे', year: 2011, village: 'कल्याण' },
+  { name: 'दिगंबर शेटे', year: 2012, village: 'कल्याण' },
+  { name: 'नंदकुमार वासुदेव शेटे', year: 2013, village: 'भिवंडी' },
+  { name: 'रवींद्र भीमनाथ शेटे', year: 2014, village: 'मुरबाड' },
+  { name: 'दत्तात्रय द्वा. शेटे', year: 2015, village: 'मुरबाड' },
+  { name: 'अनिरुद्ध सूर्यकांत शेटे', year: 2016, village: 'बदलापूर' },
+  { name: 'रामचंद्र प. शेटे', year: 2017, village: 'बदलापूर' },
+  { name: 'चंद्रकांत प. शेटे', year: 2018, village: 'बदलापूर' },
+  { name: 'अरुण दत्तात्रय शेटे', year: 2019, village: 'देवरूग' },
+  { name: 'गुरुनाथ द्वा. शेटे', year: 2020, village: 'बापगाव' },
+  { name: 'विलास मोरेश्वर शेटे', year: null, village: null },
+];
+
 // Initial roster for the Shete Parivar Navratri member directory. Seeded once
 // into shete_members; after that the list is edited through the site's own
 // add-member request + admin-approval flow, so changing this has no effect on
@@ -331,12 +369,33 @@ async function getDb() {
       reviewed_at TEXT
     )
   `);
+  // Navratri history list — edited straight from the admin page (add/edit/delete),
+  // no request/approval queue like members and gallery have, since it's the
+  // admin's own record rather than something friends submit.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      village TEXT,
+      year INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
 
   if (query(`SELECT id FROM shete_members`).length === 0) {
     for (const m of SHETE_MEMBERS_SEED) {
       _db.run(
         `INSERT INTO shete_members (name, name_en, village, village_en, mobile) VALUES (?,?,?,?,?)`,
         [m.name, m.nameEn, m.village, m.villageEn, m.mobile]
+      );
+    }
+  }
+
+  if (query(`SELECT id FROM shete_history`).length === 0) {
+    for (const h of SHETE_HISTORY_SEED) {
+      _db.run(
+        `INSERT INTO shete_history (name, village, year) VALUES (?,?,?)`,
+        [h.name, h.village, h.year]
       );
     }
   }

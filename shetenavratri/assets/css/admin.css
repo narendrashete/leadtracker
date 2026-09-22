@@ -162,6 +162,8 @@
 }
 .btn-save{background:var(--maroon);color:#fff;}
 .btn-save:disabled{opacity:0.5;}
+.btn-delete{background:#c0293f;color:#fff;}
+.btn-delete:disabled{opacity:0.5;}
 .roster-msg{font-size:11.5px;margin-top:2px;}
 .roster-msg.error{color:#c0293f;}
 .roster-msg.success{color:#2f8f4e;}

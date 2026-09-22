@@ -32,6 +32,7 @@
     <button class="admin-tab active" data-tab="gallery">फोटो विनंत्या <span id="galleryCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="members">सभासद विनंत्या <span id="membersCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="roster">सभासद यादी संपादन</button>
+    <button class="admin-tab" data-tab="history">इतिहास यादी</button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -55,6 +56,24 @@
   <section id="rosterTab" class="admin-section" style="display:none;">
     <input type="text" id="rosterSearch" class="roster-search" placeholder="नाव, गाव किंवा मोबाईल शोधा...">
     <div id="rosterList" class="request-list"></div>
+  </section>
+
+  <section id="historyTab" class="admin-section" style="display:none;">
+    <div class="roster-card" id="historyAddCard">
+      <div class="roster-row">
+        <div class="roster-fields">
+          <label>यजमानाचे नाव<input type="text" id="hAddName" placeholder="उदा. रामचंद्र शेटे"></label>
+        </div>
+        <div class="roster-fields">
+          <label>गाव<input type="text" id="hAddVillage" placeholder="उदा. कल्याण"></label>
+        </div>
+      </div>
+      <label>वर्ष<input type="text" id="hAddYear" placeholder="उदा. 2026" maxlength="4"></label>
+      <div class="roster-msg" id="hAddMsg"></div>
+      <div class="roster-actions"><button class="btn-save" id="hAddBtn">नवीन वर्ष जोडा</button></div>
+    </div>
+    <input type="text" id="historyAdminSearch" class="roster-search" placeholder="नाव, गाव किंवा वर्ष शोधा...">
+    <div id="historyAdminList" class="request-list"></div>
   </section>
 </div>
 

@@ -73,7 +73,9 @@
       document.getElementById('galleryTab').style.display = tab === 'gallery' ? 'block' : 'none';
       document.getElementById('membersTab').style.display = tab === 'members' ? 'block' : 'none';
       document.getElementById('rosterTab').style.display = tab === 'roster' ? 'block' : 'none';
+      document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
       if (tab === 'roster') loadRoster();
+      if (tab === 'history') loadHistoryAdmin();
     });
   });
 
@@ -288,6 +290,139 @@
       msgEl.className = 'roster-msg success';
       const idx = ROSTER.findIndex(function (m) { return String(m.id) === String(id); });
       if (idx !== -1) ROSTER[idx] = Object.assign({}, ROSTER[idx], payload);
+    });
+  });
+
+  // ---- History (add/edit/delete Navratri list) ----
+  const historyAdminList = document.getElementById('historyAdminList');
+  const historyAdminSearch = document.getElementById('historyAdminSearch');
+  let HISTORY_ADMIN = [];
+
+  function filterHistoryAdmin(q) {
+    q = normalize(q);
+    if (!q) return HISTORY_ADMIN;
+    return HISTORY_ADMIN.filter(function (h) {
+      return normalize(h.name).includes(q) || normalize(h.village).includes(q) ||
+        String(h.year || '').includes(q);
+    });
+  }
+
+  function historyCard(h) {
+    const card = document.createElement('div');
+    card.className = 'roster-card';
+    card.dataset.id = h.id;
+    card.innerHTML =
+      '<div class="roster-row">' +
+        '<div class="roster-fields">' +
+          '<label>यजमानाचे नाव<input type="text" class="h-name" value="' + escapeHtml(h.name) + '"></label>' +
+        '</div>' +
+        '<div class="roster-fields">' +
+          '<label>गाव<input type="text" class="h-village" value="' + escapeHtml(h.village) + '"></label>' +
+        '</div>' +
+      '</div>' +
+      '<label>वर्ष<input type="text" class="h-year" value="' + (h.year || '') + '" maxlength="4"></label>' +
+      '<div class="roster-msg"></div>' +
+      '<div class="roster-actions">' +
+        '<button class="btn-delete">काढून टाका</button>' +
+        '<button class="btn-save">जतन करा</button>' +
+      '</div>';
+    return card;
+  }
+
+  function renderHistoryAdmin(list) {
+    historyAdminList.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    list.forEach(function (h) { frag.appendChild(historyCard(h)); });
+    historyAdminList.appendChild(frag);
+  }
+
+  function loadHistoryAdmin() {
+    api('/api/shete-admin/history').then(function (res) {
+      HISTORY_ADMIN = res.body || [];
+      renderHistoryAdmin(filterHistoryAdmin(historyAdminSearch.value));
+    });
+  }
+
+  historyAdminSearch.addEventListener('input', function () {
+    renderHistoryAdmin(filterHistoryAdmin(historyAdminSearch.value));
+  });
+
+  document.getElementById('hAddBtn').addEventListener('click', function () {
+    const btn = this;
+    const msgEl = document.getElementById('hAddMsg');
+    const payload = {
+      name: document.getElementById('hAddName').value.trim(),
+      village: document.getElementById('hAddVillage').value.trim(),
+      year: document.getElementById('hAddYear').value.trim(),
+    };
+    btn.disabled = true;
+    msgEl.textContent = '';
+    msgEl.className = 'roster-msg';
+    api('/api/shete-admin/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(function (res) {
+      btn.disabled = false;
+      if (!res.ok) {
+        msgEl.textContent = res.body.error || 'जोडता आले नाही.';
+        msgEl.className = 'roster-msg error';
+        return;
+      }
+      msgEl.textContent = 'जोडले — वेबसाइटवर लगेच दिसेल.';
+      msgEl.className = 'roster-msg success';
+      document.getElementById('hAddName').value = '';
+      document.getElementById('hAddVillage').value = '';
+      document.getElementById('hAddYear').value = '';
+      loadHistoryAdmin();
+    });
+  });
+
+  historyAdminList.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('btn-save') && !e.target.classList.contains('btn-delete')) return;
+    const card = e.target.closest('.roster-card');
+    const id = card.dataset.id;
+    const msgEl = card.querySelector('.roster-msg');
+
+    if (e.target.classList.contains('btn-delete')) {
+      if (!confirm('ही नोंद कायमची काढून टाकायची?')) return;
+      e.target.disabled = true;
+      api('/api/shete-admin/history/' + id, { method: 'DELETE' }).then(function (res) {
+        if (!res.ok) {
+          e.target.disabled = false;
+          msgEl.textContent = res.body.error || 'काढता आले नाही.';
+          msgEl.className = 'roster-msg error';
+          return;
+        }
+        HISTORY_ADMIN = HISTORY_ADMIN.filter(function (h) { return String(h.id) !== String(id); });
+        card.remove();
+      });
+      return;
+    }
+
+    const payload = {
+      name: card.querySelector('.h-name').value.trim(),
+      village: card.querySelector('.h-village').value.trim(),
+      year: card.querySelector('.h-year').value.trim(),
+    };
+    e.target.disabled = true;
+    msgEl.textContent = '';
+    msgEl.className = 'roster-msg';
+    api('/api/shete-admin/history/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(function (res) {
+      e.target.disabled = false;
+      if (!res.ok) {
+        msgEl.textContent = res.body.error || 'जतन करता आले नाही.';
+        msgEl.className = 'roster-msg error';
+        return;
+      }
+      msgEl.textContent = 'जतन झाले — वेबसाइटवर लगेच दिसेल.';
+      msgEl.className = 'roster-msg success';
+      const idx = HISTORY_ADMIN.findIndex(function (h) { return String(h.id) === String(id); });
+      if (idx !== -1) HISTORY_ADMIN[idx] = Object.assign({}, HISTORY_ADMIN[idx], payload);
     });
   });
 

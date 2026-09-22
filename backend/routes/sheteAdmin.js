@@ -142,4 +142,57 @@ router.patch('/members/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- History list (add/edit/delete) ----
+
+function parseYear(raw) {
+  const s = (raw === undefined || raw === null || raw === '') ? null : raw;
+  if (s === null) return null;
+  const y = Number(s);
+  return Number.isInteger(y) ? y : NaN;
+}
+
+router.get('/history', (req, res) => {
+  const rows = query(
+    `SELECT id, name, village, year
+     FROM shete_history ORDER BY (year IS NULL), year ASC, id ASC`
+  );
+  res.json(rows);
+});
+
+router.post('/history', (req, res) => {
+  const name = (req.body.name || '').toString().trim();
+  const village = (req.body.village || '').toString().trim();
+  const year = parseYear(req.body.year);
+
+  if (!name) return res.status(400).json({ error: 'यजमानाचे नाव आवश्यक आहे.' });
+  if (Number.isNaN(year)) return res.status(400).json({ error: 'वर्ष वैध क्रमांक असावा.' });
+
+  run(`INSERT INTO shete_history (name, village, year) VALUES (?,?,?)`, [name, village || null, year]);
+  res.json({ ok: true });
+});
+
+router.patch('/history/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_history WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+
+  const name = (req.body.name || '').toString().trim();
+  const village = (req.body.village || '').toString().trim();
+  const year = parseYear(req.body.year);
+
+  if (!name) return res.status(400).json({ error: 'यजमानाचे नाव आवश्यक आहे.' });
+  if (Number.isNaN(year)) return res.status(400).json({ error: 'वर्ष वैध क्रमांक असावा.' });
+
+  run(`UPDATE shete_history SET name = ?, village = ?, year = ? WHERE id = ?`, [name, village || null, year, id]);
+  res.json({ ok: true });
+});
+
+router.delete('/history/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_history WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+  run(`DELETE FROM shete_history WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
 module.exports = router;

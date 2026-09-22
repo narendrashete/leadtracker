@@ -202,6 +202,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-22** — Filled in the `history.html` (आत्तापर्यंतची नवरात्री झालेली यादी) placeholder
+  with the actual record: 31 entries (यजमान + वर्ष + गाव), transcribed from a supplied register
+  PDF, 1991–2020 plus one pending entry (sr 31, year/village not yet supplied). Static data
+  array in a new `assets/js/history.js` (no DB table, no API — same "plain HTML, no build
+  step" pattern as the rest of this page and gallery.html), with a search box matching
+  members.html's, filtering by name/village/year. Add future years by appending to the
+  `HISTORY` array — no code changes elsewhere needed. Replaced the unused `.history-card`/
+  `.year-list`/`.year-item` placeholder CSS with `.history-list`/`.history-item` styled like
+  `.member-card`.
 - **2026-09-21** — Added a "सभासद यादी संपादन" (roster edit) tab to the Shete Navratri admin
   page (`/shetenavratri/admin.html`, shared login with the Lead Tracker admin account). Until
   now the admin queue only approved/rejected *new* member requests

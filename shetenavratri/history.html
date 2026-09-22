@@ -17,22 +17,19 @@
 </header>
 
 <div class="page">
-  <div class="history-card">
-    <div class="big">📜</div>
-    <p>ही यादी लवकरच अपडेट केली जाईल.<br>कृपया थोडी प्रतीक्षा करा.</p>
-    <p style="font-size:12px;">Content for this page will be added soon.</p>
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="sicon">🔍</span>
+      <input type="text" id="historySearch" placeholder="वर्ष, यजमान किंवा गाव शोधा...">
+    </div>
+    <div class="result-count" id="historyCount"></div>
   </div>
 
-  <!--
-    यादीत नवीन वर्ष जोडण्यासाठी खालील प्रमाणे .year-item जोडा:
-    <div class="year-item"><span>वर्ष</span><span>ठिकाण / तपशील</span></div>
-    त्यासाठी .year-list ही class असलेला div वापरा, उदा:
-    <div class="year-list">
-      <div class="year-item"><span>2025</span><span>डोंबिवली</span></div>
-    </div>
-  -->
+  <div id="historyList" class="history-list"></div>
+  <div class="no-results" id="historyNoResults" style="display:none;">🔍 काही सापडले नाही</div>
 </div>
 
+<script src="/shetenavratri/assets/js/history.js"></script>
 <script src="/shetenavratri/assets/js/protect.js"></script>
 </body>
 </html>

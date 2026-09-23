@@ -542,6 +542,55 @@ button{font-family:inherit;}
 }
 .form-submit:disabled{opacity:0.6;}
 
+/* ---------- Info nav (देव बसविण्याबद्दल माहिती hub) ---------- */
+.info-nav{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+.info-nav-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px 18px;
+  border:1px solid rgba(122,16,36,0.06);
+}
+.info-nav-item .inum{
+  width:40px;height:40px;flex-shrink:0;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  color:var(--maroon-dark);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;
+}
+.info-nav-item .itext{flex:1;min-width:0;}
+.info-nav-item .ititle{font-weight:700;font-size:16px;color:var(--maroon-dark);}
+.info-nav-item .isub{font-size:11.5px;color:var(--text-soft);margin-top:2px;}
+.info-nav-item .iarrow{margin-left:auto;color:var(--maroon);font-size:20px;flex-shrink:0;}
+
+/* ---------- Content / article pages ---------- */
+.content-card{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px 18px;
+  border:1px solid rgba(122,16,36,0.06);
+  margin-bottom:16px;
+}
+.content-card h2{
+  font-size:16px;
+  color:var(--maroon-dark);
+  margin:0 0 10px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--gold-light);
+}
+.content-card h2:not(:first-child){margin-top:22px;}
+.content-card p{font-size:14.5px;line-height:1.75;color:var(--text);margin:0 0 12px;}
+.content-card ol,.content-card ul{padding-left:20px;margin:0 0 12px;}
+.content-card li{font-size:14.5px;line-height:1.7;color:var(--text);margin-bottom:8px;}
+.content-photo{margin-top:4px;margin-bottom:16px;}
+.content-photo img{border-radius:14px;box-shadow:var(--shadow);width:100%;object-fit:cover;}
+.content-photo .caption{text-align:center;font-size:12px;color:var(--text-soft);margin-top:8px;}
+
 @media (min-width:600px){
   .dashboard{grid-template-columns:1fr 1fr;max-width:560px;}
 }

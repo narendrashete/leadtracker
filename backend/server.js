@@ -150,6 +150,9 @@ getDb().then(() => {
   // private in it) and ahead of the SPA fallback, or React would swallow the URL.
   app.get('/aartisangrah', (req, res) => {
     recordVisit(req, 'aartisangrah');
+    // The Navratri dashboard's button adds ?from=navratri, so its clicks can be
+    // counted on their own as well as in the overall Aarti Sangrah figure.
+    if (req.query.from === 'navratri') recordVisit(req, 'shetenavratri-aarti');
     res.sendFile(AARTI_PAGE, (err) => {
       // A client that disconnects mid-transfer lands here with the headers
       // already sent — answering again throws ERR_HTTP_HEADERS_SENT, which is

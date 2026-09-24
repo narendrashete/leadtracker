@@ -21,12 +21,11 @@ const PAGE_LABELS = {
 
 // The Shete Navratri site's own breakdown, in the order its dashboard shows
 // them. Its sub-pages are listed here rather than in the main list above.
-// "aartisangrah" is the dashboard's tinyurl.com/aartibook button, which
-// redirects to /aartisangrah — so that row is ALL Aarti Sangrah online readers,
-// not only those who arrived from the Navratri site.
+// "aartisangrah" counts only clicks on the dashboard's Aarti Sangrah button,
+// which links to /aartisangrah?from=navratri (see server.js).
 const NAVRATRI_PAGES = {
   'shetenavratri-members':     'Members List',
-  aartisangrah:                'aartisangrah',
+  'shetenavratri-aarti':       'aartisangrah',
   'shetenavratri-history':     'Navratri History',
   'shetenavratri-gallery':     'gallery',
   'shetenavratri-devbasavane': 'devbasavane'

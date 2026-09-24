@@ -92,7 +92,6 @@ export default function Visitors() {
           {data.navratri && (
             <PageBreakdown
               title="Shete Parivar Navratri — pages"
-              note="aartisangrah counts every Aarti Sangrah online reader, not only those from the Navratri site"
               pages={data.navratri} days={days}
             />
           )}

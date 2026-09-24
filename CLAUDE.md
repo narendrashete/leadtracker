@@ -469,6 +469,12 @@ HTML loads. Admin-only, shown on the **Visitors** screen.
   during install — which approximates installs, not how often it is then read offline.
   Repeat offline use is unmeasurable by design, and one install typically shows as one
   visitor with two views. Don't relabel this as "offline readers".
+- **The Navratri sub-pages are counted by a middleware ahead of the static mount**
+  (`SHETE_COUNTED` in `server.js`), since `express.static` serves them with no route to hook.
+  Their labels live in `NAVRATRI_PAGES` (`routes/stats.js`), returned as a separate
+  `navratri` list for its own card, and kept out of the main page list. Its "aartisangrah"
+  row is the global Aarti Sangrah online count — the dashboard button is a tinyurl that
+  redirects to `/aartisangrah`, so clicks from the Navratri site can't be told apart.
 - **`page_hits` holds one row per visitor per page per day**, with a `views` counter. Unique
   visitors for a day are that day's rows; views are their counters summed. The unique index
   on `(day, page, visitor)` is what makes a reload a view rather than a second visitor.

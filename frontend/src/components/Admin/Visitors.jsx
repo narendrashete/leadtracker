@@ -88,6 +88,14 @@ export default function Visitors() {
           </div>
 
           <PageBreakdown pages={data.pages} days={days} />
+
+          {data.navratri && (
+            <PageBreakdown
+              title="Shete Parivar Navratri — pages"
+              note="aartisangrah counts every Aarti Sangrah online reader, not only those from the Navratri site"
+              pages={data.navratri} days={days}
+            />
+          )}
         </>
       )}
     </div>
@@ -250,12 +258,14 @@ function DailyTable({ series }) {
   );
 }
 
-function PageBreakdown({ pages, days }) {
+function PageBreakdown({ pages, days, title = 'Which page', note }) {
   const peak = Math.max(1, ...pages.map(p => p.views));
   return (
     <div className="card" style={{ padding: 20, marginTop: 20 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1E293B', margin: '0 0 4px' }}>Which page</h2>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Last {days} days</div>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1E293B', margin: '0 0 4px' }}>{title}</h2>
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+        Last {days} days{note && ` · ${note}`}
+      </div>
       {pages.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Nothing recorded yet.</div>
       ) : (

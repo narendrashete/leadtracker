@@ -262,6 +262,20 @@ getDb().then(() => {
   // other static mounts above — without redirect:false, serve-static treats a bare
   // '/shetenavratri' as a directory root and 301s it to '/shetenavratri/', which
   // breaks the plain link.
+  //
+  // The sub-pages are plain files served by the static mount below, so they are
+  // counted here, just ahead of it — each gets its own key for the Navratri
+  // breakdown on the Visitors screen (labels in routes/stats.js).
+  const SHETE_COUNTED = {
+    '/members.html':     'shetenavratri-members',
+    '/history.html':     'shetenavratri-history',
+    '/gallery.html':     'shetenavratri-gallery',
+    '/devbasavane.html': 'shetenavratri-devbasavane',
+  };
+  app.use('/shetenavratri', (req, res, next) => {
+    if (req.method === 'GET' && SHETE_COUNTED[req.path]) recordVisit(req, SHETE_COUNTED[req.path]);
+    next();
+  });
   app.use('/shetenavratri', express.static(SHETE_DIR, {
     index: false,
     redirect: false,

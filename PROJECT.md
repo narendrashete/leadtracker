@@ -202,6 +202,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-24** — Visitors screen: added a "Shete Parivar Navratri — pages" breakdown
+  (Members List, aartisangrah, Navratri History, gallery, devbasavane). The four sub-pages
+  are now counted by a small middleware ahead of the `/shetenavratri` static mount
+  (`SHETE_COUNTED` in `server.js`); counts start from this deploy. The aartisangrah row is
+  the existing Aarti Sangrah online count (tinyurl.com/aartibook redirects there), so it
+  includes readers from every source, not only the Navratri site.
 - **2026-09-22** — Extended PrimeGem's "Developed by Prime Computers" credit (clickable logo
   linking to `https://www.primecomputers.co.in`, inlined as the same base64 PNG data URI so
   no page gains an external request) to Aarti Sangrah and the Navratri site. Aarti Sangrah:

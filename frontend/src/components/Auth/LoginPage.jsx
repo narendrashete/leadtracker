@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { APP_NAME } from '../../branding';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -48,7 +49,7 @@ export default function LoginPage() {
           }}>
             📊
           </div>
-          <div style={{ fontWeight: 800, fontSize: 22, color: '#1E293B' }}>Lead Tracker</div>
+          <div style={{ fontWeight: 800, fontSize: 22, color: '#1E293B' }}>{APP_NAME}</div>
           <div style={{ color: '#64748B', fontSize: 14, marginTop: 4 }}>Sign in to your account</div>
         </div>
 

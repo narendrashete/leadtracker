@@ -202,6 +202,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-28** — Shete Navratri: added आगामी कार्यक्रम (upcoming event) — a full-width
+  tile with a pulsing "★ NEW" corner ribbon at the top of the dashboard, linking to
+  `upcoming.html` (Navratri Utsav 2026 venue + Google Maps button). Counted as
+  `shetenavratri-upcoming` ("Upcoming Event" in the Navratri visitors card).
 - **2026-09-24** — Navratri breakdown's aartisangrah row now counts only clicks from the
   Navratri dashboard: its button links to `/aartisangrah?from=navratri` instead of
   tinyurl.com/aartibook, recorded as `shetenavratri-aarti` (also still in the overall

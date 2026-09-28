@@ -104,6 +104,8 @@ shetenavratri/
                        bilingual (Devanagari + English) search, Call/WhatsApp icon
                        buttons (tel:/wa.me), copy/right-click blocked on names & numbers.
   history.html          आत्तापर्यंतची नवरात्री झालेली यादी — placeholder, content pending.
+  upcoming.html         आगामी कार्यक्रम — next event + venue + map link; the home
+                       tile carries a "★ NEW" ribbon (`.new-badge`). Edit in place per event.
   gallery.html           क्षणचित्रे — photo collage + modal viewer (mock placeholders
                        until real photos are supplied).
   assets/                css/js shared by all four pages.

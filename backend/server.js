@@ -274,6 +274,7 @@ getDb().then(() => {
     '/history.html':     'shetenavratri-history',
     '/gallery.html':     'shetenavratri-gallery',
     '/devbasavane.html': 'shetenavratri-devbasavane',
+    '/upcoming.html':    'shetenavratri-upcoming',
   };
   app.use('/shetenavratri', (req, res, next) => {
     if (req.method === 'GET' && SHETE_COUNTED[req.path]) recordVisit(req, SHETE_COUNTED[req.path]);

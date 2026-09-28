@@ -28,7 +28,8 @@ const NAVRATRI_PAGES = {
   'shetenavratri-aarti':       'aartisangrah',
   'shetenavratri-history':     'Navratri History',
   'shetenavratri-gallery':     'gallery',
-  'shetenavratri-devbasavane': 'devbasavane'
+  'shetenavratri-devbasavane': 'devbasavane',
+  'shetenavratri-upcoming':    'Upcoming Event'
 };
 
 function daysBack(n) {

@@ -202,6 +202,9 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-28** — Upcoming event page: added click-to-call venue contact and a Dates
+  section (घटस्थापना 11 Oct, फुलवरा 17 Oct 2026, linking to their info pages); home tile
+  shows the start date.
 - **2026-09-28** — Shete Navratri: added आगामी कार्यक्रम (upcoming event) — a full-width
   tile with a pulsing "★ NEW" corner ribbon at the top of the dashboard, linking to
   `upcoming.html` (Navratri Utsav 2026 venue + Google Maps button). Counted as

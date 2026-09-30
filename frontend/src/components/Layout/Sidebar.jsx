@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { PrimeCredit } from './PrimeCredit';
 
 const NAV = [
   { to: '/board',     label: 'Pipeline Board', icon: '⬜' },
@@ -151,6 +152,10 @@ export default function Sidebar() {
         >
           Sign Out
         </button>
+      </div>
+
+      <div style={{ color: '#94A3B8', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <PrimeCredit />
       </div>
     </aside>
   );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { PrimeCredit } from '../Layout/PrimeCredit';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -109,6 +110,10 @@ export default function LoginPage() {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ color: '#64748B', marginTop: 20, marginBottom: -20 }}>
+          <PrimeCredit />
+        </div>
       </div>
     </div>
   );

@@ -139,7 +139,10 @@
     msgEl.className = 'form-msg';
 
     fetch('/api/shete/gallery/request', { method: 'POST', body: fd })
-      .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+      .then(function (r) {
+        if (r.status === 413) return { ok: false, body: { error: 'फोटो खूप मोठा आहे. लहान फोटो निवडा.' } };
+        return r.json().then(function (body) { return { ok: r.ok, body: body }; });
+      })
       .then(function (res) {
         submitBtn.disabled = false;
         if (!res.ok) {

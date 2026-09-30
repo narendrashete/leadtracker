@@ -261,7 +261,7 @@ button{font-family:inherit;}
   box-shadow:0 3px 10px rgba(122,16,36,0.08);
   padding:12px 14px;
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   gap:12px;
 }
 .member-card .sr{
@@ -313,6 +313,24 @@ button{font-family:inherit;}
 }
 .contact-actions .call-btn{background:#2f8f4e;}
 .contact-actions .wa-btn{background:#25D366;}
+/* keeps the alternate row's lone call button under the call button above it */
+.contact-actions .spacer{width:38px;height:38px;}
+
+/* One row per number (WhatsApp, then optional alternate), buttons beside it */
+.num-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.num-row + .num-row{padding-top:8px;border-top:1px dashed #eadfd0;}
+.num-text{flex:1;min-width:0;}
+.num-label{
+  font-size:10.5px;font-weight:600;color:var(--text-soft);
+  display:flex;align-items:center;gap:4px;
+  user-select:none;-webkit-user-select:none;
+}
+.num-label .dot{width:6px;height:6px;border-radius:50%;background:#25D366;}
+.num-label.alt .dot{background:#2f8f4e;}
+.num-row .mmobile{
+  margin-top:1px;
+  font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:var(--text);
+}
 .no-results{
   text-align:center;
   padding:40px 10px;

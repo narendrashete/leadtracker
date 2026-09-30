@@ -40,7 +40,7 @@ function galleryUrl(imageFile) {
 // up immediately with no redeploy.
 router.get('/members/approved', (req, res) => {
   const rows = query(
-    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile
+    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile, alt_mobile AS altMobile
      FROM shete_members ORDER BY id`
   );
   res.json(rows.map((r, i) => ({ ...r, sr: i + 1 })));
@@ -53,12 +53,16 @@ router.post('/members/request', (req, res) => {
   const name = (req.body.name || '').toString().trim();
   const village = (req.body.village || '').toString().trim();
   const mobile = (req.body.mobile || '').toString().trim();
+  const altMobile = (req.body.altMobile || '').toString().trim();
 
   if (!name || !village || !mobile) {
     return res.status(400).json({ error: 'नाव, गाव आणि मोबाईल क्रमांक आवश्यक आहे.' });
   }
   if (!MOBILE_RE.test(mobile)) {
     return res.status(400).json({ error: 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.' });
+  }
+  if (altMobile && !MOBILE_RE.test(altMobile)) {
+    return res.status(400).json({ error: 'पर्यायी क्रमांक १० अंकी असावा.' });
   }
   if (query(`SELECT id FROM shete_members WHERE mobile = ?`, [mobile]).length > 0) {
     return res.status(409).json({ error: 'हा मोबाईल क्रमांक आधीच सभासद यादीत आहे.' });
@@ -67,7 +71,10 @@ router.post('/members/request', (req, res) => {
     return res.status(409).json({ error: 'या मोबाईल क्रमांकाची विनंती आधीच प्रलंबित आहे.' });
   }
 
-  run(`INSERT INTO shete_member_requests (name, village, mobile) VALUES (?,?,?)`, [name, village, mobile]);
+  run(
+    `INSERT INTO shete_member_requests (name, village, mobile, alt_mobile) VALUES (?,?,?,?)`,
+    [name, village, mobile, altMobile && altMobile !== mobile ? altMobile : null]
+  );
   res.json({ ok: true, message: 'विनंती पाठवली. Admin कडून मंजुरीनंतर सभासद यादीत दिसेल.' });
 });
 

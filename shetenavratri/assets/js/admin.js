@@ -167,7 +167,8 @@
           '<input type="checkbox" class="m-check" value="' + r.id + '">' +
           '<div class="request-info">' +
             '<div class="rtitle">' + escapeHtml(r.name) + '</div>' +
-            '<div class="rmeta">📍 ' + escapeHtml(r.village) + ' · ' + r.mobile + ' · ' + r.createdAt + '</div>' +
+            '<div class="rmeta">📍 ' + escapeHtml(r.village) + ' · ' + r.mobile +
+              (r.altMobile ? ' · पर्यायी ' + r.altMobile : '') + ' · ' + r.createdAt + '</div>' +
           '</div>' +
           '<div class="request-btns">' +
             '<button class="btn-approve" data-id="' + r.id + '">मंजूर</button>' +
@@ -217,7 +218,7 @@
     return ROSTER.filter(function (m) {
       return normalize(m.name).includes(q) || normalize(m.nameEn).includes(q) ||
         normalize(m.village).includes(q) || normalize(m.villageEn).includes(q) ||
-        m.mobile.includes(q);
+        m.mobile.includes(q) || (m.altMobile || '').includes(q);
     });
   }
 
@@ -236,7 +237,10 @@
           '<label>Village (English)<input type="text" class="r-villageEn" value="' + escapeHtml(m.villageEn) + '"></label>' +
         '</div>' +
       '</div>' +
-      '<label>मोबाईल<input type="text" class="r-mobile" value="' + escapeHtml(m.mobile) + '" maxlength="10"></label>' +
+      '<div class="roster-row"><div class="roster-fields">' +
+        '<label>WhatsApp / मोबाईल<input type="text" class="r-mobile" value="' + escapeHtml(m.mobile) + '" maxlength="10"></label>' +
+        '<label>पर्यायी (Calling)<input type="text" class="r-altMobile" value="' + escapeHtml(m.altMobile) + '" maxlength="10" placeholder="ऐच्छिक"></label>' +
+      '</div></div>' +
       '<div class="roster-msg"></div>' +
       '<div class="roster-actions"><button class="btn-save">जतन करा</button></div>';
     return card;
@@ -271,6 +275,7 @@
       village: card.querySelector('.r-village').value.trim(),
       villageEn: card.querySelector('.r-villageEn').value.trim(),
       mobile: card.querySelector('.r-mobile').value.trim(),
+      altMobile: card.querySelector('.r-altMobile').value.trim(),
     };
     e.target.disabled = true;
     msgEl.textContent = '';

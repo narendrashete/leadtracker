@@ -103,6 +103,8 @@ shetenavratri/
   members.html          सभासद यादी — 66-member directory (assets/js/members-data.js),
                        bilingual (Devanagari + English) search, Call/WhatsApp icon
                        buttons (tel:/wa.me), copy/right-click blocked on names & numbers.
+                       Optional `alt_mobile` (calling-only) shows as its own row with a
+                       Call button only; rows without one look unchanged.
   history.html          आत्तापर्यंतची नवरात्री झालेली यादी — placeholder, content pending.
   upcoming.html         आगामी कार्यक्रम — next event + venue + map link; the home
                        tile carries a "★ NEW" ribbon (`.new-badge`). Edit in place per event.

@@ -50,11 +50,30 @@
         '<div class="member-info">' +
           '<div class="mname">' + escapeHtml(m.name) + '</div>' +
           '<div class="mvillage">📍 ' + escapeHtml(m.village) + '</div>' +
-          '<div class="mmobile">' + formatMobile(m.mobile) + '</div>' +
-        '</div>' +
-        '<div class="contact-actions">' +
-          '<a class="call-btn" href="' + telLink(m.mobile) + '" aria-label="Call">' + CALL_ICON + '</a>' +
-          '<a class="wa-btn" href="' + waLink(m.mobile) + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + WA_ICON + '</a>' +
+          // One row per number, each with its own buttons, so it's clear which
+          // number a button dials. The alternate row is call-only and appears
+          // only when the member has given one.
+          '<div class="num-row">' +
+            '<div class="num-text">' +
+              '<div class="num-label"><span class="dot"></span>WhatsApp / मोबाईल</div>' +
+              '<div class="mmobile">' + formatMobile(m.mobile) + '</div>' +
+            '</div>' +
+            '<div class="contact-actions">' +
+              '<a class="call-btn" href="' + telLink(m.mobile) + '" aria-label="Call">' + CALL_ICON + '</a>' +
+              '<a class="wa-btn" href="' + waLink(m.mobile) + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + WA_ICON + '</a>' +
+            '</div>' +
+          '</div>' +
+          (m.altMobile ?
+          '<div class="num-row">' +
+            '<div class="num-text">' +
+              '<div class="num-label alt"><span class="dot"></span>पर्यायी क्रमांक (Calling)</div>' +
+              '<div class="mmobile">' + formatMobile(m.altMobile) + '</div>' +
+            '</div>' +
+            '<div class="contact-actions">' +
+              '<a class="call-btn" href="' + telLink(m.altMobile) + '" aria-label="Call alternate number">' + CALL_ICON + '</a>' +
+              '<span class="spacer"></span>' +
+            '</div>' +
+          '</div>' : '') +
         '</div>';
       frag.appendChild(card);
     });
@@ -79,6 +98,7 @@
         normalize(m.village).includes(q) ||
         normalize(m.villageEn).includes(q) ||
         m.mobile.includes(q) ||
+        (m.altMobile || '').includes(q) ||
         String(m.sr) === q
       );
     });
@@ -123,9 +143,15 @@
     const name = document.getElementById('mName').value.trim();
     const village = document.getElementById('mVillage').value.trim();
     const mobile = document.getElementById('mMobile').value.trim();
+    const altMobile = document.getElementById('mAltMobile').value.trim();
 
     if (!/^[0-9]{10}$/.test(mobile)) {
       msgEl.textContent = 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.';
+      msgEl.className = 'form-msg error';
+      return;
+    }
+    if (altMobile && !/^[0-9]{10}$/.test(altMobile)) {
+      msgEl.textContent = 'पर्यायी क्रमांक १० अंकी असावा.';
       msgEl.className = 'form-msg error';
       return;
     }
@@ -135,7 +161,7 @@
     fetch('/api/shete/members/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name, village: village, mobile: mobile }),
+      body: JSON.stringify({ name: name, village: village, mobile: mobile, altMobile: altMobile }),
     })
       .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
       .then(function (res) {

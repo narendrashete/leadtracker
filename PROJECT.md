@@ -202,6 +202,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-30** — Members list: optional alternate (calling) number per member. New nullable
+  `alt_mobile` column on `shete_members` + `shete_member_requests` (guarded ALTER TABLE).
+  Each card now shows one row per number — WhatsApp/मोबाईल with Call + WhatsApp, and, only
+  when set, पर्यायी क्रमांक with Call only. Optional field in the add-member form and in the
+  admin roster editor; carried through approval; searchable.
 - **2026-09-28** — Upcoming event page: added click-to-call venue contact and a Dates
   section (घटस्थापना 11 Oct, फुलवरा 17 Oct 2026, linking to their info pages); home tile
   shows the start date.

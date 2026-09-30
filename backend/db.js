@@ -382,6 +382,14 @@ async function getDb() {
     )
   `);
 
+  // Optional second number for calling, when a member's WhatsApp number isn't
+  // the one they want calls on. Databases predating it get the column here.
+  for (const table of ['shete_members', 'shete_member_requests']) {
+    try {
+      _db.run(`ALTER TABLE ${table} ADD COLUMN alt_mobile TEXT`);
+    } catch { /* column already exists */ }
+  }
+
   if (query(`SELECT id FROM shete_members`).length === 0) {
     for (const m of SHETE_MEMBERS_SEED) {
       _db.run(

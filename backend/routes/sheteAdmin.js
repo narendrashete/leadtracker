@@ -64,7 +64,7 @@ router.post('/gallery/bulk-approve', (req, res) => {
 
 router.get('/members/pending', (req, res) => {
   const rows = query(
-    `SELECT id, name, village, mobile, created_at AS createdAt
+    `SELECT id, name, village, mobile, alt_mobile AS altMobile, created_at AS createdAt
      FROM shete_member_requests WHERE status = 'pending' ORDER BY id`
   );
   res.json(rows);
@@ -77,7 +77,10 @@ function approveMemberRequest(id) {
   // A duplicate may have been approved from elsewhere between submission and
   // review; skip inserting a second row for the same mobile rather than erroring.
   if (query(`SELECT id FROM shete_members WHERE mobile = ?`, [reqRow.mobile]).length === 0) {
-    run(`INSERT INTO shete_members (name, village, mobile) VALUES (?,?,?)`, [reqRow.name, reqRow.village, reqRow.mobile]);
+    run(
+      `INSERT INTO shete_members (name, village, mobile, alt_mobile) VALUES (?,?,?,?)`,
+      [reqRow.name, reqRow.village, reqRow.mobile, reqRow.alt_mobile]
+    );
   }
   run(`UPDATE shete_member_requests SET status = 'approved', reviewed_at = datetime('now','localtime') WHERE id = ?`, [id]);
   return true;
@@ -113,7 +116,7 @@ const MOBILE_RE = /^[0-9]{10}$/;
 
 router.get('/members', (req, res) => {
   const rows = query(
-    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile
+    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile, alt_mobile AS altMobile
      FROM shete_members ORDER BY id`
   );
   res.json(rows);
@@ -129,15 +132,18 @@ router.patch('/members/:id', (req, res) => {
   const village = (req.body.village || '').toString().trim();
   const villageEn = (req.body.villageEn || '').toString().trim();
   const mobile = (req.body.mobile || '').toString().trim();
+  const altMobile = (req.body.altMobile || '').toString().trim();
 
   if (!name || !village) return res.status(400).json({ error: 'नाव आणि गाव आवश्यक आहे.' });
   if (!MOBILE_RE.test(mobile)) return res.status(400).json({ error: 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.' });
+  if (altMobile && !MOBILE_RE.test(altMobile)) return res.status(400).json({ error: 'पर्यायी क्रमांक १० अंकी असावा.' });
+  if (altMobile && altMobile === mobile) return res.status(400).json({ error: 'पर्यायी क्रमांक मुख्य क्रमांकापेक्षा वेगळा असावा.' });
   const dupe = query(`SELECT id FROM shete_members WHERE mobile = ? AND id != ?`, [mobile, id]);
   if (dupe.length) return res.status(409).json({ error: 'हा मोबाईल क्रमांक आधीच दुसऱ्या सभासदाकडे आहे.' });
 
   run(
-    `UPDATE shete_members SET name = ?, name_en = ?, village = ?, village_en = ?, mobile = ? WHERE id = ?`,
-    [name, nameEn || null, village, villageEn || null, mobile, id]
+    `UPDATE shete_members SET name = ?, name_en = ?, village = ?, village_en = ?, mobile = ?, alt_mobile = ? WHERE id = ?`,
+    [name, nameEn || null, village, villageEn || null, mobile, altMobile || null, id]
   );
   res.json({ ok: true });
 });

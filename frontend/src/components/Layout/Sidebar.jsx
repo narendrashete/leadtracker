@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { APP_NAME } from '../../branding';
 import { PrimeCredit } from './PrimeCredit';
 
 const NAV = [
@@ -23,7 +24,7 @@ export default function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Lead Tracker</div>
+        <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>{APP_NAME}</div>
         <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 2 }}>Sales Pipeline</div>
       </div>
 

@@ -202,6 +202,28 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-09-30** — Members list: optional alternate (calling) number per member. New nullable
+  `alt_mobile` column on `shete_members` + `shete_member_requests` (guarded ALTER TABLE).
+  Each card now shows one row per number — WhatsApp/मोबाईल with Call + WhatsApp, and, only
+  when set, पर्यायी क्रमांक with Call only. Optional field in the add-member form and in the
+  admin roster editor; carried through approval; searchable.
+- **2026-09-28** — Upcoming event page: added click-to-call venue contact and a Dates
+  section (घटस्थापना 11 Oct, फुलवरा 17 Oct 2026, linking to their info pages); home tile
+  shows the start date.
+- **2026-09-28** — Shete Navratri: added आगामी कार्यक्रम (upcoming event) — a full-width
+  tile with a pulsing "★ NEW" corner ribbon at the top of the dashboard, linking to
+  `upcoming.html` (Navratri Utsav 2026 venue + Google Maps button). Counted as
+  `shetenavratri-upcoming` ("Upcoming Event" in the Navratri visitors card).
+- **2026-09-24** — Navratri breakdown's aartisangrah row now counts only clicks from the
+  Navratri dashboard: its button links to `/aartisangrah?from=navratri` instead of
+  tinyurl.com/aartibook, recorded as `shetenavratri-aarti` (also still in the overall
+  Aarti Sangrah count). Counts start from this deploy.
+- **2026-09-24** — Visitors screen: added a "Shete Parivar Navratri — pages" breakdown
+  (Members List, aartisangrah, Navratri History, gallery, devbasavane). The four sub-pages
+  are now counted by a small middleware ahead of the `/shetenavratri` static mount
+  (`SHETE_COUNTED` in `server.js`); counts start from this deploy. The aartisangrah row is
+  the existing Aarti Sangrah online count (tinyurl.com/aartibook redirects there), so it
+  includes readers from every source, not only the Navratri site.
 - **2026-09-22** — Extended PrimeGem's "Developed by Prime Computers" credit (clickable logo
   linking to `https://www.primecomputers.co.in`, inlined as the same base64 PNG data URI so
   no page gains an external request) to Aarti Sangrah and the Navratri site. Aarti Sangrah:

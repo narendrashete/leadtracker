@@ -91,6 +91,11 @@ button{font-family:inherit;}
   box-shadow:0 6px 18px rgba(0,0,0,0.35);
   position:relative;
   z-index:2;
+  overflow:hidden;
+}
+.hero-mock img{
+  width:100%;height:100%;
+  object-fit:cover;
 }
 .hero h1{
   font-size:26px;
@@ -256,7 +261,7 @@ button{font-family:inherit;}
   box-shadow:0 3px 10px rgba(122,16,36,0.08);
   padding:12px 14px;
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   gap:12px;
 }
 .member-card .sr{
@@ -308,6 +313,24 @@ button{font-family:inherit;}
 }
 .contact-actions .call-btn{background:#2f8f4e;}
 .contact-actions .wa-btn{background:#25D366;}
+/* keeps the alternate row's lone call button under the call button above it */
+.contact-actions .spacer{width:38px;height:38px;}
+
+/* One row per number (WhatsApp, then optional alternate), buttons beside it */
+.num-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.num-row + .num-row{padding-top:8px;border-top:1px dashed #eadfd0;}
+.num-text{flex:1;min-width:0;}
+.num-label{
+  font-size:10.5px;font-weight:600;color:var(--text-soft);
+  display:flex;align-items:center;gap:4px;
+  user-select:none;-webkit-user-select:none;
+}
+.num-label .dot{width:6px;height:6px;border-radius:50%;background:#25D366;}
+.num-label.alt .dot{background:#2f8f4e;}
+.num-row .mmobile{
+  margin-top:1px;
+  font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:var(--text);
+}
 .no-results{
   text-align:center;
   padding:40px 10px;
@@ -537,6 +560,118 @@ button{font-family:inherit;}
 }
 .form-submit:disabled{opacity:0.6;}
 
+/* ---------- Info nav (देव बसविण्याबद्दल माहिती hub) ---------- */
+.info-nav{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+.info-nav-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px 18px;
+  border:1px solid rgba(122,16,36,0.06);
+}
+.info-nav-item .inum{
+  width:40px;height:40px;flex-shrink:0;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));
+  color:var(--maroon-dark);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;
+}
+.info-nav-item .itext{flex:1;min-width:0;}
+.info-nav-item .ititle{font-weight:700;font-size:16px;color:var(--maroon-dark);}
+.info-nav-item .isub{font-size:11.5px;color:var(--text-soft);margin-top:2px;}
+.info-nav-item .iarrow{margin-left:auto;color:var(--maroon);font-size:20px;flex-shrink:0;}
+
+/* ---------- Content / article pages ---------- */
+.content-card{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px 18px;
+  border:1px solid rgba(122,16,36,0.06);
+  margin-bottom:16px;
+}
+.content-card h2{
+  font-size:16px;
+  color:var(--maroon-dark);
+  margin:0 0 10px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--gold-light);
+}
+.content-card h2:not(:first-child){margin-top:22px;}
+.content-card p{font-size:14.5px;line-height:1.75;color:var(--text);margin:0 0 12px;}
+.content-card ol,.content-card ul{padding-left:20px;margin:0 0 12px;}
+.content-card li{font-size:14.5px;line-height:1.7;color:var(--text);margin-bottom:8px;}
+.content-photo{margin-top:4px;margin-bottom:16px;}
+.content-photo img{border-radius:14px;box-shadow:var(--shadow);width:100%;object-fit:cover;}
+.content-photo .caption{text-align:center;font-size:12px;color:var(--text-soft);margin-top:8px;}
+
 @media (min-width:600px){
   .dashboard{grid-template-columns:1fr 1fr;max-width:560px;}
 }
+
+/* ---------- Upcoming event (आगामी कार्यक्रम) ---------- */
+.new-badge{
+  position:absolute;top:16px;right:-36px;width:130px;text-align:center;
+  transform:rotate(45deg);
+  background:linear-gradient(135deg,#ff3b3b,#c0102a);
+  color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:1px;
+  padding:4px 0;box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  animation:newPulse 1.6s ease-in-out infinite;
+}
+@keyframes newPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+.dash-btn.event-tile{
+  grid-column:1 / -1;
+  position:relative;overflow:hidden;
+  flex-direction:row;text-align:left;gap:16px;padding:18px 18px;
+  background:linear-gradient(135deg,#fff8e6,#ffeec4);
+  border:2px solid var(--gold);
+}
+.dash-btn.event-tile .icon-wrap{flex-shrink:0;background:linear-gradient(135deg,#ffb8b8,#c0102a);color:#fff;}
+.dash-btn.event-tile .label{font-size:16px;}
+.dash-btn.event-tile .ename{font-weight:700;font-size:14px;color:var(--orange);margin-top:2px;}
+.dash-btn.event-tile .eplace{font-size:12px;color:var(--text-soft);margin-top:2px;}
+.event-card{position:relative;overflow:hidden;border:2px solid var(--gold);}
+.event-card .event-title{font-size:21px;font-weight:800;color:var(--maroon-dark);padding-right:40px;}
+.event-card .event-sub{font-family:'Poppins',sans-serif;font-size:12px;color:var(--text-soft);margin-bottom:18px;}
+.event-card .venue{line-height:1.8;}
+.event-card .venue-en{font-size:12.5px;line-height:1.6;color:var(--text-soft);margin-top:-4px;}
+.map-btn{
+  display:block;text-align:center;margin-top:6px;
+  background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));
+  color:#fff;font-weight:700;font-size:15px;padding:13px;border-radius:12px;
+  box-shadow:var(--shadow);
+}
+.call-row{
+  display:flex;align-items:center;gap:14px;margin:4px 0 12px;
+  padding:12px 14px;border-radius:12px;background:#eaf7ef;border:1px solid #bfe3cc;
+}
+.call-circle{
+  width:46px;height:46px;flex-shrink:0;border-radius:50%;
+  background:linear-gradient(135deg,#34c46a,#1f8f4a);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(31,143,74,0.35);
+}
+.call-text{display:flex;flex-direction:column;}
+.call-label{font-size:12px;color:var(--text-soft);}
+.call-num{font-family:'Poppins',sans-serif;font-weight:600;font-size:18px;color:#1f6f3c;letter-spacing:.5px;}
+.date-list{display:flex;flex-direction:column;gap:10px;margin-bottom:6px;}
+.date-row{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:12px;background:#fff8ec;border:1px solid var(--gold-light);}
+.date-box{
+  width:52px;flex-shrink:0;border-radius:10px;overflow:hidden;text-align:center;
+  background:#fff;border:1px solid var(--gold);display:flex;flex-direction:column;
+}
+.date-box .dd{font-weight:800;font-size:20px;color:var(--maroon-dark);line-height:1.5;}
+.date-box .mm{background:var(--maroon);color:#fff;font-size:11px;font-weight:600;padding:1px 0 2px;}
+.date-text{flex:1;min-width:0;}
+.date-text .dname{font-weight:700;font-size:15.5px;color:var(--maroon-dark);}
+.date-text .dsub{font-size:12px;color:var(--text-soft);margin-top:2px;}
+.date-row .iarrow{color:var(--maroon);font-size:18px;flex-shrink:0;}
+.dash-btn.event-tile .icon-wrap.cal-icon{
+  flex-direction:column;border-radius:12px;overflow:hidden;padding:0;
+  background:#fff;border:2px solid #c0102a;box-shadow:0 3px 8px rgba(192,16,42,0.25);
+}
+.cal-icon .dd{flex:1;display:flex;align-items:center;font-weight:800;font-size:22px;color:var(--maroon-dark);line-height:1;}
+.cal-icon .mm{width:100%;background:#c0102a;color:#fff;font-size:10.5px;font-weight:700;padding:1px 0 3px;text-align:center;}

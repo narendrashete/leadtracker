@@ -103,7 +103,11 @@ shetenavratri/
   members.html          सभासद यादी — 66-member directory (assets/js/members-data.js),
                        bilingual (Devanagari + English) search, Call/WhatsApp icon
                        buttons (tel:/wa.me), copy/right-click blocked on names & numbers.
+                       Optional `alt_mobile` (calling-only) shows as its own row with a
+                       Call button only; rows without one look unchanged.
   history.html          आत्तापर्यंतची नवरात्री झालेली यादी — placeholder, content pending.
+  upcoming.html         आगामी कार्यक्रम — next event + venue + map link; the home
+                       tile carries a "★ NEW" ribbon (`.new-badge`). Edit in place per event.
   gallery.html           क्षणचित्रे — photo collage + modal viewer (mock placeholders
                        until real photos are supplied).
   assets/                css/js shared by all four pages.
@@ -469,6 +473,13 @@ HTML loads. Admin-only, shown on the **Visitors** screen.
   during install — which approximates installs, not how often it is then read offline.
   Repeat offline use is unmeasurable by design, and one install typically shows as one
   visitor with two views. Don't relabel this as "offline readers".
+- **The Navratri sub-pages are counted by a middleware ahead of the static mount**
+  (`SHETE_COUNTED` in `server.js`), since `express.static` serves them with no route to hook.
+  Their labels live in `NAVRATRI_PAGES` (`routes/stats.js`), returned as a separate
+  `navratri` list for its own card, and kept out of the main page list. Its "aartisangrah"
+  row is `shetenavratri-aarti`: the dashboard button links to `/aartisangrah?from=navratri`
+  (not the tinyurl), and that route records the click under that key as well as the usual
+  `aartisangrah` one. Keep the `?from=navratri` on that button or the row stops counting.
 - **`page_hits` holds one row per visitor per page per day**, with a `views` counter. Unique
   visitors for a day are that day's rows; views are their counters summed. The unique index
   on `(day, page, visitor)` is what makes a reload a view rather than a second visitor.

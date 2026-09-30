@@ -19,6 +19,19 @@ const PAGE_LABELS = {
   leadtracker:        'Lead Tracker app'
 };
 
+// The Shete Navratri site's own breakdown, in the order its dashboard shows
+// them. Its sub-pages are listed here rather than in the main list above.
+// "aartisangrah" counts only clicks on the dashboard's Aarti Sangrah button,
+// which links to /aartisangrah?from=navratri (see server.js).
+const NAVRATRI_PAGES = {
+  'shetenavratri-members':     'Members List',
+  'shetenavratri-aarti':       'aartisangrah',
+  'shetenavratri-history':     'Navratri History',
+  'shetenavratri-gallery':     'gallery',
+  'shetenavratri-devbasavane': 'devbasavane',
+  'shetenavratri-upcoming':    'Upcoming Event'
+};
+
 function daysBack(n) {
   const d = new Date();
   d.setDate(d.getDate() - (n - 1));
@@ -62,8 +75,16 @@ router.get('/', (req, res, next) => {
         views: (byPage[page] && byPage[page].views) || 0
       })),
       // A key recorded before it had a label still shows, under its raw name.
-      ...counted.filter(r => !PAGE_LABELS[r.page]).map(r => ({ ...r, label: r.page }))
+      ...counted.filter(r => !PAGE_LABELS[r.page] && !NAVRATRI_PAGES[r.page])
+        .map(r => ({ ...r, label: r.page }))
     ].sort((a, b) => b.views - a.views || a.label.localeCompare(b.label));
+
+    const navratri = Object.keys(NAVRATRI_PAGES).map(page => ({
+      page,
+      label: NAVRATRI_PAGES[page],
+      visitors: (byPage[page] && byPage[page].visitors) || 0,
+      views: (byPage[page] && byPage[page].views) || 0
+    }));
 
     const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
     const todayRow = byDay[today] || { visitors: 0, views: 0 };
@@ -98,7 +119,8 @@ router.get('/', (req, res, next) => {
         first_day: allTime.first_day || null
       },
       daily: series,
-      pages
+      pages,
+      navratri
     });
   } catch (err) {
     next(err);

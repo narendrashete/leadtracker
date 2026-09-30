@@ -51,3 +51,7 @@ frontend/src/
   components/          Board, Leads, Followups, Reports, Admin, Auth, Layout
 start.bat              local one-click launcher
 ```
+
+---
+
+Developed by [Prime Computers](https://www.primecomputers.co.in)

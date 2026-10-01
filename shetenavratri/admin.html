@@ -30,6 +30,7 @@
 <div class="page" id="adminView" style="display:none;">
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="gallery">फोटो विनंत्या <span id="galleryCount" class="badge"></span></button>
+    <button class="admin-tab" data-tab="approved">मंजूर फोटो (वर्ष बदला)</button>
     <button class="admin-tab" data-tab="members">सभासद विनंत्या <span id="membersCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="roster">सभासद यादी संपादन</button>
     <button class="admin-tab" data-tab="history">इतिहास यादी</button>
@@ -43,7 +44,10 @@
     <div id="galleryList" class="request-list"></div>
     <div class="no-results" id="galleryEmpty" style="display:none;">✅ सर्व फोटो विनंत्या पूर्ण झाल्या</div>
 
-    <h3 style="margin:22px 0 8px;">मंजूर फोटो — वर्ष बदला</h3>
+  </section>
+
+  <section id="approvedTab" class="admin-section" style="display:none;">
+    <p style="margin:0 0 8px;color:#7a5a50;">आधीच गॅलरीत असलेले फोटो — चुकीचे वर्ष येथे बदला.</p>
     <div class="admin-actions">
       <label class="select-all"><input type="checkbox" id="approvedSelectAll"> सर्व निवडा</label>
       <input type="number" id="approvedYear" min="1990" placeholder="वर्ष" style="width:90px;padding:6px;">

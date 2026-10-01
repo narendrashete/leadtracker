@@ -71,9 +71,11 @@
       btn.classList.add('active');
       const tab = btn.dataset.tab;
       document.getElementById('galleryTab').style.display = tab === 'gallery' ? 'block' : 'none';
+      document.getElementById('approvedTab').style.display = tab === 'approved' ? 'block' : 'none';
       document.getElementById('membersTab').style.display = tab === 'members' ? 'block' : 'none';
       document.getElementById('rosterTab').style.display = tab === 'roster' ? 'block' : 'none';
       document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+      if (tab === 'approved') loadGalleryApproved();
       if (tab === 'roster') loadRoster();
       if (tab === 'history') loadHistoryAdmin();
     });
@@ -506,7 +508,6 @@
 
   function loadAll() {
     loadGalleryPending();
-    loadGalleryApproved();
     loadMembersPending();
   }
 

@@ -60,6 +60,29 @@ router.post('/gallery/bulk-approve', (req, res) => {
   res.json({ ok: true, approved: count });
 });
 
+// Approved photos — listed so an admin can correct a mistyped year afterwards.
+router.get('/gallery/approved', (req, res) => {
+  const rows = query(
+    `SELECT g.id, g.image_file AS imageFile, g.caption, g.year, m.name, m.village
+     FROM shete_gallery g LEFT JOIN shete_members m ON m.mobile = g.mobile
+     WHERE g.status = 'approved' ORDER BY g.year DESC, g.id DESC`
+  );
+  res.json(rows.map(r => ({ ...r, url: galleryUrl(r.imageFile) })));
+});
+
+router.post('/gallery/set-year', (req, res) => {
+  const ids = parseIds(req.body);
+  const year = Number(req.body.year);
+  if (!ids.length) return res.status(400).json({ error: 'No ids given.' });
+  if (!Number.isInteger(year) || year < 1990 || year > new Date().getFullYear()) {
+    return res.status(400).json({ error: 'Year must be between 1990 and ' + new Date().getFullYear() + '.' });
+  }
+  for (const id of ids) {
+    run(`UPDATE shete_gallery SET year = ? WHERE id = ? AND status = 'approved'`, [year, id]);
+  }
+  res.json({ ok: true, updated: ids.length });
+});
+
 // ---- Member requests ----
 
 router.get('/members/pending', (req, res) => {

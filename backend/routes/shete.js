@@ -80,11 +80,18 @@ router.post('/members/request', (req, res) => {
 
 // Public: approved gallery photos only — never the submitter's mobile number.
 router.get('/gallery/approved', (req, res) => {
+  // Name and village come from the member directory (looked up by the
+  // submitter's mobile, which is never returned); the year is the photo's own.
   const rows = query(
-    `SELECT id, image_file AS imageFile, caption, year
-     FROM shete_gallery WHERE status = 'approved' ORDER BY year DESC, id DESC`
+    `SELECT g.id, g.image_file AS imageFile, g.caption, g.year, m.id AS memberId,
+            m.name, m.village
+     FROM shete_gallery g LEFT JOIN shete_members m ON m.mobile = g.mobile
+     WHERE g.status = 'approved' ORDER BY g.year DESC, g.id DESC`
   );
-  res.json(rows.map(r => ({ id: r.id, url: galleryUrl(r.imageFile), caption: r.caption, year: r.year })));
+  res.json(rows.map(r => ({
+    id: r.id, url: galleryUrl(r.imageFile), caption: r.caption, year: r.year,
+    name: r.name || '', village: r.village || '', member: r.memberId,
+  })));
 });
 
 // Public: the Navratri history list, edited from the admin page directly

@@ -22,12 +22,47 @@
       return;
     }
     noPhotosEl.style.display = 'none';
-    PHOTOS.forEach(function (p, i) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.innerHTML = '<img src="' + p.url + '" alt="' + escapeHtml(p.caption) + '" loading="lazy">';
-      cell.addEventListener('click', function () { openModal(i); });
-      collage.appendChild(cell);
+
+    // One group per member (photos with no matching member group by caption).
+    // Newest year first; PHOTOS is reordered to match so the modal's
+    // prev/next walks the photos in the order they appear on screen.
+    const groups = [];
+    const byKey = {};
+    PHOTOS.forEach(function (p) {
+      const key = p.member ? 'm' + p.member : 'c' + p.caption;
+      if (!byKey[key]) { byKey[key] = { photos: [] }; groups.push(byKey[key]); }
+      byKey[key].photos.push(p);
+    });
+    groups.forEach(function (g) {
+      g.years = Array.from(new Set(g.photos.map(function (p) { return p.year; }))).sort(function (a, b) { return b - a; });
+    });
+    groups.sort(function (a, b) { return b.years[0] - a.years[0]; });
+    PHOTOS = [];
+
+    groups.forEach(function (g) {
+      const first = g.photos[0];
+      const title = first.name || first.caption;
+      const sec = document.createElement('section');
+      sec.className = 'photo-group';
+      sec.innerHTML =
+        '<div class="group-head"><div class="group-title">' + escapeHtml(title) +
+        (first.village ? ' <span class="group-village">· ' + escapeHtml(first.village) + '</span>' : '') +
+        '</div><div class="group-years">' +
+        g.years.map(function (y) { return '<span class="year-chip">' + y + '</span>'; }).join('') +
+        '</div></div>';
+      const grid = document.createElement('div');
+      grid.className = 'collage group-grid';
+      g.photos.forEach(function (p) {
+        const i = PHOTOS.push(p) - 1;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.innerHTML = '<img src="' + p.url + '" alt="' + escapeHtml(p.caption) + '" loading="lazy">' +
+          '<span class="cell-year">' + p.year + '</span>';
+        cell.addEventListener('click', function () { openModal(i); });
+        grid.appendChild(cell);
+      });
+      sec.appendChild(grid);
+      collage.appendChild(sec);
     });
   }
 
@@ -39,7 +74,7 @@
   function showCurrent() {
     const p = PHOTOS[current];
     modalImg.src = p.url;
-    modalCaption.textContent = p.caption + ' — ' + p.year;
+    modalCaption.textContent = (p.name ? p.name + (p.village ? ', ' + p.village : '') + ' — ' : '') + p.caption + ' — ' + p.year;
   }
   function closeModal() {
     overlay.classList.remove('open');

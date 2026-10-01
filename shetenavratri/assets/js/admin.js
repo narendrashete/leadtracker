@@ -146,6 +146,63 @@
     });
   });
 
+  // ---- Approved photos: year correction ----
+  const approvedList = document.getElementById('approvedList');
+  const approvedSelectAll = document.getElementById('approvedSelectAll');
+  const approvedYearInput = document.getElementById('approvedYear');
+  const approvedSetBtn = document.getElementById('approvedSetYear');
+
+  function loadGalleryApproved() {
+    api('/api/shete-admin/gallery/approved').then(function (res) {
+      approvedList.innerHTML = '';
+      approvedSelectAll.checked = false;
+      (res.body || []).forEach(function (r) {
+        const card = document.createElement('div');
+        card.className = 'request-card';
+        card.innerHTML =
+          '<input type="checkbox" class="a-check" value="' + r.id + '">' +
+          '<img class="request-thumb g-thumb" src="' + r.url + '" data-caption="' + escapeHtml(r.caption) + ' — ' + r.year + '">' +
+          '<div class="request-info">' +
+            '<div class="rtitle">' + escapeHtml(r.name || r.caption) + '</div>' +
+            '<div class="rmeta">' + escapeHtml(r.village || '') + ' · वर्ष: <b>' + r.year + '</b></div>' +
+          '</div>' +
+          '<div class="request-btns">' +
+            '<input type="number" class="a-year" min="1990" value="' + r.year + '" style="width:80px;padding:6px;">' +
+            '<button class="btn-approve a-save" data-id="' + r.id + '">बदला</button>' +
+          '</div>';
+        approvedList.appendChild(card);
+      });
+    });
+  }
+
+  function setYear(ids, year) {
+    return api('/api/shete-admin/gallery/set-year', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids, year: year }),
+    }).then(function (res) {
+      if (!res.ok) alert(res.body.error || 'Failed');
+      loadGalleryApproved();
+    });
+  }
+
+  approvedList.addEventListener('click', function (e) {
+    if (e.target.classList.contains('g-thumb')) {
+      openPreview(e.target.src, e.target.dataset.caption);
+    } else if (e.target.classList.contains('a-save')) {
+      const yr = e.target.closest('.request-card').querySelector('.a-year').value;
+      setYear([Number(e.target.dataset.id)], Number(yr));
+    }
+  });
+  approvedSelectAll.addEventListener('change', function () {
+    document.querySelectorAll('.a-check').forEach(function (c) { c.checked = approvedSelectAll.checked; });
+  });
+  approvedSetBtn.addEventListener('click', function () {
+    const ids = Array.from(document.querySelectorAll('.a-check:checked')).map(function (c) { return Number(c.value); });
+    if (!ids.length || !approvedYearInput.value) return;
+    setYear(ids, Number(approvedYearInput.value));
+  });
+
   // ---- Member pending ----
   const membersList = document.getElementById('membersList');
   const membersEmpty = document.getElementById('membersEmpty');
@@ -449,6 +506,7 @@
 
   function loadAll() {
     loadGalleryPending();
+    loadGalleryApproved();
     loadMembersPending();
   }
 

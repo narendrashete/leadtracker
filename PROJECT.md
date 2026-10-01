@@ -202,6 +202,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **Navratri gallery grouped by member** — public gallery now groups photos under the
+  submitter's name + village (looked up from `shete_members` via mobile; mobile never
+  returned), heading shows all years, each thumbnail has a year badge. Admin page gained
+  "मंजूर फोटो — वर्ष बदला" (per-photo + bulk year edit, `POST /api/shete-admin/gallery/set-year`).
 - **2026-09-30** — Members list: optional alternate (calling) number per member. New nullable
   `alt_mobile` column on `shete_members` + `shete_member_requests` (guarded ALTER TABLE).
   Each card now shows one row per number — WhatsApp/मोबाईल with Call + WhatsApp, and, only

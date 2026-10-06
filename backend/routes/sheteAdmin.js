@@ -83,6 +83,17 @@ router.post('/gallery/set-year', (req, res) => {
   res.json({ ok: true, updated: ids.length });
 });
 
+// Removes an already-approved photo (wrong/duplicate upload) — distinct from
+// /reject, which only applies to a still-pending request.
+router.delete('/gallery/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const rows = query(`SELECT id, image_file AS imageFile FROM shete_gallery WHERE id = ?`, [id]);
+  if (!rows.length) return res.status(404).json({ error: 'फोटो सापडला नाही.' });
+  run(`DELETE FROM shete_gallery WHERE id = ?`, [id]);
+  fs.unlink(path.join(UPLOAD_DIR, rows[0].imageFile), () => {});
+  res.json({ ok: true });
+});
+
 // ---- Member requests ----
 
 router.get('/members/pending', (req, res) => {

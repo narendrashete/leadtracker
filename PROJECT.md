@@ -203,6 +203,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-06** — The admin "मंजूर फोटो (वर्ष बदला)" tab gained a काढून टाका (delete) button per
+  photo, next to the existing year-change control. Until now an already-approved photo could
+  only have its year corrected, not be removed — wrong/duplicate uploads had no way back off
+  the live gallery. New `DELETE /api/shete-admin/gallery/:id` (any status) deletes the DB row
+  and unlinks the file from `shetenavratri/uploads/gallery/`. Verified end-to-end with a local
+  server: upload → approve → delete via the tab → gone from `/api/shete/gallery/approved` and
+  disk.
 - **Navratri gallery grouped by member** — public gallery now groups photos under the
   submitter's name + village (looked up from `shete_members` via mobile; mobile never
   returned), heading shows all years, each thumbnail has a year badge. Admin page gained

@@ -171,6 +171,7 @@
           '<div class="request-btns">' +
             '<input type="number" class="a-year" min="1990" value="' + r.year + '" style="width:80px;padding:6px;">' +
             '<button class="btn-approve a-save" data-id="' + r.id + '">बदला</button>' +
+            '<button class="btn-reject a-delete" data-id="' + r.id + '">काढून टाका</button>' +
           '</div>';
         approvedList.appendChild(card);
       });
@@ -194,6 +195,17 @@
     } else if (e.target.classList.contains('a-save')) {
       const yr = e.target.closest('.request-card').querySelector('.a-year').value;
       setYear([Number(e.target.dataset.id)], Number(yr));
+    } else if (e.target.classList.contains('a-delete')) {
+      if (!confirm('हा फोटो कायमचा काढून टाकायचा?')) return;
+      e.target.disabled = true;
+      api('/api/shete-admin/gallery/' + e.target.dataset.id, { method: 'DELETE' }).then(function (res) {
+        if (!res.ok) {
+          e.target.disabled = false;
+          alert(res.body.error || 'काढता आले नाही.');
+          return;
+        }
+        loadGalleryApproved();
+      });
     }
   });
   approvedSelectAll.addEventListener('change', function () {

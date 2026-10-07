@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import LeadCard from './LeadCard';
+import { exportLeadsToExcel } from '../../exportLeads';
 
 const PAGE_SIZE = 10;
 
@@ -46,6 +47,18 @@ export default function BoardColumn({ title, leads, onCardClick }) {
         color: '#fff',
       }}>
         <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{title}</span>
+        <button
+          title={`Download ${title} as Excel`}
+          disabled={leads.length === 0}
+          onClick={() => exportLeadsToExcel(leads, title)}
+          style={{
+            background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none', borderRadius: 6,
+            padding: '2px 8px', fontSize: 12, fontWeight: 600,
+            cursor: leads.length ? 'pointer' : 'default', opacity: leads.length ? 1 : 0.5,
+          }}
+        >
+          ⬇ Excel
+        </button>
         <span style={{
           background: 'rgba(255,255,255,0.25)',
           borderRadius: 12,

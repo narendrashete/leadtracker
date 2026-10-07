@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { STATUS_BADGE, STATUS_LABEL } from '../Board/LeadCard';
 import Section from '../Section';
+import { SOURCE_OPTIONS } from '../../leadSources';
 
 const SOFTWARE_OPTIONS = ['Courier Software', 'ERP Accounts Software', 'Customised Software'];
 const STATUS_OPTIONS = [
@@ -141,6 +142,13 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
                   <div className="form-group">
                     <label>Date</label>
                     <input type="date" className="form-control" value={form.date} onChange={set('date')} />
+                  </div>
+                  <div className="form-group">
+                    <label>Source of Enquiry</label>
+                    <select className="form-control" value={form.source || ''} onChange={set('source')}>
+                      <option value="">— Select —</option>
+                      {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
                   </div>
                 </div>
               </Section>

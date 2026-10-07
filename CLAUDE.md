@@ -619,6 +619,10 @@ deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines
 for the `Calendar links` block, which lists one line per group. `CALENDAR_SHARE_CODE` only
 seeds the very first group's code on a fresh database; every later group gets a random one.
 
+## Lead Source & Bulk Import
+- `leads.source` is free text constrained only by the UI dropdown (`frontend/src/leadSources.js`); older leads have NULL.
+- **Import Leads** (admin sidebar) parses an IndiaMART export in the browser and calls `POST /api/leads/import` (requireAdmin). IndiaMART dates are relative ("11:29 AM"=today, "Yesterday", "22 May"=no year → export year, "21 Apr'25"); the file's last-modified date is the reference "today". Re-import is safe — rows matching source+contact_no+date are skipped. Imported rows use the current year's `ENQ-` sequence regardless of enquiry date. Uses `runMany()` (one disk write) — don't loop `run()` for bulk inserts.
+
 ## Pipeline Column Logic (don't duplicate — reuse)
 Derived, never stored, in `getColumn()` (`frontend/src/components/Board/PipelineBoard.jsx`):
 Dropped enquiry → **Dropped** · Closed with success → **Converted** · else ≥1 follow-up →

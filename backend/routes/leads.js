@@ -1,5 +1,6 @@
 const express = require('express');
-const { query, run } = require('../db');
+const { query, run, runMany } = require('../db');
+const { requireAdmin } = require('../auth');
 const router = express.Router();
 
 // Compute the next ENQ-YYYY-NNN id from existing rows. Scans all ids for the
@@ -51,7 +52,7 @@ router.post('/', (req, res, next) => {
       date, company_name, contact_person, contact_no, email,
       address, city, state,
       required_software, customer_description, committed_to_customer,
-      next_followup_date, status
+      next_followup_date, status, source
     } = req.body;
 
     if (!company_name || !company_name.trim()) {
@@ -73,12 +74,12 @@ router.post('/', (req, res, next) => {
             (enquiry_id, date, company_name, contact_person, contact_no, email,
              address, city, state,
              required_software, customer_description, committed_to_customer,
-             next_followup_date, status)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+             next_followup_date, status, source)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           [enquiry_id, safeDate, company_name, contact_person, contact_no, email,
            address, city, state,
            required_software, customer_description, committed_to_customer,
-           next_followup_date, safeStatus]
+           next_followup_date, safeStatus, source]
         );
         lastErr = null;
         break;
@@ -91,6 +92,40 @@ router.post('/', (req, res, next) => {
 
     const rows = query('SELECT * FROM leads WHERE id = ?', [id]);
     res.status(201).json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// Bulk import (admin). Rows arrive already cleaned by the Import Leads page.
+// All imported leads get an id in the CURRENT year's sequence (ids follow when a
+// lead was entered here, `date` carries when the enquiry happened). Re-importing
+// is safe: a row whose source + contact_no + date already exists is skipped.
+router.post('/import', requireAdmin, (req, res, next) => {
+  try {
+    const { source, rows } = req.body;
+    if (!source || !Array.isArray(rows)) return res.status(400).json({ error: 'source and rows are required' });
+
+    const seen = new Set(
+      query('SELECT contact_no, date FROM leads WHERE source = ?', [source]).map(r => `${r.contact_no}|${r.date}`)
+    );
+    const year = new Date().getFullYear();
+    let next = parseInt(computeNextEnquiryId().split('-')[2], 10);
+    const params = [];
+    let skipped = 0;
+    for (const r of rows) {
+      const key = `${r.contact_no}|${r.date}`;
+      if (!r.company_name || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '') || seen.has(key)) { skipped++; continue; }
+      seen.add(key);
+      params.push([
+        `ENQ-${year}-${String(next++).padStart(3, '0')}`, r.date, r.company_name, r.contact_person,
+        r.contact_no, r.city, r.required_software, r.customer_description, 'In-Process', source,
+      ]);
+    }
+    runMany(
+      `INSERT INTO leads (enquiry_id, date, company_name, contact_person, contact_no, city,
+         required_software, customer_description, status, source) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      params
+    );
+    res.json({ imported: params.length, skipped });
   } catch (err) { next(err); }
 });
 
@@ -113,7 +148,7 @@ router.put('/:id', (req, res, next) => {
       date, company_name, contact_person, contact_no, email,
       address, city, state,
       required_software, customer_description, committed_to_customer,
-      next_followup_date, status
+      next_followup_date, status, source
     } = req.body;
 
     run(
@@ -121,12 +156,12 @@ router.put('/:id', (req, res, next) => {
         date=?, company_name=?, contact_person=?, contact_no=?, email=?,
         address=?, city=?, state=?,
         required_software=?, customer_description=?, committed_to_customer=?,
-        next_followup_date=?, status=?
+        next_followup_date=?, status=?, source=?
        WHERE id=?`,
       [date, company_name, contact_person, contact_no, email,
        address, city, state,
        required_software, customer_description, committed_to_customer,
-       next_followup_date, status, req.params.id]
+       next_followup_date, status, source, req.params.id]
     );
 
     const rows = query('SELECT * FROM leads WHERE id = ?', [req.params.id]);

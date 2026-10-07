@@ -9,6 +9,7 @@ import Reports from './components/Reports/Reports';
 import UserManagement from './components/Admin/UserManagement';
 import CalendarLinks from './components/Admin/CalendarLinks';
 import Visitors from './components/Admin/Visitors';
+import ImportLeads from './components/Admin/ImportLeads';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -39,6 +40,9 @@ function AppShell() {
             <Route path="/reports"   element={<Reports />} />
             {user.role === 'admin' && (
               <Route path="/users" element={<UserManagement />} />
+            )}
+            {user.role === 'admin' && (
+              <Route path="/import-leads" element={<ImportLeads />} />
             )}
             {user.role === 'admin' && (
               <Route path="/calendar-links" element={<CalendarLinks />} />

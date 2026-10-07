@@ -45,6 +45,14 @@ export default function Sidebar() {
           </NavLink>
         )}
 
+        {/* Admin-only: bulk import of purchased leads */}
+        {user?.role === 'admin' && (
+          <NavLink to="/import-leads" style={navStyle}>
+            <span style={{ fontSize: 16 }}>📥</span>
+            Import Leads
+          </NavLink>
+        )}
+
 
         {/* Everything below belongs to the other apps hosted here (Navratri, Aarti,
             PrimeGem, Calendar, Visitors). Admin-only; regular users see just the core

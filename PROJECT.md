@@ -202,6 +202,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **(uncommitted)** — Added `leads.source` column (IndiaMART / WhatsApp Campaign / Reference / Email Campaign / Facebook Ad / LinkedIn Ad / Personal; list in `frontend/src/leadSources.js`), shown on cards and editable in the new-lead form and drawer. Added admin-only **Import Leads** page (`ImportLeads.jsx`, browser-parses the IndiaMART xlsx with `read-excel-file`) posting to `POST /api/leads/import` (batch insert via `runMany`, dedupes on source+contact_no+date). Global JSON body limit raised to 10mb. Imported leads get current-year `ENQ-` ids; `date` is the enquiry date.
 - **Sidebar split** — Non-admin users now see only Pipeline Board, New Lead, Follow-ups, Reports. Admin sees Users plus the other apps' entries (Aarti Sangrah, PrimeGem, Shete Navratri + Admin, Visitors, Calendar Links); any future extra items go in that admin-only block in `Sidebar.jsx`. Menu-only: the public pages stay reachable by URL by design.
 
 - **2026-10-06** — The admin "मंजूर फोटो (वर्ष बदला)" tab gained a काढून टाका (delete) button per

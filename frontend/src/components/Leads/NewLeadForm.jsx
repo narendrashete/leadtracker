@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import Section from '../Section';
+import { SOURCE_OPTIONS } from '../../leadSources';
 
 const SOFTWARE_OPTIONS = ['Courier Software', 'ERP Accounts Software', 'Customised Software'];
 const STATUS_OPTIONS = [
@@ -33,6 +34,7 @@ export default function NewLeadForm() {
     committed_to_customer: '',
     next_followup_date: '',
     status: STATUS_OPTIONS[0],
+    source: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +82,13 @@ export default function NewLeadForm() {
               <div className="form-group">
                 <label>Date</label>
                 <input type="date" className="form-control" value={form.date} onChange={set('date')} />
+              </div>
+              <div className="form-group">
+                <label>Source of Enquiry</label>
+                <select className="form-control" value={form.source || ''} onChange={set('source')}>
+                  <option value="">— Select —</option>
+                  {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
             </div>
           </Section>

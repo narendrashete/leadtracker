@@ -11,7 +11,7 @@ const app = express();
 // collapse into a single counted visitor. One hop: only nginx is trusted.
 app.set('trust proxy', 1);
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // large for the admin lead import
 
 const FRONTEND_DIST = path.resolve(__dirname, '..', 'frontend', 'dist');
 const CALENDAR_PAGE = path.resolve(__dirname, '..', 'mokla-divas', 'index.html');

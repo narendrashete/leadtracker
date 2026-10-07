@@ -187,7 +187,7 @@ async function getDb() {
     )
   `);
   // Existing databases predate the address/city/state columns — add them if missing.
-  for (const col of ['address', 'city', 'state']) {
+  for (const col of ['address', 'city', 'state', 'source']) {
     try {
       _db.run(`ALTER TABLE leads ADD COLUMN ${col} TEXT`);
     } catch { /* column already exists */ }
@@ -456,4 +456,10 @@ function run(sql, params = []) {
   return rowid;
 }
 
-module.exports = { getDb, query, run, save, hashPassword, verifyPassword };
+// Many inserts, one disk write — run() rewrites the whole DB file per call.
+function runMany(sql, paramsList) {
+  for (const params of paramsList) _db.run(sql, sanitize(params));
+  save();
+}
+
+module.exports = { getDb, query, run, runMany, save, hashPassword, verifyPassword };

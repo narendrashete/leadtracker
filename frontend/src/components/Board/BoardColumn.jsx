@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import LeadCard from './LeadCard';
+
+const PAGE_SIZE = 10;
 
 const COLUMN_COLORS = {
   'Leads Received': { header: '#3B82F6', light: '#EFF6FF' },
@@ -9,6 +12,21 @@ const COLUMN_COLORS = {
 
 export default function BoardColumn({ title, leads, onCardClick }) {
   const colors = COLUMN_COLORS[title] || { header: '#64748B', light: '#F8FAFC' };
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const bodyRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const hasMore = visible < leads.length;
+
+  // Reveal the next page when the bottom of the column's scroll area comes into view.
+  useEffect(() => {
+    if (!hasMore || !sentinelRef.current) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(v => v + PAGE_SIZE); },
+      { root: bodyRef.current, rootMargin: '120px' }
+    );
+    io.observe(sentinelRef.current);
+    return () => io.disconnect();
+  }, [hasMore, visible]);
 
   return (
     <div style={{
@@ -39,7 +57,9 @@ export default function BoardColumn({ title, leads, onCardClick }) {
         </span>
       </div>
 
-      <div style={{
+      <div ref={bodyRef} style={{
+        maxHeight: 'calc(100vh - 190px)',
+        overflowY: 'auto',
         background: colors.light,
         border: '1px solid var(--border)',
         borderTop: 'none',
@@ -58,9 +78,16 @@ export default function BoardColumn({ title, leads, onCardClick }) {
             No leads here
           </div>
         ) : (
-          leads.map(lead => (
+          leads.slice(0, visible).map(lead => (
             <LeadCard key={lead.id} lead={lead} onClick={onCardClick} />
           ))
+        )}
+        {hasMore && (
+          <div ref={sentinelRef}
+            onClick={() => setVisible(v => v + PAGE_SIZE)}
+            style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}>
+            Showing {visible} of {leads.length} — scroll or click for more
+          </div>
         )}
       </div>
     </div>

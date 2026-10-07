@@ -203,6 +203,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **Board paging** — Each pipeline column renders 10 cards and reveals 10 more as its (now independently scrolling) body is scrolled to the bottom, via IntersectionObserver in `BoardColumn.jsx` (click the footer as fallback). All leads are still fetched in one call; only DOM rendering is deferred.
+
 - **(uncommitted)** — Added `leads.source` column (IndiaMART / WhatsApp Campaign / Reference / Email Campaign / Facebook Ad / LinkedIn Ad / Personal; list in `frontend/src/leadSources.js`), shown on cards and editable in the new-lead form and drawer. Added admin-only **Import Leads** page (`ImportLeads.jsx`, browser-parses the IndiaMART xlsx with `read-excel-file`) posting to `POST /api/leads/import` (batch insert via `runMany`, dedupes on source+contact_no+date). Global JSON body limit raised to 10mb. Imported leads get current-year `ENQ-` ids; `date` is the enquiry date.
 - **Sidebar split** — Non-admin users now see only Pipeline Board, New Lead, Follow-ups, Reports. Admin sees Users plus the other apps' entries (Aarti Sangrah, PrimeGem, Shete Navratri + Admin, Visitors, Calendar Links); any future extra items go in that admin-only block in `Sidebar.jsx`. Menu-only: the public pages stay reachable by URL by design.
 

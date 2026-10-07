@@ -44,6 +44,7 @@ export const api = {
   updateLead:   (id, d)  => request(`/leads/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
   importLeads:  (data)   => request('/leads/import', { method: 'POST', body: JSON.stringify(data) }),
   nextEnquiryId: ()      => request('/leads/next-enquiry-id'),
+  getProducts:   ()      => request('/leads/meta/products'),
   getLocations:  ()      => request('/leads/meta/locations'),
 
   // Followups

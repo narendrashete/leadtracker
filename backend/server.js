@@ -24,6 +24,7 @@ const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
 getDb().then(() => {
   const leadsRouter    = require('./routes/leads');
+  leadsRouter.backfillProducts();
   const followupsRouter = require('./routes/followups');
   const authRouter     = require('./routes/auth');
   const usersRouter    = require('./routes/users');

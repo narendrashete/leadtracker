@@ -187,7 +187,7 @@ async function getDb() {
     )
   `);
   // Existing databases predate the address/city/state columns — add them if missing.
-  for (const col of ['address', 'city', 'state', 'source']) {
+  for (const col of ['address', 'city', 'state', 'source', 'product']) {
     try {
       _db.run(`ALTER TABLE leads ADD COLUMN ${col} TEXT`);
     } catch { /* column already exists */ }

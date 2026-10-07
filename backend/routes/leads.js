@@ -1,6 +1,7 @@
 const express = require('express');
 const { query, run, runMany } = require('../db');
 const { requireAdmin } = require('../auth');
+const { PRODUCT_OPTIONS, categorizeProduct } = require('../productCategories');
 const router = express.Router();
 
 // Compute the next ENQ-YYYY-NNN id from existing rows. Scans all ids for the
@@ -35,6 +36,8 @@ router.get('/meta/locations', (req, res) => {
   res.json({ cities, states });
 });
 
+router.get('/meta/products', (req, res) => res.json(PRODUCT_OPTIONS));
+
 router.get('/', (req, res) => {
   const leads = query(`
     SELECT l.*, COUNT(f.id) AS followup_count
@@ -52,7 +55,7 @@ router.post('/', (req, res, next) => {
       date, company_name, contact_person, contact_no, email,
       address, city, state,
       required_software, customer_description, committed_to_customer,
-      next_followup_date, status, source
+      next_followup_date, status, source, product
     } = req.body;
 
     if (!company_name || !company_name.trim()) {
@@ -74,12 +77,12 @@ router.post('/', (req, res, next) => {
             (enquiry_id, date, company_name, contact_person, contact_no, email,
              address, city, state,
              required_software, customer_description, committed_to_customer,
-             next_followup_date, status, source)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+             next_followup_date, status, source, product)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
           [enquiry_id, safeDate, company_name, contact_person, contact_no, email,
            address, city, state,
            required_software, customer_description, committed_to_customer,
-           next_followup_date, safeStatus, source]
+           next_followup_date, safeStatus, source, product]
         );
         lastErr = null;
         break;
@@ -117,12 +120,12 @@ router.post('/import', requireAdmin, (req, res, next) => {
       seen.add(key);
       params.push([
         `ENQ-${year}-${String(next++).padStart(3, '0')}`, r.date, r.company_name, r.contact_person,
-        r.contact_no, r.city, r.required_software, r.customer_description, 'In-Process', source,
+        r.contact_no, r.city, r.required_software, categorizeProduct(r.required_software), r.customer_description, 'In-Process', source,
       ]);
     }
     runMany(
       `INSERT INTO leads (enquiry_id, date, company_name, contact_person, contact_no, city,
-         required_software, customer_description, status, source) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+         required_software, product, customer_description, status, source) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       params
     );
     res.json({ imported: params.length, skipped });
@@ -148,7 +151,7 @@ router.put('/:id', (req, res, next) => {
       date, company_name, contact_person, contact_no, email,
       address, city, state,
       required_software, customer_description, committed_to_customer,
-      next_followup_date, status, source
+      next_followup_date, status, source, product
     } = req.body;
 
     run(
@@ -156,12 +159,12 @@ router.put('/:id', (req, res, next) => {
         date=?, company_name=?, contact_person=?, contact_no=?, email=?,
         address=?, city=?, state=?,
         required_software=?, customer_description=?, committed_to_customer=?,
-        next_followup_date=?, status=?, source=?
+        next_followup_date=?, status=?, source=?, product=?
        WHERE id=?`,
       [date, company_name, contact_person, contact_no, email,
        address, city, state,
        required_software, customer_description, committed_to_customer,
-       next_followup_date, status, source, req.params.id]
+       next_followup_date, status, source, product, req.params.id]
     );
 
     const rows = query('SELECT * FROM leads WHERE id = ?', [req.params.id]);
@@ -169,4 +172,14 @@ router.put('/:id', (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Leads saved before `product` existed (or imported before it did) get a category
+// derived from their requirement text. Runs at startup; only touches NULL products.
+function backfillProducts() {
+  const rows = query(`SELECT id, required_software FROM leads
+                      WHERE product IS NULL AND required_software IS NOT NULL AND trim(required_software) != ''`);
+  if (rows.length) runMany('UPDATE leads SET product = ? WHERE id = ?', rows.map(r => [categorizeProduct(r.required_software), r.id]));
+  return rows.length;
+}
+
 module.exports = router;
+module.exports.backfillProducts = backfillProducts;

@@ -203,6 +203,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **Board filters + software product master** — New `leads.product` column (category from `backend/productCategories.js`: Automobile, Courier & Logistics, Quotation, Tally & Accounting, Billing & GST, Label & Barcode, Society & Property, Finance & Banking, Custom Software, Other). `required_software` is now the customer's own free text. Import categorizes automatically; startup `backfillProducts()` fills NULL products on existing leads. Pipeline Board has Source + Software Product filters; header shows `filtered / total`. Filtering is client-side. Edit keyword rules in `productCategories.js` (first match wins).
+
 - **Board paging** — Each pipeline column renders 10 cards and reveals 10 more as its (now independently scrolling) body is scrolled to the bottom, via IntersectionObserver in `BoardColumn.jsx` (click the footer as fallback). All leads are still fetched in one call; only DOM rendering is deferred.
 
 - **(uncommitted)** — Added `leads.source` column (IndiaMART / WhatsApp Campaign / Reference / Email Campaign / Facebook Ad / LinkedIn Ad / Personal; list in `frontend/src/leadSources.js`), shown on cards and editable in the new-lead form and drawer. Added admin-only **Import Leads** page (`ImportLeads.jsx`, browser-parses the IndiaMART xlsx with `read-excel-file`) posting to `POST /api/leads/import` (batch insert via `runMany`, dedupes on source+contact_no+date). Global JSON body limit raised to 10mb. Imported leads get current-year `ENQ-` ids; `date` is the enquiry date.

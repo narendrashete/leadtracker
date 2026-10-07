@@ -4,7 +4,6 @@ import { STATUS_BADGE, STATUS_LABEL } from '../Board/LeadCard';
 import Section from '../Section';
 import { SOURCE_OPTIONS } from '../../leadSources';
 
-const SOFTWARE_OPTIONS = ['Courier Software', 'ERP Accounts Software', 'Customised Software'];
 const STATUS_OPTIONS = [
   'In-Process',
   'Customer is taking longer time to close',
@@ -25,6 +24,7 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState('details'); // 'details' | 'followups'
   const [locations, setLocations] = useState({ cities: [], states: [] });
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     api.getLead(leadId).then(data => {
@@ -32,6 +32,7 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
       setForm({ ...data });
     });
     api.getLocations().then(setLocations);
+    api.getProducts().then(setProducts);
   }, [leadId]);
 
   function set(field) {
@@ -200,10 +201,15 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
               <Section icon="📋" title="Requirement">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div className="form-group">
-                    <label>Required Software</label>
-                    <select className="form-control" value={form.required_software || ''} onChange={set('required_software')}>
-                      {SOFTWARE_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    <label>Software Product</label>
+                    <select className="form-control" value={form.product || ''} onChange={set('product')}>
+                      <option value="">— Select —</option>
+                      {products.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Requirement (customer's words)</label>
+                    <input className="form-control" value={form.required_software || ''} onChange={set('required_software')} />
                   </div>
                   <div className="form-group">
                     <label>Customer Description</label>

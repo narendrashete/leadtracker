@@ -623,6 +623,8 @@ seeds the very first group's code on a fresh database; every later group gets a 
 - `leads.source` is free text constrained only by the UI dropdown (`frontend/src/leadSources.js`); older leads have NULL.
 - **Import Leads** (admin sidebar) parses an IndiaMART export in the browser and calls `POST /api/leads/import` (requireAdmin). IndiaMART dates are relative ("11:29 AM"=today, "Yesterday", "22 May"=no year → export year, "21 Apr'25"); the file's last-modified date is the reference "today". Re-import is safe — rows matching source+contact_no+date are skipped. Imported rows use the current year's `ENQ-` sequence regardless of enquiry date. Uses `runMany()` (one disk write) — don't loop `run()` for bulk inserts.
 
+- `leads.product` is a category derived from `required_software` by keyword rules in `backend/productCategories.js` (served at `GET /api/leads/meta/products`); `required_software` itself is free text. The board's Source/Product filters work on these.
+
 ## Pipeline Column Logic (don't duplicate — reuse)
 Derived, never stored, in `getColumn()` (`frontend/src/components/Board/PipelineBoard.jsx`):
 Dropped enquiry → **Dropped** · Closed with success → **Converted** · else ≥1 follow-up →

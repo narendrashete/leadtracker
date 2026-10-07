@@ -202,6 +202,7 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **Sidebar split** — Non-admin users now see only Pipeline Board, New Lead, Follow-ups, Reports. Admin sees Users plus the other apps' entries (Aarti Sangrah, PrimeGem, Shete Navratri + Admin, Visitors, Calendar Links); any future extra items go in that admin-only block in `Sidebar.jsx`. Menu-only: the public pages stay reachable by URL by design.
 
 - **2026-10-06** — The admin "मंजूर फोटो (वर्ष बदला)" tab gained a काढून टाका (delete) button per
   photo, next to the existing year-change control. Until now an already-approved photo could

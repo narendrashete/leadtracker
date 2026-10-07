@@ -37,6 +37,20 @@ export default function Sidebar() {
           </NavLink>
         ))}
 
+        {/* Admin-only: Users */}
+        {user?.role === 'admin' && (
+          <NavLink to="/users" style={navStyle}>
+            <span style={{ fontSize: 16 }}>👥</span>
+            Users
+          </NavLink>
+        )}
+
+
+        {/* Everything below belongs to the other apps hosted here (Navratri, Aarti,
+            PrimeGem, Calendar, Visitors). Admin-only; regular users see just the core
+            Lead Tracker menu. */}
+        {user?.role === 'admin' && (
+          <>
         {/* Aarti Sangrah — a standalone page served by this same Express process, not
             a React route, so it is a plain link rather than a NavLink. Opens in a new
             tab to leave the board where the user left it. */}
@@ -78,7 +92,7 @@ export default function Sidebar() {
         {/* Admin-only: the approval queue for Shete Navratri's public photo/
             member submissions. A plain link (its own login screen, not a React
             route) placed alongside the other admin-only pages below. */}
-        {user?.role === 'admin' && (
+        {(
           <a
             href="/shetenavratri/admin.html"
             target="_blank"
@@ -90,16 +104,8 @@ export default function Sidebar() {
           </a>
         )}
 
-        {/* Admin-only: Users */}
-        {user?.role === 'admin' && (
-          <NavLink to="/users" style={navStyle}>
-            <span style={{ fontSize: 16 }}>👥</span>
-            Users
-          </NavLink>
-        )}
-
         {/* Admin-only: how many people are opening the public pages */}
-        {user?.role === 'admin' && (
+        {(
           <NavLink to="/visitors" style={navStyle}>
             <span style={{ fontSize: 16 }}>📈</span>
             Visitors
@@ -107,11 +113,13 @@ export default function Sidebar() {
         )}
 
         {/* Admin-only: share links for the friends' availability calendar */}
-        {user?.role === 'admin' && (
+        {(
           <NavLink to="/calendar-links" style={navStyle}>
             <span style={{ fontSize: 16 }}>🗓️</span>
             Calendar Links
           </NavLink>
+        )}
+          </>
         )}
       </nav>
 

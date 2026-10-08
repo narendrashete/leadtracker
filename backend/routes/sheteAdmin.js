@@ -182,6 +182,16 @@ router.patch('/members/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// Removes a member outright — e.g. a duplicate entry whose number has been
+// merged into another member's alternate number.
+router.delete('/members/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const existing = query(`SELECT id FROM shete_members WHERE id = ?`, [id]);
+  if (!existing.length) return res.status(404).json({ error: 'सभासद सापडला नाही.' });
+  run(`DELETE FROM shete_members WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
 // ---- History list (add/edit/delete) ----
 
 function parseYear(raw) {

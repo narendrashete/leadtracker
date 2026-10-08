@@ -203,6 +203,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-08** — Shete Navratri admin roster tab: each member card now has a "काढून टाका" (delete) button, backed by `DELETE /api/shete-admin/members/:id`. Added to merge a duplicate entry (move its number into another member's पर्यायी field, then delete it).
+
 - **Excel export per board column** — each column header has a ⬇ Excel button (`BoardColumn.jsx` + `frontend/src/exportLeads.js`, `write-excel-file`, built in the browser) exporting ALL leads in that column (not just the 10 shown), respecting the active Source/Product filters, with every New Lead form field.
 
 - **Board filters + software product master** — New `leads.product` column (category from `backend/productCategories.js`: Automobile, Courier & Logistics, Quotation, Tally & Accounting, Billing & GST, Label & Barcode, Society & Property, Finance & Banking, Custom Software, Other). `required_software` is now the customer's own free text. Import categorizes automatically; startup `backfillProducts()` fills NULL products on existing leads. Pipeline Board has Source + Software Product filters; header shows `filtered / total`. Filtering is client-side. Edit keyword rules in `productCategories.js` (first match wins).

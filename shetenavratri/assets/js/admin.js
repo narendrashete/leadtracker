@@ -313,7 +313,10 @@
         '<label>पर्यायी (Calling)<input type="text" class="r-altMobile" value="' + escapeHtml(m.altMobile) + '" maxlength="10" placeholder="ऐच्छिक"></label>' +
       '</div></div>' +
       '<div class="roster-msg"></div>' +
-      '<div class="roster-actions"><button class="btn-save">जतन करा</button></div>';
+      '<div class="roster-actions">' +
+        '<button class="btn-delete">काढून टाका</button>' +
+        '<button class="btn-save">जतन करा</button>' +
+      '</div>';
     return card;
   }
 
@@ -336,10 +339,28 @@
   });
 
   rosterList.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('btn-save')) return;
+    if (!e.target.classList.contains('btn-save') && !e.target.classList.contains('btn-delete')) return;
     const card = e.target.closest('.roster-card');
     const id = card.dataset.id;
     const msgEl = card.querySelector('.roster-msg');
+
+    if (e.target.classList.contains('btn-delete')) {
+      const name = card.querySelector('.r-name').value.trim();
+      if (!confirm('"' + name + '" यांना सभासद यादीतून कायमचे काढून टाकायचे?')) return;
+      e.target.disabled = true;
+      api('/api/shete-admin/members/' + id, { method: 'DELETE' }).then(function (res) {
+        if (!res.ok) {
+          e.target.disabled = false;
+          msgEl.textContent = res.body.error || 'काढता आले नाही.';
+          msgEl.className = 'roster-msg error';
+          return;
+        }
+        ROSTER = ROSTER.filter(function (m) { return String(m.id) !== String(id); });
+        card.remove();
+      });
+      return;
+    }
+
     const payload = {
       name: card.querySelector('.r-name').value.trim(),
       nameEn: card.querySelector('.r-nameEn').value.trim(),

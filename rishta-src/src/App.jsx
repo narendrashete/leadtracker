@@ -23,6 +23,24 @@ const saveLS = (v) => {
   }
 };
 
+// "New" is per device: which profiles THIS browser has opened. In the shared
+// album, one person opening a profile must not take it off everyone's New list.
+const SEEN_KEY = 'rishta.seen.v1';
+const loadSeen = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SEEN_KEY)) || []);
+  } catch {
+    return new Set();
+  }
+};
+const saveSeen = (set) => {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...set]));
+  } catch {
+    /* ignore */
+  }
+};
+
 const DEFAULT = {
   q: '',
   age: null,
@@ -47,7 +65,17 @@ function bounds(list, fn, floor, ceil) {
 
 export default function App() {
   const [profiles, setProfiles] = useState(null);
-  const [f, setF] = useState(() => ({ ...DEFAULT, ...loadLS() }));
+  // Never reopen on the New tab: it only makes sense right after an import.
+  const [f, setF] = useState(() => {
+    const v = { ...DEFAULT, ...loadLS() };
+    if (v.tab === 'new') v.tab = 'all';
+    return v;
+  });
+  const [seen, setSeen] = useState(loadSeen);
+  // Profiles opened since the tab was last changed stay in the list, so a
+  // profile doesn't vanish from under you the moment you close it.
+  const [keep, setKeep] = useState(() => new Set());
+  const isNew = (p) => p.status === 'new' && !seen.has(p.id);
   const [progress, setProgress] = useState(null);
   const [toast, setToast] = useState('');
   const [openId, setOpenId] = useState(null);
@@ -83,7 +111,10 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const set = (patch) => setF((o) => ({ ...o, ...patch }));
+  const set = (patch) => {
+    if (patch.tab !== undefined) setKeep(new Set());
+    setF((o) => ({ ...o, ...patch }));
+  };
 
   async function handleFiles(files) {
     const pdfs = [...files].filter((x) => /pdf$/i.test(x.type) || /\.pdf$/i.test(x.name));
@@ -151,19 +182,23 @@ export default function App() {
       if (p.status === 'hidden') c.hidden++;
       else {
         c.all++;
-        if (p.status === 'new') c.new++;
+        if (isNew(p)) c.new++;
         if (p.status === 'shortlist') c.shortlist++;
       }
     }
     return c;
-  }, [list]);
+  }, [list, seen]); // eslint-disable-line
 
   const tabbed = useMemo(
     () =>
       list.filter((p) =>
-        f.tab === 'hidden' ? p.status === 'hidden' : p.status !== 'hidden' && (f.tab === 'all' || p.status === f.tab)
+        keep.has(p.id) ||
+        (f.tab === 'hidden'
+          ? p.status === 'hidden'
+          : p.status !== 'hidden' &&
+            (f.tab === 'all' || (f.tab === 'new' ? isNew(p) : p.status === f.tab)))
       ),
-    [list, f.tab]
+    [list, f.tab, seen, keep] // eslint-disable-line
   );
 
   const matches = (p, skip) => {
@@ -241,7 +276,12 @@ export default function App() {
 
   function openProfile(p) {
     setOpenId(p.id);
-    if (p.status === 'new') updateProfile(p, { status: 'seen' });
+    setKeep((k) => (k.has(p.id) ? k : new Set(k).add(p.id)));
+    if (!seen.has(p.id)) {
+      const next = new Set(seen).add(p.id);
+      setSeen(next);
+      saveSeen(next);
+    }
   }
   const step = (d) => {
     const n = results[openIdx + d];
@@ -485,6 +525,11 @@ export default function App() {
             <div className="resultline">
               <strong>{results.length}</strong>
               <span> of {tabbed.length} match</span>
+              {f.q.trim() && f.tab !== 'all' && (
+                <button className="link small" onClick={() => set({ tab: 'all' })}>
+                  Search all profiles
+                </button>
+              )}
               {chipsActive.map(([label, fn]) => (
                 <button key={label} className="achip" onClick={fn} aria-label={`Remove ${label}`}>
                   {label}
@@ -509,6 +554,7 @@ export default function App() {
                 <Card
                   key={p.id}
                   p={p}
+                  isNew={isNew(p)}
                   onOpen={() => openProfile(p)}
                   onStar={() => updateProfile(p, { status: p.status === 'shortlist' ? 'seen' : 'shortlist' })}
                 />
@@ -576,14 +622,14 @@ export default function App() {
   );
 }
 
-function Card({ p, onOpen, onStar }) {
+function Card({ p, isNew, onOpen, onStar }) {
   const job = p.fields.job || '';
   return (
     <article className={'card' + (p.status === 'shortlist' ? ' is-star' : '')}>
       <button className="card-hit" onClick={onOpen} aria-label={`Open ${p.name}`}>
         <div className="card-photo">
           <Photo id={p.id} alt={p.name} />
-          {p.status === 'new' && <span className="badge-new">New</span>}
+          {isNew && <span className="badge-new">New</span>}
           <span className="card-age">
             {p.age ?? '—'}
             {p.dob?.approx && p.age ? '~' : ''}

@@ -503,6 +503,12 @@ notes is seen by everyone who opens `/rishta`.
   import in `importPdf.js`), because a single-file page has no worker file to point at.
 - **Re-import is safe.** A profile's id is surname + DOB + MVS number + height; an existing
   id is updated (parsed fields, photo) but keeps status, notes and field edits.
+- **"New" is per device, not shared.** Opening a profile records it in this browser's
+  `localStorage` (`rishta.seen.v1`) and never PATCHes the server, so one family member
+  opening a profile can't take it off everyone else's New list. Shared `status` is only
+  shortlist / hidden (`'seen'` is the neutral value). A profile opened since the last tab
+  change stays in the list (`keep` in `App.jsx`) — without that, opening one on the New tab
+  made it vanish from the results the moment it was closed, which read as "deleted".
 - **Parsing is heuristic** (`parse.js`). Marathi pages come out of the PDF font-garbled; a
   repair pass (`fixMarathi`) and consonant-skeleton label matching (`skel`) recover most
   fields. Income: bare figures under 1 lakh are treated as monthly. Places are grouped via

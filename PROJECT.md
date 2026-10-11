@@ -38,8 +38,9 @@ address/city/state to leads.
 - Rishta Album: private marriage-profile album at `/rishta`. Imports the vadhu-var list PDFs
   in the browser, one card per profile with photo; filters by age, native place, job
   location, salary, education, height, weight; shortlist/hide/notes. React + Vite source in
-  `rishta-src/`, built single file committed in `rishta/`. No API, data stays in the
-  browser. See `CLAUDE.md` → Rishta Album.
+  `rishta-src/`, built single file committed in `rishta/`. Shared album: profiles, photos,
+  shortlist and notes stored on the server (`/api/rishta`, open to anyone with the link).
+  See `CLAUDE.md` → Rishta Album.
 
 ## Features In Progress
 - **Aarti audio playback** — the player is live, and which aartis have one is driven by the
@@ -208,6 +209,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-10-11** — Rishta Album is now shared: family members opening `/rishta` see the profiles someone imported, plus a common shortlist and notes. New public `/api/rishta` (`routes/rishta.js`), tables `rishta_profiles` + `rishta_imports`, images in git-ignored `rishta-data/images/`. No code/login by the owner's choice; no delete on the public API; `noindex` headers. The page falls back to browser-only storage when the API is absent. Profiles imported before this change were only in the importer's browser — import the PDF once more to share them.
 
 - **2026-10-11** — Added Rishta Album at `/rishta` (also `/Rishta`): marriage-profile PDF importer + filterable album. Source `rishta-src/` (React + Vite), committed build `rishta/index.html`, route in `server.js`, `rishta` visitor label. Tested with the 1 Oct 2026 list (294 pages → 289 profiles; age parsed on all but 5, salary on ~90%).
 

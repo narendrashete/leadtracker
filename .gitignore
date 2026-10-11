@@ -15,3 +15,8 @@ aartisangrah/audio/archived/
 # leads.db (also git-ignored). Content, not code — never committed, persists
 # across deploys because git pull never touches untracked files.
 shetenavratri/uploads/
+
+# Rishta Album profile photos/page images, referenced by rishta_profiles rows in
+# leads.db (also git-ignored). Private content — never committed, survives
+# deploys because git pull never touches untracked files.
+rishta-data/

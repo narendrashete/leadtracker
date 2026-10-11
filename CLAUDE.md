@@ -37,8 +37,8 @@ Express (backend/server.js)
    ├── /kinetic-gem/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    ├── /shetenavratri (public — serves shetenavratri/index.html + members/history/gallery
    │                   pages + assets/, no API, no build step)
-   ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/,
-   │                   no API; all profile data stays in the visitor's browser)
+   ├── /api/rishta    (public by owner's choice — shared Rishta Album profiles/images)
+   ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -62,7 +62,7 @@ backend/
   db.js                sql.js init/schema, query()/run() helpers, save-on-write, admin seed
   auth.js              in-memory session store + requireAuth/requireAdmin middleware
   routes/               leads.js, followups.js, auth.js, users.js, calendar.js,
-                        calendarAdmin.js, stats.js
+                        calendarAdmin.js, stats.js, rishta.js
   analytics.js         records a page view; hashes the visitor, filters bots
   leads.db             the entire database (git-ignored)
 frontend/src/
@@ -117,11 +117,13 @@ rishta/
   index.html           Rishta Album — BUILD OUTPUT of rishta-src/ (one self-contained file,
                        React + pdf.js inlined). Committed so the server needs no build step.
                        Never edit by hand; rebuild from rishta-src/. Served at /rishta.
+rishta-data/images/    Rishta profile photos + page images (git-ignored, like gallery uploads)
 rishta-src/            Rishta Album source: React + Vite, its own package.json.
   src/lib/parse.js       profile-page parser: field labels (English + Marathi), age, height,
                          weight, income (→ ₹ lakh/yr), education groups, place-name aliases
   src/lib/importPdf.js   pdf.js reading, profile-photo detection and cropping
-  src/lib/db.js          IndexedDB store (profiles, images, imports) — in the browser only
+  src/lib/store.js       storage interface: /api/rishta when present, else IndexedDB
+  src/lib/db.js          IndexedDB backend (browser-only fallback)
   src/App.jsx, src/components/   filters, card grid, profile sheet
 start.bat               local one-click launcher (runs the production build)
 ```
@@ -464,29 +466,46 @@ file, not a fork**, and that difference is deliberate:
   its centre). Regenerating means re-running that generator, not editing a PNG.
 
 ## Rishta Album (marriage-profile album)
-A fifth app sharing this repo and this Express process for hosting only: no tables, no API,
-no accounts. The owner imports the vadhu-var list PDFs he receives (one profile per page,
-photo top-right, "Label: value" lines in English or Marathi); the page turns each into a
-card and filters them by age, native place, job/current location, salary, education,
-height and weight, with shortlist / not-interested / notes per profile.
+A fifth app sharing this repo and this Express process. The owner imports the vadhu-var list
+PDFs he receives (one profile per page, photo top-right, "Label: value" lines in English or
+Marathi); the page turns each into a card and filters them by age, native place,
+job/current location, salary, education, height and weight, with shortlist /
+not-interested / notes per profile. The album is SHARED: whatever anyone imports, stars or
+notes is seen by everyone who opens `/rishta`.
 - **Unlike the other standalone pages it HAS a build step — but not on the server.** Source
   is React + Vite in `rishta-src/`; `npm run build` there writes one self-contained
   `rishta/index.html` (vite-plugin-singlefile inlines React, pdf.js and its worker, ~2 MB),
   and that built file is committed. So the VPS update flow is unchanged: `git pull` +
   `pm2 reload`. After any change in `rishta-src/`, run its build and commit `rishta/` too,
   or the server keeps serving the old page. Don't hand-edit `rishta/index.html`.
-- **The server never sees a profile.** PDFs are parsed in the browser (pdf.js); profiles,
-  cropped photos, page images, shortlist and notes live in that browser's IndexedDB. So the
-  album is per browser/device, and the route is public on purpose — the page itself holds no
-  personal data. Don't add an upload endpoint without deciding where that data should live:
-  these are private individuals' biodata.
+- **Public with no code or login — the owner's explicit choice** (family members just open
+  the link). Anyone the link reaches can see every profile and photo, import, shortlist and
+  note. There is deliberately no delete endpoint on this public API. If access ever needs
+  restricting, the Mokla Divas share-code pattern is the one to reuse. Responses carry
+  `X-Robots-Tag: noindex`. These are private individuals' biodata: never expose
+  `/api/rishta` data anywhere else, and never put it in git.
+- **Parsing happens in the browser** (pdf.js); the server only stores the result.
+  `routes/rishta.js`: `GET/POST /profiles` (POST is a batch upsert, max 60), `PATCH
+  /profiles/:id` (status/note/edits only), `PUT/GET /images/:kind/:id` (kind `photo` or
+  `page`, JPEG only, checked by magic bytes), `GET/POST /imports`.
+- **Storage split.** `rishta_profiles` holds the parsed profile as JSON in `data`, with
+  `status`, `note` and `edits` as their own columns: a re-import rewrites only `data`, so it
+  can never wipe the family's shortlist or notes. Images are files in `rishta-data/images/`
+  (name = sha1(id)-kind.jpg), never blobs in leads.db, because `run()` rewrites the whole DB
+  file per write (~120 KB of JPEG per profile). Bulk upserts use `runMany()`.
+- **`store.js` picks the backend at load**: if `GET /api/rishta/profiles` answers, the page
+  runs shared; otherwise (opened as a file, or as a Claude Artifact) it falls back to the
+  browser's IndexedDB. Keep both paths working. Shared mode reloads on tab focus so one
+  person sees another's stars without a manual refresh.
+- **Images must stay under nginx's `client_max_body_size`** (1 MB default). Page renders are
+  ~760px wide JPEG q0.78, largest seen 243 KB.
 - **pdf.js worker runs from a `blob:` URL** built from the inlined worker source (`?raw`
   import in `importPdf.js`), because a single-file page has no worker file to point at.
 - **Re-import is safe.** A profile's id is surname + DOB + MVS number + height; an existing
-  id is updated (parsed fields, photo) but keeps the user's status, notes and field edits.
+  id is updated (parsed fields, photo) but keeps status, notes and field edits.
 - **Parsing is heuristic** (`parse.js`). Marathi pages come out of the PDF font-garbled; a
   repair pass (`fixMarathi`) and consonant-skeleton label matching (`skel`) recover most
-  fields. Income: bare figures under ₹1 lakh are treated as monthly. Places are grouped via
+  fields. Income: bare figures under 1 lakh are treated as monthly. Places are grouped via
   the `PLACES` alias table (spellings + Devanagari) — add a town there when it shows up
   split in the Native / Location filters. The profile sheet's "Fix details" stores user
   overrides in `edits`, and `derive()` recomputes filter values from raw + edits.

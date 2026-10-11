@@ -37,6 +37,8 @@ Express (backend/server.js)
    ├── /kinetic-gem/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    ├── /shetenavratri (public — serves shetenavratri/index.html + members/history/gallery
    │                   pages + assets/, no API, no build step)
+   ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/,
+   │                   no API; all profile data stays in the visitor's browser)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -111,6 +113,16 @@ shetenavratri/
   gallery.html           क्षणचित्रे — photo collage + modal viewer (mock placeholders
                        until real photos are supplied).
   assets/                css/js shared by all four pages.
+rishta/
+  index.html           Rishta Album — BUILD OUTPUT of rishta-src/ (one self-contained file,
+                       React + pdf.js inlined). Committed so the server needs no build step.
+                       Never edit by hand; rebuild from rishta-src/. Served at /rishta.
+rishta-src/            Rishta Album source: React + Vite, its own package.json.
+  src/lib/parse.js       profile-page parser: field labels (English + Marathi), age, height,
+                         weight, income (→ ₹ lakh/yr), education groups, place-name aliases
+  src/lib/importPdf.js   pdf.js reading, profile-photo detection and cropping
+  src/lib/db.js          IndexedDB store (profiles, images, imports) — in the browser only
+  src/App.jsx, src/components/   filters, card grid, profile sheet
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -451,6 +463,35 @@ file, not a fork**, and that difference is deliberate:
   recentres the deformed mesh (lobing moves the centroid, and a maskable icon is cropped about
   its centre). Regenerating means re-running that generator, not editing a PNG.
 
+## Rishta Album (marriage-profile album)
+A fifth app sharing this repo and this Express process for hosting only: no tables, no API,
+no accounts. The owner imports the vadhu-var list PDFs he receives (one profile per page,
+photo top-right, "Label: value" lines in English or Marathi); the page turns each into a
+card and filters them by age, native place, job/current location, salary, education,
+height and weight, with shortlist / not-interested / notes per profile.
+- **Unlike the other standalone pages it HAS a build step — but not on the server.** Source
+  is React + Vite in `rishta-src/`; `npm run build` there writes one self-contained
+  `rishta/index.html` (vite-plugin-singlefile inlines React, pdf.js and its worker, ~2 MB),
+  and that built file is committed. So the VPS update flow is unchanged: `git pull` +
+  `pm2 reload`. After any change in `rishta-src/`, run its build and commit `rishta/` too,
+  or the server keeps serving the old page. Don't hand-edit `rishta/index.html`.
+- **The server never sees a profile.** PDFs are parsed in the browser (pdf.js); profiles,
+  cropped photos, page images, shortlist and notes live in that browser's IndexedDB. So the
+  album is per browser/device, and the route is public on purpose — the page itself holds no
+  personal data. Don't add an upload endpoint without deciding where that data should live:
+  these are private individuals' biodata.
+- **pdf.js worker runs from a `blob:` URL** built from the inlined worker source (`?raw`
+  import in `importPdf.js`), because a single-file page has no worker file to point at.
+- **Re-import is safe.** A profile's id is surname + DOB + MVS number + height; an existing
+  id is updated (parsed fields, photo) but keeps the user's status, notes and field edits.
+- **Parsing is heuristic** (`parse.js`). Marathi pages come out of the PDF font-garbled; a
+  repair pass (`fixMarathi`) and consonant-skeleton label matching (`skel`) recover most
+  fields. Income: bare figures under ₹1 lakh are treated as monthly. Places are grouped via
+  the `PLACES` alias table (spellings + Devanagari) — add a town there when it shows up
+  split in the Native / Location filters. The profile sheet's "Fix details" stores user
+  overrides in `edits`, and `derive()` recomputes filter values from raw + edits.
+- Counted in Visitors as `rishta`. Express routing is case-insensitive, so `/Rishta` works.
+
 ## Visitor Counting
 Server-side, in `analytics.js`, recorded on the three public pages and on the SPA's own
 HTML loads. Admin-only, shown on the **Visitors** screen.
@@ -607,7 +648,9 @@ pm2 reload leadtracker
 `git pull` never touches `backend/leads.db` (it's git-ignored) — no manual file copying needed.
 The calendar, Aarti Sangrah and PrimeGem pages need no build step (they are plain HTML, not
 part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any of them. Aarti
-Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, PrimeGem
+Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Rishta Album
+at `https://leadtracker.primecomputers.co.in/rishta` (built locally from `rishta-src/` and
+committed — see Rishta Album), PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
 them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching

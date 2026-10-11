@@ -16,6 +16,7 @@ const PAGE_LABELS = {
   'kinetic-gem-app':  'PrimeGem — installed app',
   calendar:           'Mokla Divas calendar',
   shetenavratri:      'Shete Parivar Navratri',
+  rishta:             'Rishta Album',
   leadtracker:        'Lead Tracker app'
 };
 

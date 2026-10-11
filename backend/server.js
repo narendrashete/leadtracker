@@ -19,6 +19,7 @@ const AARTI_PAGE    = path.resolve(__dirname, '..', 'aartisangrah', 'index.html'
 const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
 const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html');
 const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
+const RISHTA_PAGE   = path.resolve(__dirname, '..', 'rishta', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
@@ -298,6 +299,23 @@ getDb().then(() => {
     });
   });
 
+  // Rishta Album — a private marriage-profile (biodata) album. One self-contained
+  // HTML file BUILT from rishta-src/ (React + Vite, inlined by
+  // vite-plugin-singlefile) and committed, so the server needs no build step for
+  // it. No API and no tables: the PDFs are read in the visitor's browser and every
+  // profile, photo, shortlist and note lives in that browser's IndexedDB, never on
+  // this server. Express routing is case-insensitive, so /Rishta works too.
+  app.get('/rishta', (req, res) => {
+    recordVisit(req, 'rishta');
+    res.sendFile(RISHTA_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Rishta page missing.');
+      }
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -321,6 +339,7 @@ getDb().then(() => {
     console.log(`  PrimeGem:        http://localhost:${PORT}/kinetic-gem`);
     console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
     console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
+    console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

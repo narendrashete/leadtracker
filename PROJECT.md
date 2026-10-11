@@ -210,6 +210,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-11** — Rishta fix: a profile opened from the New tab vanished from search results on close (opening marked it seen, and the search was scoped to New). Now "New" is per device (localStorage, no server write on open), opened profiles stay listed until the tab changes, the page never reopens on the New tab, and a "Search all profiles" link appears when searching inside a tab.
+
 - **2026-10-11** — Rishta Album is now shared: family members opening `/rishta` see the profiles someone imported, plus a common shortlist and notes. New public `/api/rishta` (`routes/rishta.js`), tables `rishta_profiles` + `rishta_imports`, images in git-ignored `rishta-data/images/`. No code/login by the owner's choice; no delete on the public API; `noindex` headers. The page falls back to browser-only storage when the API is absent. Profiles imported before this change were only in the importer's browser — import the PDF once more to share them.
 
 - **2026-10-11** — Added Rishta Album at `/rishta` (also `/Rishta`): marriage-profile PDF importer + filterable album. Source `rishta-src/` (React + Vite), committed build `rishta/index.html`, route in `server.js`, `rishta` visitor label. Tested with the 1 Oct 2026 list (294 pages → 289 profiles; age parsed on all but 5, salary on ~90%).

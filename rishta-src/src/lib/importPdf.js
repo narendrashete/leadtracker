@@ -1,5 +1,5 @@
 import { itemsToLines, parseProfile, derive } from './parse.js';
-import * as db from './db.js';
+import * as store from './store.js';
 
 let pdfjsP;
 async function loadPdfjs() {
@@ -74,7 +74,21 @@ export async function importPdf(file, onProgress = () => {}) {
   const now = new Date().toISOString();
   let listTitle = '';
   let added = 0, updated = 0, skipped = 0;
-  const existing = new Map((await db.getAll('profiles')).map((p) => [p.id, p]));
+  const existing = new Map((await store.loadAll()).map((p) => [p.id, p]));
+  // Uploads run behind page rendering (a few pages in flight) so a 300-page
+  // list doesn't wait on the network page by page.
+  let chain = Promise.resolve();
+  let inflight = 0;
+  let uploadError = null;
+  const queue = (fn) => {
+    inflight++;
+    chain = chain
+      .then(fn)
+      .catch((e) => {
+        uploadError = uploadError || e;
+      })
+      .finally(() => inflight--);
+  };
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   const crop = document.createElement('canvas');
@@ -126,9 +140,13 @@ export async function importPdf(file, onProgress = () => {}) {
       edits: prev?.edits || {},
     };
     derive(rec);
-    await db.put('profiles', rec);
-    await db.put('images', photoBlob, `photo:${p.id}`);
-    await db.put('images', pageBlob, `page:${p.id}`);
+    queue(async () => {
+      if (uploadError) return;
+      await store.saveProfiles([rec]);
+      await Promise.all([store.putImage('photo', p.id, photoBlob), store.putImage('page', p.id, pageBlob)]);
+    });
+    if (inflight > 3) await chain;
+    if (uploadError) throw uploadError;
     existing.set(p.id, rec);
     prev ? updated++ : added++;
     page.cleanup();
@@ -136,7 +154,9 @@ export async function importPdf(file, onProgress = () => {}) {
     // let the UI breathe
     if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));
   }
-  await db.put('imports', { id: importId, name: file.name, title: listTitle, at: now, pages: total, added, updated });
+  await chain;
+  if (uploadError) throw uploadError;
+  await store.addImport({ id: importId, name: file.name, title: listTitle, at: now, pages: total, added, updated });
   await doc.destroy();
   return { added, updated, skipped, total, title: listTitle };
 }

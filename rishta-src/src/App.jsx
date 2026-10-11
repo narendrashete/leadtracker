@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import * as db from './lib/db.js';
+import * as store from './lib/store.js';
 import { importPdf } from './lib/importPdf.js';
 import { ageFrom, fmtHeight, fmtIncome, derive, EDU_LEVELS } from './lib/parse.js';
 import { RangeField, PlaceFilter, Chip } from './components/Filters.jsx';
@@ -57,7 +57,7 @@ export default function App() {
   const fileRef = useRef();
 
   const reload = useCallback(async () => {
-    const all = await db.getAll('profiles');
+    const all = await store.loadAll();
     all.forEach((p) => {
       derive(p);
       p.age = ageFrom(p.dob);
@@ -65,8 +65,16 @@ export default function App() {
     setProfiles(all);
   }, []);
   useEffect(() => {
-    reload().catch(() => setProfiles([]));
-    db.persist();
+    reload()
+      .then(() => !store.isShared() && store.persist())
+      .catch((e) => {
+        setProfiles((p) => p || []);
+        setToast(`Couldn't load the album: ${e.message}`);
+      });
+    // Shared album: pick up what other family members imported or starred.
+    const onVis = () => document.visibilityState === 'visible' && store.isShared() && reload().catch(() => {});
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [reload]);
   useEffect(() => saveLS(f), [f]);
   useEffect(() => {
@@ -92,7 +100,7 @@ export default function App() {
         tU += r.updated;
       } catch (e) {
         console.error(e);
-        setToast(`Couldn't read ${file.name}. Is it a valid PDF? (${e.message})`);
+        setToast(`Couldn't finish ${file.name}: ${e.message}`);
       }
     }
     setProgress(null);
@@ -105,9 +113,14 @@ export default function App() {
     const rec = { ...p, ...patch };
     delete rec.age;
     derive(rec);
-    await db.put('profiles', rec);
     rec.age = ageFrom(rec.dob);
     setProfiles((list) => list.map((x) => (x.id === rec.id ? rec : x)));
+    try {
+      await store.patchProfile(p, patch);
+    } catch (e) {
+      setProfiles((list) => list.map((x) => (x.id === p.id ? p : x)));
+      setToast(`Couldn't save that change: ${e.message}`);
+    }
   }
 
   // ---------- derived lists ----------
@@ -391,7 +404,9 @@ export default function App() {
           <div>
             <h1>Rishta Album</h1>
             <p className="brand-sub">
-              {profiles == null ? 'Loading…' : `${counts.all} profiles · ${counts.shortlist} shortlisted`}
+              {profiles == null
+                ? 'Loading…'
+                : `${counts.all} profiles · ${counts.shortlist} shortlisted${store.isShared() ? ' · shared' : ''}`}
             </p>
           </div>
         </div>
@@ -624,7 +639,11 @@ function Empty({ onPick }) {
         <button className="btn primary lg" onClick={onPick}>
           <Icon name="upload" /> Import a PDF
         </button>
-        <p className="muted small">Or drop the file anywhere on this page. Everything stays in this browser.</p>
+        <p className="muted small">
+          {store.isShared()
+            ? 'Or drop the file anywhere on this page. Imported profiles, shortlists and notes are shared with everyone who opens this link.'
+            : 'Or drop the file anywhere on this page. Everything stays in this browser.'}
+        </p>
       </div>
       <div className="empty-sample" aria-label="Example card">
         <span className="sample-tag">Example</span>
@@ -665,8 +684,8 @@ function ManageDialog({ onClose, onCleared, profiles }) {
   const [usage, setUsage] = useState(0);
   const [confirm, setConfirm] = useState(false);
   useEffect(() => {
-    db.getAll('imports').then((x) => setImports(x.sort((a, b) => b.at.localeCompare(a.at))));
-    db.storageEstimate().then(setUsage);
+    store.listImports().then(setImports).catch(() => {});
+    if (!store.isShared()) store.storageEstimate().then(setUsage);
   }, []);
   return (
     <div className="modal-wrap" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -678,7 +697,9 @@ function ManageDialog({ onClose, onCleared, profiles }) {
           </button>
         </div>
         <p className="muted">
-          {profiles.length} profiles stored in this browser{usage ? ` · ${(usage / 1048576).toFixed(0)} MB used` : ''}.
+          {store.isShared()
+            ? `${profiles.length} profiles, shared with everyone who opens this link.`
+            : `${profiles.length} profiles stored in this browser${usage ? ` · ${(usage / 1048576).toFixed(0)} MB used` : ''}.`}
         </p>
         <ul className="imports">
           {imports.length === 0 && <li className="muted">No imports yet.</li>}
@@ -696,7 +717,7 @@ function ManageDialog({ onClose, onCleared, profiles }) {
             </li>
           ))}
         </ul>
-        <div className="danger-zone">
+        {!store.isShared() && <div className="danger-zone">
           {!confirm ? (
             <button className="btn ghost danger" onClick={() => setConfirm(true)}>
               Delete all profiles
@@ -710,7 +731,7 @@ function ManageDialog({ onClose, onCleared, profiles }) {
               <button
                 className="btn danger-solid"
                 onClick={async () => {
-                  await db.clearAll();
+                  await store.clearLocal();
                   await onCleared();
                   onClose();
                 }}
@@ -719,7 +740,7 @@ function ManageDialog({ onClose, onCleared, profiles }) {
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

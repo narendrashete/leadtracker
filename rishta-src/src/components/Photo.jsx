@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import * as db from '../lib/db.js';
+import * as store from '../lib/store.js';
 import { Icon } from './Icon.jsx';
 
 const cache = new Map();
@@ -12,10 +12,11 @@ export function useImage(key) {
       setUrl(cache.get(key));
       return;
     }
-    db.get('images', key)
-      .then((blob) => {
-        if (!blob || !alive) return;
-        const u = URL.createObjectURL(blob);
+    const i = key.indexOf(':');
+    store
+      .imageUrl(key.slice(0, i), key.slice(i + 1))
+      .then((u) => {
+        if (!u || !alive) return;
         cache.set(key, u);
         setUrl(u);
       })
@@ -35,5 +36,5 @@ export default function Photo({ id, alt, kind = 'photo' }) {
         <Icon name="person" />
       </div>
     );
-  return <img src={url} alt={alt} loading="lazy" decoding="async" />;
+  return <img src={url} alt={alt} loading="lazy" decoding="async" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />;
 }

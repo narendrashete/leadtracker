@@ -357,6 +357,32 @@ async function getDb() {
       reviewed_at TEXT
     )
   `);
+  // Rishta Album (shared marriage-profile album). Parsed profile JSON per row;
+  // status/note/edits kept as their own columns so a PDF re-import (which only
+  // rewrites `data`) can never wipe the family's shortlist or notes. Images are
+  // files in rishta-data/images, not blobs here.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS rishta_profiles (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new',
+      note TEXT NOT NULL DEFAULT '',
+      edits TEXT NOT NULL DEFAULT '{}',
+      first_seen TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS rishta_imports (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      title TEXT,
+      at TEXT NOT NULL,
+      pages INTEGER,
+      added INTEGER,
+      updated INTEGER
+    )
+  `);
   _db.run(`
     CREATE TABLE IF NOT EXISTS shete_gallery (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -33,6 +33,7 @@ getDb().then(() => {
   const calendarAdminRouter = require('./routes/calendarAdmin');
   const statsRouter    = require('./routes/stats');
   const sheteRouter      = require('./routes/shete');
+  const rishtaRouter     = require('./routes/rishta');
   const sheteAdminRouter = require('./routes/sheteAdmin');
   const { recordVisit } = require('./analytics');
 
@@ -60,6 +61,8 @@ getDb().then(() => {
   // the site itself is open to anyone, submissions just land in a pending
   // table instead of going live.
   app.use('/api/shete', sheteRouter);
+  // Public by the owner's choice (see CLAUDE.md → Rishta Album): no code, no login.
+  app.use('/api/rishta', rishtaRouter);
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
   // surface can never approve its own requests.
@@ -307,6 +310,7 @@ getDb().then(() => {
   // this server. Express routing is case-insensitive, so /Rishta works too.
   app.get('/rishta', (req, res) => {
     recordVisit(req, 'rishta');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
     res.sendFile(RISHTA_PAGE, (err) => {
       // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
       // here with headers already sent, and answering again would crash the process.

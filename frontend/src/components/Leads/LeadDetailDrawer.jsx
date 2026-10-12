@@ -151,6 +151,10 @@ export default function LeadDetailDrawer({ leadId, onClose, onSaved }) {
                       {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label>Category</label>
+                    <input className="form-control" placeholder="e.g. Manufacturer, Trading" value={form.category || ''} onChange={set('category')} />
+                  </div>
                 </div>
               </Section>
 

@@ -25,6 +25,7 @@ Express (backend/server.js)
    ├── /api/calendar-admin (requireAuth + requireAdmin)
    ├── /api/leads     (requireAuth)
    ├── /api/followups (requireAuth)
+   ├── /api/contacts  (requireAuth; /import adds requireAdmin) — separate contacts.db
    ├── /api/users     (requireAuth + requireAdmin)
    ├── /api/stats     (requireAuth + requireAdmin — visitor counts)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
@@ -64,7 +65,9 @@ backend/
   routes/               leads.js, followups.js, auth.js, users.js, calendar.js,
                         calendarAdmin.js, stats.js, rishta.js
   analytics.js         records a page view; hashes the visitor, filters bots
+  contactsDb.js        second sql.js DB (contacts.db) for bulk marketing contacts
   leads.db             the entire database (git-ignored)
+  contacts.db          marketing contacts only (git-ignored)
 frontend/src/
   api.js               fetch wrapper — adds Bearer token, unwraps { error } bodies, 401→login
   context/AuthContext   login/logout/me, persists token to localStorage
@@ -690,6 +693,8 @@ seeds the very first group's code on a fresh database; every later group gets a 
 ## Lead Source & Bulk Import
 - `leads.source` is free text constrained only by the UI dropdown (`frontend/src/leadSources.js`); older leads have NULL.
 - **Import Leads** (admin sidebar) parses an IndiaMART export in the browser and calls `POST /api/leads/import` (requireAdmin). IndiaMART dates are relative ("11:29 AM"=today, "Yesterday", "22 May"=no year → export year, "21 Apr'25"); the file's last-modified date is the reference "today". Re-import is safe — rows matching source+contact_no+date are skipped. Imported rows use the current year's `ENQ-` sequence regardless of enquiry date. Uses `runMany()` (one disk write) — don't loop `run()` for bulk inserts.
+
+- **Marketing Contacts** (`/contacts`, `routes/contacts.js`, `contactsDb.js`) hold bulk cold lists (the 500k "Internet" GST list) in their own `backend/contacts.db`, never in `leads.db` — `run()` rewrites the whole leads file per write, so 500k rows there would make every follow-up and page view a ~75 MB write. `contacts.db` is written only by imports, debounced 2s after the last chunk. Import is chunked (2,000 rows/request) to stay under nginx's default 1 MB body limit. "Already a lead" is derived by matching `contacts.phone` to `leads.contact_no`, never stored. Converting a contact goes through `insertLead()` in `routes/leads.js` — reuse it rather than writing another lead INSERT. `contacts.category` is comma-joined without spaces (filtered with `',' || category || ','  LIKE`); it is copied to the free-text `leads.category` as ", "-joined. `marketing contacts/` (the source spreadsheets — real phones/emails) is git-ignored.
 
 - `leads.product` is a category derived from `required_software` by keyword rules in `backend/productCategories.js` (served at `GET /api/leads/meta/products`); `required_software` itself is free text. The board's Source/Product filters work on these.
 

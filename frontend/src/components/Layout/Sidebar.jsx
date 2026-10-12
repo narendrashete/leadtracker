@@ -8,6 +8,7 @@ const NAV = [
   { to: '/new-lead',  label: 'New Lead',        icon: '＋' },
   { to: '/followups', label: 'Follow-ups',       icon: '📋' },
   { to: '/reports',   label: 'Reports',          icon: '📊' },
+  { to: '/contacts',  label: 'Marketing Contacts', icon: '📇' },
 ];
 
 export default function Sidebar() {

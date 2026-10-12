@@ -47,6 +47,12 @@ export const api = {
   getProducts:   ()      => request('/leads/meta/products'),
   getLocations:  ()      => request('/leads/meta/locations'),
 
+  // Marketing contacts (bulk cold lists, kept apart from leads)
+  getContacts:     (params) => request(`/contacts?${new URLSearchParams(params)}`),
+  getContactsMeta: ()       => request('/contacts/meta'),
+  convertContact:  (id)     => request(`/contacts/${id}/convert`, { method: 'POST' }),
+  importContacts:  (data)   => request('/contacts/import', { method: 'POST', body: JSON.stringify(data) }),
+
   // Followups
   getFollowups:   (lead_id) => request(`/followups?lead_id=${lead_id}`),
   createFollowup: (data)    => request('/followups', { method: 'POST', body: JSON.stringify(data) }),

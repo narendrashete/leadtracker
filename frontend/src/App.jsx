@@ -10,6 +10,7 @@ import UserManagement from './components/Admin/UserManagement';
 import CalendarLinks from './components/Admin/CalendarLinks';
 import Visitors from './components/Admin/Visitors';
 import ImportLeads from './components/Admin/ImportLeads';
+import Contacts from './components/Contacts/Contacts';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -38,6 +39,7 @@ function AppShell() {
             <Route path="/new-lead"  element={<NewLeadForm />} />
             <Route path="/followups" element={<FollowupScreen />} />
             <Route path="/reports"   element={<Reports />} />
+            <Route path="/contacts"  element={<Contacts />} />
             {user.role === 'admin' && (
               <Route path="/users" element={<UserManagement />} />
             )}

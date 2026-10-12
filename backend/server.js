@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { getDb, query } = require('./db');
+const { getContactsDb } = require('./contactsDb');
 const { requireAuth } = require('./auth');
 
 const app = express();
@@ -23,8 +24,9 @@ const RISHTA_PAGE   = path.resolve(__dirname, '..', 'rishta', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
-getDb().then(() => {
+Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
+  const contactsRouter = require('./routes/contacts');
   leadsRouter.backfillProducts();
   const followupsRouter = require('./routes/followups');
   const authRouter     = require('./routes/auth');
@@ -53,6 +55,7 @@ getDb().then(() => {
   // Protected: all other API routes require a valid session
   app.use('/api/leads',     requireAuth, leadsRouter);
   app.use('/api/followups', requireAuth, followupsRouter);
+  app.use('/api/contacts',  requireAuth, contactsRouter); // import route adds requireAdmin itself
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
   app.use('/api/stats',     statsRouter); // stats router applies requireAuth + requireAdmin itself
 

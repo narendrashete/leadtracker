@@ -6,4 +6,5 @@ export const SOURCE_OPTIONS = [
   'Facebook Ad',
   'LinkedIn Ad',
   'Personal',
+  'Internet',
 ];

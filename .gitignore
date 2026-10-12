@@ -1,5 +1,9 @@
 node_modules/
 backend/leads.db
+backend/contacts.db
+# Source spreadsheets of bought/downloaded contact lists — real phone numbers
+# and emails, imported through the app, never committed.
+marketing contacts/
 backend/$stage/
 backend/server_test.log
 frontend/dist/

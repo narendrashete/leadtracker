@@ -120,6 +120,10 @@ Base path `/api`. All responses JSON; errors are `{ error }` with a 4xx/5xx stat
 | GET | /leads/meta/locations | user | distinct `{ cities, states }` for autocomplete |
 | GET | /leads/:id | user | lead + its follow-ups |
 | PUT | /leads/:id | user | full-record update |
+| GET | /contacts?q=&category=&city=&page= | user | marketing contacts, 50/page, each with `lead` if its phone matches a lead |
+| GET | /contacts/meta | user | `{ total, categories, cities }` with counts (cached until next import) |
+| POST | /contacts/:id/convert | user | creates a lead from a contact; 409 if its phone is already a lead |
+| POST | /contacts/import | admin | `{ source, rows }` chunk; skips rows already present |
 | GET | /followups?lead_id= | user | follow-ups for a lead |
 | POST | /followups | user | add a follow-up |
 | GET | /users | admin | list users (no password hashes) |
@@ -137,6 +141,7 @@ Routes defined in `frontend/src/App.jsx`, gated by `AuthContext`:
 | /new-lead | NewLeadForm | any logged-in user |
 | /followups | FollowupScreen | any logged-in user |
 | /reports | Reports | any logged-in user |
+| /contacts | Contacts | any logged-in user (import panel admin-only) |
 | /users | UserManagement | admin only |
 | / and unknown paths | redirect → /board | — |
 | (logged out) | LoginPage | — |
@@ -209,6 +214,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-10-12** — **Marketing Contacts.** New sidebar screen (`/contacts`, all users) for bulk cold contact lists — first one is the ~500k-row "Internet" GST list (`marketing contacts/*.xlsx`, git-ignored). Contacts live in their own `backend/contacts.db` (`contactsDb.js`), not `leads.db`. Search + Category/City filters, 50 per page, and a **→ Lead** button that creates a lead (source `Internet`, category copied) via the shared `insertLead()` in `routes/leads.js`; a contact whose phone already matches a lead shows that ENQ id instead. Admin import is on the same screen (browser parses the xlsx, posts 2,000-row chunks to `POST /api/contacts/import`). New `leads.category` column (free text, editable in New Lead form + drawer) and `Internet` added to `SOURCE_OPTIONS`. Real 500k import still to be run — locally and on the server — via the screen's import panel.
 
 - **2026-10-11** — Rishta fix: a profile opened from the New tab vanished from search results on close (opening marked it seen, and the search was scoped to New). Now "New" is per device (localStorage, no server write on open), opened profiles stay listed until the tab changes, the page never reopens on the New tab, and a "Search all profiles" link appears when searching inside a tab.
 

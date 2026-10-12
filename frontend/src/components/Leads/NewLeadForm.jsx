@@ -35,6 +35,7 @@ export default function NewLeadForm() {
     next_followup_date: '',
     status: STATUS_OPTIONS[0],
     source: '',
+    category: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -91,6 +92,10 @@ export default function NewLeadForm() {
                   <option value="">— Select —</option>
                   {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
+              </div>
+              <div className="form-group">
+                <label>Category</label>
+                <input className="form-control" placeholder="e.g. Manufacturer, Trading" value={form.category || ''} onChange={set('category')} />
               </div>
             </div>
           </Section>

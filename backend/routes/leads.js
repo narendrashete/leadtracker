@@ -49,52 +49,47 @@ router.get('/', (req, res) => {
   res.json(leads);
 });
 
-router.post('/', (req, res, next) => {
-  try {
-    const {
-      date, company_name, contact_person, contact_no, email,
-      address, city, state,
-      required_software, customer_description, committed_to_customer,
-      next_followup_date, status, source, product
-    } = req.body;
+// Insert a lead with a fresh server-side ENQ id. Retries a couple of times if a
+// concurrent insert grabbed the same number. Returns the new row.
+function insertLead(f) {
+  const safeDate = f.date || new Date().toISOString().slice(0, 10);
+  const safeStatus = f.status || 'In-Process';
 
-    if (!company_name || !company_name.trim()) {
-      return res.status(400).json({ error: 'Company Name is required' });
-    }
-
-    // Always generate the id server-side so a blank/duplicate value from the
-    // browser can never break the save. Retry a couple of times if a
-    // concurrent insert grabbed the same number.
-    const safeDate = date || new Date().toISOString().slice(0, 10);
-    const safeStatus = status || 'In-Process';
-
-    let id, lastErr;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const enquiry_id = computeNextEnquiryId();
-      try {
-        id = run(
-          `INSERT INTO leads
-            (enquiry_id, date, company_name, contact_person, contact_no, email,
-             address, city, state,
-             required_software, customer_description, committed_to_customer,
-             next_followup_date, status, source, product)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-          [enquiry_id, safeDate, company_name, contact_person, contact_no, email,
+  let id, lastErr;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const enquiry_id = computeNextEnquiryId();
+    try {
+      id = run(
+        `INSERT INTO leads
+          (enquiry_id, date, company_name, contact_person, contact_no, email,
            address, city, state,
            required_software, customer_description, committed_to_customer,
-           next_followup_date, safeStatus, source, product]
-        );
-        lastErr = null;
-        break;
-      } catch (e) {
-        lastErr = e;
-        if (!/UNIQUE/i.test(e.message)) throw e; // only retry on id collision
-      }
+           next_followup_date, status, source, product, category)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [enquiry_id, safeDate, f.company_name, f.contact_person, f.contact_no, f.email,
+         f.address, f.city, f.state,
+         f.required_software, f.customer_description, f.committed_to_customer,
+         f.next_followup_date, safeStatus, f.source, f.product, f.category]
+      );
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (!/UNIQUE/i.test(e.message)) throw e; // only retry on id collision
     }
-    if (lastErr) throw lastErr;
+  }
+  if (lastErr) throw lastErr;
+  return query('SELECT * FROM leads WHERE id = ?', [id])[0];
+}
 
-    const rows = query('SELECT * FROM leads WHERE id = ?', [id]);
-    res.status(201).json(rows[0]);
+router.post('/', (req, res, next) => {
+  try {
+    if (!req.body.company_name || !req.body.company_name.trim()) {
+      return res.status(400).json({ error: 'Company Name is required' });
+    }
+    // Always generate the id server-side so a blank/duplicate value from the
+    // browser can never break the save.
+    res.status(201).json(insertLead(req.body));
   } catch (err) { next(err); }
 });
 
@@ -151,7 +146,7 @@ router.put('/:id', (req, res, next) => {
       date, company_name, contact_person, contact_no, email,
       address, city, state,
       required_software, customer_description, committed_to_customer,
-      next_followup_date, status, source, product
+      next_followup_date, status, source, product, category
     } = req.body;
 
     run(
@@ -159,12 +154,12 @@ router.put('/:id', (req, res, next) => {
         date=?, company_name=?, contact_person=?, contact_no=?, email=?,
         address=?, city=?, state=?,
         required_software=?, customer_description=?, committed_to_customer=?,
-        next_followup_date=?, status=?, source=?, product=?
+        next_followup_date=?, status=?, source=?, product=?, category=?
        WHERE id=?`,
       [date, company_name, contact_person, contact_no, email,
        address, city, state,
        required_software, customer_description, committed_to_customer,
-       next_followup_date, status, source, product, req.params.id]
+       next_followup_date, status, source, product, category, req.params.id]
     );
 
     const rows = query('SELECT * FROM leads WHERE id = ?', [req.params.id]);
@@ -183,3 +178,4 @@ function backfillProducts() {
 
 module.exports = router;
 module.exports.backfillProducts = backfillProducts;
+module.exports.insertLead = insertLead;

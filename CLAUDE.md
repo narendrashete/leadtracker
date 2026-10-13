@@ -40,6 +40,8 @@ Express (backend/server.js)
    │                   pages + assets/, no API, no build step)
    ├── /api/rishta    (public by owner's choice — shared Rishta Album profiles/images)
    ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/)
+   ├── /Prime_API_Integration (public — serves Prime_API_Integration/index.html verbatim,
+   │                   built from prime-api-src/, no API)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -128,8 +130,25 @@ rishta-src/            Rishta Album source: React + Vite, its own package.json.
   src/lib/store.js       storage interface: /api/rishta when present, else IndexedDB
   src/lib/db.js          IndexedDB backend (browser-only fallback)
   src/App.jsx, src/components/   filters, card grid, profile sheet
+Prime_API_Integration/
+  index.html           Multi-courier shipping demo — BUILD OUTPUT of prime-api-src/ (one
+                       self-contained file). Committed; never edit by hand.
+prime-api-src/         Its source: React + Vite + TypeScript + Tailwind, own package.json.
 start.bat               local one-click launcher (runs the production build)
 ```
+
+## Prime API Integration (multi-courier shipping demo)
+A sixth app sharing this repo and Express process for hosting only — no tables, no API, no
+auth. Client-presentation prototype of a courier aggregator: a shopper's checkout compares
+GATI / Xpressbees / Shiprocket quotes side by side (lowest price and fastest flagged), books a
+mock AWB, and tracks it through 8 simulated stages. Every rate, AWB and tracking event is
+mocked in the browser (`buildCouriers()` in `prime-api-src/src/lib.ts`); cart and orders live
+in the visitor's `localStorage`. Same build model as Rishta: `npm run build` in
+`prime-api-src/` writes the single file via vite-plugin-singlefile, and that file is committed,
+so the server needs only `git pull` + `pm2 reload`. Hash-routed (`#/shipping`, `#/track`…), so
+the one `/Prime_API_Integration` route serves every screen. Counted in Visitors as `prime-api`.
+Real courier APIs, when they come, belong behind a server-side adapter (keys never in the page).
+
 
 ## Mokla Divas (shared availability calendar)
 A second, unrelated app that shares this repo and this Express process for storage only. It
@@ -678,7 +697,8 @@ The calendar, Aarti Sangrah and PrimeGem pages need no build step (they are plai
 part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any of them. Aarti
 Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Rishta Album
 at `https://leadtracker.primecomputers.co.in/rishta` (built locally from `rishta-src/` and
-committed — see Rishta Album), PrimeGem
+committed — see Rishta Album), the Prime API Integration demo at
+`https://leadtracker.primecomputers.co.in/Prime_API_Integration` (same committed-build model), PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
 them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching

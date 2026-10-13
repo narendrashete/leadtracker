@@ -17,6 +17,7 @@ const PAGE_LABELS = {
   calendar:           'Mokla Divas calendar',
   shetenavratri:      'Shete Parivar Navratri',
   rishta:             'Rishta Album',
+  'prime-api':        'Prime API Integration demo',
   leadtracker:        'Lead Tracker app'
 };
 

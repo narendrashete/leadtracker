@@ -21,6 +21,7 @@ const AARTI_AUDIO   = path.resolve(__dirname, '..', 'aartisangrah', 'audio');
 const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html');
 const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
 const RISHTA_PAGE   = path.resolve(__dirname, '..', 'rishta', 'index.html');
+const PRIME_API_PAGE = path.resolve(__dirname, '..', 'Prime_API_Integration', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
@@ -323,6 +324,23 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // Prime API Integration — the multi-courier shipping (courier aggregator) demo.
+  // One self-contained HTML file BUILT from prime-api-src/ (React + Vite + Tailwind,
+  // inlined by vite-plugin-singlefile) and committed, like Rishta. No API, no
+  // tables: courier rates, AWBs and tracking are simulated in the browser and the
+  // demo's cart/orders live in that browser's localStorage. Hash-routed, so this
+  // one route serves every screen. Case-insensitive, so /prime_api_integration works too.
+  app.get('/Prime_API_Integration', (req, res) => {
+    recordVisit(req, 'prime-api');
+    res.sendFile(PRIME_API_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Prime API Integration page missing.');
+      }
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -347,6 +365,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
     console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
     console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
+    console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

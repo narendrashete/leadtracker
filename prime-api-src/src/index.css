@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: #fff;
+  color: #0f1b4c;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.pop { animation: pop 0.25s ease both; }

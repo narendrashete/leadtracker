@@ -98,6 +98,18 @@ export default function Sidebar() {
           Shete Navratri
         </a>
 
+        {/* Prime API Integration — the multi-courier shipping demo, a standalone
+            page served by this same Express process, so a plain link too. */}
+        <a
+          href="/Prime_API_Integration"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={navStyle({ isActive: false })}
+        >
+          <span style={{ fontSize: 16 }}>🚚</span>
+          Prime API Integration
+        </a>
+
         {/* Admin-only: the approval queue for Shete Navratri's public photo/
             member submissions. A plain link (its own login screen, not a React
             route) placed alongside the other admin-only pages below. */}

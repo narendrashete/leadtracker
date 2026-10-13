@@ -1,4 +1,4 @@
-# Prime API Integration – Multi-Courier Shipping Demo (ShopSphere)
+# Prime API Integration – Multi-Courier Shipping Demo
 
 Frontend-only prototype of a courier-aggregator checkout: product catalog → cart → checkout → compare
 GATI / Xpressbees / Shiprocket rates side by side (lowest price and fastest flagged) → mock AWB →

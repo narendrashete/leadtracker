@@ -22,6 +22,7 @@ const GEM_PAGE      = path.resolve(__dirname, '..', 'kinetic-gem', 'index.html')
 const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
 const RISHTA_PAGE   = path.resolve(__dirname, '..', 'rishta', 'index.html');
 const PRIME_API_PAGE = path.resolve(__dirname, '..', 'Prime_API_Integration', 'index.html');
+const PRIMEXAI_PAGE  = path.resolve(__dirname, '..', 'PrimeXAI', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 
@@ -341,6 +342,22 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // PrimeXAI — the "AI delivery savings" dashboard (hours and cost of each live
+  // project built with Claude vs. by hand). One self-contained HTML file with its
+  // data inlined, a standalone copy of the claude.ai dashboard artifact. No API,
+  // no tables. Case-insensitive, so /primexai works too.
+  app.get('/PrimeXAI', (req, res) => {
+    recordVisit(req, 'primexai');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(PRIMEXAI_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('PrimeXAI page missing.');
+      }
+    });
+  });
+
   // Serve built React app
   app.use(express.static(FRONTEND_DIST));
 
@@ -366,6 +383,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
     console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
+    console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

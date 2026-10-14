@@ -18,6 +18,7 @@ const PAGE_LABELS = {
   shetenavratri:      'Shete Parivar Navratri',
   rishta:             'Rishta Album',
   'prime-api':        'Prime API Integration demo',
+  primexai:           'PrimeXAI savings dashboard',
   leadtracker:        'Lead Tracker app'
 };
 

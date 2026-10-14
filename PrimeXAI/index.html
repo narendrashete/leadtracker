@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PrimeXAI · AI Delivery Savings</title>
+<meta name="description" content="Hours and cost of every live Prime Computers project built with Claude, against the estimate for building it by hand.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  /* Stand-ins for the tokens the claude.ai dashboard runtime provides, so the
+     page below renders the same here as it does in the artifact. */
+  :root {
+    color-scheme: light;
+    --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-anthropic-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --color-bg: #f6f6f3; --color-panel: #ffffff; --color-fg: #1a1a19; --color-fg-muted: #5f5e59;
+    --color-border-line: #e3e2dc; --color-ok: #2f7d32; --color-warn: #9a5c00; --color-bad: #c4372f;
+    --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 16px; --cds-gap-lg: 24px; --cds-gap-xl: 32px;
+    --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 20px; --cds-pad-xl: 28px;
+    --cds-radius: 10px;
+    --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px;
+    --cds-font-weight-medium: 500;
+    --cds-chart-muted: #c9c8c1; --cds-chart-grid: #ecebe6; --cds-chart-axis: #b8b7b0; --cds-chart-reference: #8a8983;
+    --cds-surface-popover: #ffffff; --cds-border: #dddbd4; --cds-shadow-popover: 0 6px 20px rgba(20, 20, 19, .12);
+    --cds-text-secondary: #5f5e59; --cds-dur-slow: 240ms; --cds-ease-out: cubic-bezier(.2, .8, .2, 1);
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --color-bg: #141413; --color-panel: #1f1f1d; --color-fg: #f2f1ec; --color-fg-muted: #a8a79f;
+      --color-border-line: #34332f; --color-ok: #6cc070; --color-warn: #e0a640; --color-bad: #ef6b63;
+      --cds-chart-muted: #56554f; --cds-chart-grid: #2b2a27; --cds-chart-axis: #4a4944; --cds-chart-reference: #8a8983;
+      --cds-surface-popover: #262624; --cds-border: #3a3935; --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, .45);
+      --cds-text-secondary: #a8a79f;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    }
+  }
+  html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: 14px; }
+  #dash-root { max-width: 1200px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 8px; }
+  .footer-credit { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 24px 28px; }
+  .footer-credit .credit-label { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-fg-muted); }
+  .footer-credit .credit { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 8px; background: #fff; border: 1px solid var(--color-border-line); box-shadow: 0 1px 3px rgba(0, 0, 0, .08); transition: transform .15s ease; }
+  .footer-credit .credit:hover { transform: translateY(-1px); }
+  .footer-credit .credit-logo { display: block; height: 16px; width: auto; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script type="application/json" id="data-projects">[
+ {
+  "id": "primett",
+  "project": "PrimeTT",
+  "what": "Ticketing, chat, broadcast, password vault + 2FA (PWA)",
+  "runs_on": "primett.co.in",
+  "deploy": "Live server",
+  "loc": 55725,
+  "ai_hours": 82.0,
+  "ai_basis": "measured",
+  "manual_hours": 1760,
+  "days_to_live": 6,
+  "basis": "19 phases, 501 automated tests, CI deploy; ~250 finished lines/day by hand"
+ },
+ {
+  "id": "pfa_light",
+  "project": "PFA Light",
+  "what": "Accounting software (PCNEW upgrade), portable exe",
+  "runs_on": "Client PCs (portable .exe)",
+  "deploy": "Client install",
+  "loc": 21572,
+  "ai_hours": 19.5,
+  "ai_basis": "measured",
+  "manual_hours": 720,
+  "days_to_live": 9,
+  "basis": "Fork of full PFA: GST books, legacy prints, MSSQL import, auto-update"
+ },
+ {
+  "id": "primetask",
+  "project": "PrimeTask",
+  "what": "Task manager: Kanban, time tracking, live updates",
+  "runs_on": "primetask.primecomputers.co.in",
+  "deploy": "Live server",
+  "loc": 14913,
+  "ai_hours": 5.5,
+  "ai_basis": "measured",
+  "manual_hours": 480,
+  "days_to_live": 2,
+  "basis": "NestJS + Prisma + React, 3 sprints, RBAC, Postgres on VPS"
+ },
+ {
+  "id": "ace_courier",
+  "project": "Ace Courier v2",
+  "what": "Courier booking API + web app (Flask to FastAPI/React rewrite)",
+  "runs_on": "v2.acecouriers.in",
+  "deploy": "Live server",
+  "loc": 9293,
+  "ai_hours": 18.0,
+  "ai_basis": "measured",
+  "manual_hours": 360,
+  "days_to_live": 4,
+  "basis": "29 legacy routes ported, MSSQL procedures, index tuning, CI runner"
+ },
+ {
+  "id": "evavo",
+  "project": "Evavo Quotation",
+  "what": "Quotation platform with product catalogue from Excel",
+  "runs_on": "evquote.primecomputers.co.in",
+  "deploy": "Live server",
+  "loc": 7293,
+  "ai_hours": 16.9,
+  "ai_basis": "measured",
+  "manual_hours": 320,
+  "days_to_live": 3,
+  "basis": "Excel + photo import, PDF quotes, Postgres, DigitalOcean then Hostinger"
+ },
+ {
+  "id": "oro_einvoice",
+  "project": "ORO E-Invoice",
+  "what": "GST e-invoice (IRN) generator for legacy VB6 accounts",
+  "runs_on": "Client PC (bundled exe)",
+  "deploy": "Client install",
+  "loc": 6359,
+  "ai_hours": 8.4,
+  "ai_basis": "measured",
+  "manual_hours": 280,
+  "days_to_live": null,
+  "basis": "Adaequare GSP integration, legacy .mdb read/write-back, single exe"
+ },
+ {
+  "id": "jeevikum_quote",
+  "project": "Jeevikum QuoteApp",
+  "what": "Freight quote and invoice app",
+  "runs_on": "login.primexcourier.co.in",
+  "deploy": "Live server",
+  "loc": 6051,
+  "ai_hours": 26.1,
+  "ai_basis": "measured",
+  "manual_hours": 240,
+  "days_to_live": null,
+  "basis": "Flask + MSSQL, Windows VPS service, CI; hours include 4 months of changes"
+ },
+ {
+  "id": "investment",
+  "project": "MPN Investment",
+  "what": "Family investment tracker with live MF/stock prices",
+  "runs_on": "mpninvestment.primecomputers.co.in",
+  "deploy": "Live server",
+  "loc": 6627,
+  "ai_hours": 12.5,
+  "ai_basis": "measured",
+  "manual_hours": 240,
+  "days_to_live": 2,
+  "basis": "Express + React, mfapi/Yahoo prices, multi-user login, CI"
+ },
+ {
+  "id": "leadtracker",
+  "project": "Lead Tracker",
+  "what": "Sales pipeline board, follow-ups, reports, contacts",
+  "runs_on": "leadtracker.primecomputers.co.in",
+  "deploy": "Live server",
+  "loc": 5830,
+  "ai_hours": 9.4,
+  "ai_basis": "measured",
+  "manual_hours": 200,
+  "days_to_live": 4,
+  "basis": "React + Express + SQLite, auth/roles, nginx + PM2"
+ },
+ {
+  "id": "musicbox",
+  "project": "Narendra's Musicbox",
+  "what": "Music streaming PWA from OneDrive",
+  "runs_on": "musicbox.narendrashete.com",
+  "deploy": "Live server",
+  "loc": 2927,
+  "ai_hours": 5.5,
+  "ai_basis": "measured",
+  "manual_hours": 120,
+  "days_to_live": 1,
+  "basis": "OneDrive API, iPhone audio quirks, offline PWA, CI to Windows server"
+ },
+ {
+  "id": "navratri",
+  "project": "Shete Navratri",
+  "what": "Family Navratri site with gallery and admin",
+  "runs_on": "leadtracker.primecomputers.co.in/shetenavratri",
+  "deploy": "Live server",
+  "loc": 2467,
+  "ai_hours": 3.6,
+  "ai_basis": "measured",
+  "manual_hours": 96,
+  "days_to_live": 1,
+  "basis": "Photo approvals, member roster, admin screens"
+ },
+ {
+  "id": "hpa_mis",
+  "project": "HPA Stock MIS Reports",
+  "what": "Daily 8 AM vehicle-stock reports to Telegram",
+  "runs_on": "n8n on Hostinger VPS",
+  "deploy": "Live server",
+  "loc": 1579,
+  "ai_hours": 7.1,
+  "ai_basis": "measured",
+  "manual_hours": 96,
+  "days_to_live": null,
+  "basis": "n8n workflows, Docker + Playwright renderer, PNG and PDF reports"
+ },
+ {
+  "id": "jeevikum_site",
+  "project": "Jeevikum Website",
+  "what": "Public website fed live from the ops app",
+  "runs_on": "jeevikumnew.primegpt.co.in",
+  "deploy": "Live server",
+  "loc": 1198,
+  "ai_hours": 7.3,
+  "ai_basis": "measured",
+  "manual_hours": 80,
+  "days_to_live": null,
+  "basis": "Client design built out, live tracking data, FTPS CI"
+ },
+ {
+  "id": "rishta",
+  "project": "Rishta Album",
+  "what": "Shared family profile album",
+  "runs_on": "leadtracker.primecomputers.co.in/rishta",
+  "deploy": "Live server",
+  "loc": 2447,
+  "ai_hours": 1.5,
+  "ai_basis": "estimated",
+  "manual_hours": 64,
+  "days_to_live": 1,
+  "basis": "Shared album across family members, per-device 'new' flags"
+ },
+ {
+  "id": "aarti",
+  "project": "Aarti Sangrah",
+  "what": "Aarti collection with audio",
+  "runs_on": "leadtracker.primecomputers.co.in/aartisangrah",
+  "deploy": "Live server",
+  "loc": 2903,
+  "ai_hours": 1.5,
+  "ai_basis": "measured",
+  "manual_hours": 48,
+  "days_to_live": 1,
+  "basis": "Content site with recordings and sidebar entry"
+ },
+ {
+  "id": "prime_api",
+  "project": "Prime API Integration",
+  "what": "Multi-courier shipping demo store",
+  "runs_on": "leadtracker.primecomputers.co.in/Prime_API_Integration",
+  "deploy": "Live server",
+  "loc": 956,
+  "ai_hours": 1.2,
+  "ai_basis": "measured",
+  "manual_hours": 48,
+  "days_to_live": 1,
+  "basis": "Demo shop with courier rate and booking flow"
+ },
+ {
+  "id": "mokla",
+  "project": "Mokla Divas",
+  "what": "Shared availability calendar for friends",
+  "runs_on": "leadtracker.primecomputers.co.in/mokla-divas",
+  "deploy": "Live server",
+  "loc": 1234,
+  "ai_hours": 1.5,
+  "ai_basis": "estimated",
+  "manual_hours": 40,
+  "days_to_live": 1,
+  "basis": "Private share links per group, availability marking"
+ },
+ {
+  "id": "kinetic_gem",
+  "project": "PrimeGem",
+  "what": "Interactive soft-body toy, installable offline",
+  "runs_on": "leadtracker.primecomputers.co.in/kinetic-gem",
+  "deploy": "Live server",
+  "loc": 883,
+  "ai_hours": 1.0,
+  "ai_basis": "estimated",
+  "manual_hours": 32,
+  "days_to_live": 1,
+  "basis": "Soft-body physics on canvas, PWA install"
+ }
+]</script>
+<script type="application/json" id="data-assumptions">[
+ {
+  "key": "dev_rate",
+  "label": "Developer cost per hour",
+  "value": 1000,
+  "unit": "INR/hour",
+  "note": "Mid-level full-stack developer in India (about Rs 1.7 lakh a month). Used for both columns."
+ },
+ {
+  "key": "ai_overhead",
+  "label": "Your time outside Claude",
+  "value": 1.5,
+  "unit": "x measured hours",
+  "note": "Measured Claude session hours are multiplied by this to cover testing, reviews and client calls."
+ },
+ {
+  "key": "claude_monthly",
+  "label": "Claude subscription",
+  "value": 17500,
+  "unit": "INR/month",
+  "note": "About USD 200 a month, shared across projects by hours."
+ },
+ {
+  "key": "months",
+  "label": "Months of use",
+  "value": 4.1,
+  "unit": "months",
+  "note": "10 Jun 2026 to 14 Oct 2026."
+ },
+ {
+  "key": "hours_per_day",
+  "label": "Working hours per day",
+  "value": 8,
+  "unit": "hours",
+  "note": "Used to turn hours into working days."
+ }
+]</script>
+<script>
+  // Minimal stand-in for the claude.ai dashboard runtime's `dash` object:
+  // datasets come from the JSON blocks above, calcs run on first read.
+  (function () {
+    const raw = {
+      projects: JSON.parse(document.getElementById('data-projects').textContent),
+      assumptions: JSON.parse(document.getElementById('data-assumptions').textContent),
+    };
+    const calcs = {}, cache = {}, subs = [];
+    const get = (id) => {
+      if (id in raw) return raw[id];
+      if (id in cache) return cache[id];
+      const c = calcs[id];
+      if (!c) return undefined;
+      return (cache[id] = c.fn(...c.inputs.map(get)));
+    };
+    const redraw = () => subs.forEach((fn) => fn());
+    window.dash = {
+      data(id) {
+        const v = get(id);
+        return v === undefined ? { status: 'missing', data: [] } : { status: 'ok', data: v, columns: v[0] ? Object.keys(v[0]) : [] };
+      },
+      calc(id, spec) { calcs[id] = spec; },
+      onData(fn) { subs.push(fn); fn(); },
+      colors: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `var(--series-${i})`),
+      params: () => ({}), setParams() {}, resetParams() {}, setLink() {}, refresh() {},
+    };
+    let width = 0;
+    window.addEventListener('resize', () => {
+      const w = document.getElementById('dash-root').clientWidth;
+      if (w !== width) { width = w; redraw(); }
+    });
+    if (document.fonts) document.fonts.ready.then(redraw);
+  })();
+</script>
+</head>
+<body>
+<div id="dash-root">
+<style>
+  .sv { display: grid; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); }
+  .sv h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+  .sv-take { margin: var(--cds-gap-xs) 0 0; color: var(--color-fg-muted); max-width: 72ch; font-size: var(--cds-font-size-body); line-height: 1.5; }
+  .sv-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-md); }
+  .sv-kpi, .sv-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .sv-kpi { display: grid; gap: var(--cds-gap-xs); align-content: start; }
+  .sv-kpi-label, .sv-kpi-sub, .sv-note, .sv-legend { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .sv-kpi-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.35); font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+  .sv-card { display: grid; gap: var(--cds-gap-sm); }
+  .sv-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .sv-note { margin: 0; line-height: 1.5; max-width: 80ch; }
+  .sv-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); }
+  .sv-legend span { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+  .sv-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .sv-chart { position: relative; min-height: 200px; }
+  .sv-chart svg { display: block; overflow: visible; }
+  .sv-chart text { font-family: var(--font-anthropic-sans); }
+  .sv-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); display: grid; gap: 2px; min-width: 12rem; z-index: 2; }
+  .sv-tip-head { color: var(--cds-text-secondary); }
+  .sv-tip-row { display: flex; align-items: center; gap: var(--cds-gap-xs); font-variant-numeric: tabular-nums; }
+  .sv-tip-row i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .sv-tip-row b { margin-left: auto; padding-left: var(--cds-gap-md); }
+  .sv .sv-tip-row b { font-weight: 500; }
+  .sv-tablewrap { overflow-x: auto; }
+  .sv table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .sv th, .sv td { padding: var(--cds-pad-xs) var(--cds-pad-sm); text-align: left; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+  .sv th { color: var(--color-fg-muted); font-weight: 500; white-space: nowrap; }
+  .sv td.n, .sv th.n { text-align: right; white-space: nowrap; }
+  .sv td.w { min-width: 14rem; }
+  .sv tfoot td { font-weight: 600; border-bottom: 0; }
+  .sv-sub { display: block; color: var(--color-fg-muted); }
+  .sv-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .sv-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+  .sv-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: var(--cds-gap-md); }
+  .sv-list { margin: 0; padding-left: 1.1rem; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.6; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  [data-dash-source-state=empty] { color: transparent; }
+</style>
+
+<div class="sv">
+  <header id="summary">
+    <h1>AI delivery savings across Prime Computers projects</h1>
+    <p class="sv-take dash-skeleton" id="sv-take" data-source="totals"></p>
+  </header>
+
+  <div class="sv-kpis" id="headline">
+    <div class="sv-kpi">
+      <span class="sv-kpi-label">Projects live</span>
+      <span class="sv-kpi-value dash-skeleton" data-source="totals" data-field="projects" data-row="0">—</span>
+      <span class="sv-kpi-sub">On live servers or installed at clients</span>
+    </div>
+    <div class="sv-kpi">
+      <span class="sv-kpi-label">Hours with Claude</span>
+      <span class="sv-kpi-value dash-skeleton" data-source="totals" data-field="ai_hours" data-row="0">—</span>
+      <span class="sv-kpi-sub" id="sv-sub-ai" data-source="totals">—</span>
+    </div>
+    <div class="sv-kpi">
+      <span class="sv-kpi-label">Hours by hand (estimate)</span>
+      <span class="sv-kpi-value dash-skeleton" data-source="totals" data-field="manual_hours" data-row="0">—</span>
+      <span class="sv-kpi-sub" id="sv-sub-manual" data-source="totals">—</span>
+    </div>
+    <div class="sv-kpi">
+      <span class="sv-kpi-label">Cost saved</span>
+      <span class="sv-kpi-value dash-skeleton" data-source="totals" data-field="saving" data-row="0">—</span>
+      <span class="sv-kpi-sub" id="sv-sub-cost" data-source="totals">—</span>
+    </div>
+  </div>
+
+  <section class="sv-card" id="time">
+    <h2>Hours to build and go live</h2>
+    <p class="sv-note">Each row is one project. The gap between the dots is the time saved. Log scale, so every gridline is ten times the one before.</p>
+    <div class="sv-legend" id="sv-time-legend" data-source="per_project"></div>
+    <div class="sv-chart dash-skeleton" id="sv-time-chart" data-source="per_project"></div>
+  </section>
+
+  <section class="sv-card" id="savings">
+    <h2>Cost saved per project</h2>
+    <p class="sv-note">Estimated cost by hand minus the cost with Claude, which includes your own time and a share of the Claude subscription.</p>
+    <div class="sv-chart dash-skeleton" id="sv-save-chart" data-source="per_project"></div>
+  </section>
+
+  <section class="sv-card" id="detail">
+    <h2>Project detail</h2>
+    <p class="sv-note">"Claude hrs" is measured from your Claude Code session logs (active time only). "With AI" adds your time outside Claude. "Live in" counts calendar days from the first commit to the first live deploy.</p>
+    <div class="sv-tablewrap">
+      <table id="sv-table" data-source="per_project" data-row-key="id">
+        <thead>
+          <tr>
+            <th data-field="project">Project</th>
+            <th data-field="runs_on">Runs on</th>
+            <th class="n" data-field="days_to_live">Live in</th>
+            <th class="n" data-field="ai_hours">Claude hrs</th>
+            <th class="n" data-field="ai_eff_hours">With AI hrs</th>
+            <th class="n" data-field="manual_hours">By hand hrs</th>
+            <th class="n" data-field="speedup">Faster</th>
+            <th class="n" data-field="ai_cost">Cost with AI</th>
+            <th class="n" data-field="manual_cost">Cost by hand</th>
+            <th class="n" data-field="saving">Saved</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td></td>
+            <td></td>
+            <td class="n" data-source="totals" data-field="ai_measured" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="ai_hours" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="manual_hours" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="speedup" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="ai_cost" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="manual_cost" data-row="0">—</td>
+            <td class="n" data-source="totals" data-field="saving" data-row="0">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <div class="sv-grid2">
+    <section class="sv-card" id="assumptions">
+      <h2>Assumptions</h2>
+      <p class="sv-note">Server hosting is left out because it costs the same either way.</p>
+      <div class="sv-tablewrap">
+        <table id="sv-assume" data-source="assumptions" data-row-key="key">
+          <thead><tr><th data-field="label">Item</th><th class="n" data-field="value">Value</th><th data-field="unit">Unit</th><th data-field="note">Why</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="sv-card" id="method">
+      <h2>How the numbers were made</h2>
+      <ul class="sv-list">
+        <li>Claude hours come from the timestamps in every Claude Code session log for each project folder. Pauses longer than twenty minutes are not counted.</li>
+        <li>Mini-apps hosted inside the Lead Tracker server were split out by the folder each session touched. Rishta Album, Mokla Divas and PrimeGem had no separable sessions, so their hours are estimated from git history.</li>
+        <li>Jeevikum QuoteApp hours include four months of changes after go-live, so its saving is understated.</li>
+        <li>Hand estimates assume one experienced full-stack developer working without AI, sized from the code that shipped (about 250 finished lines a day) and adjusted for integrations, testing and server setup.</li>
+        <li>Left out because they are not live: Prime AutoTrack (automobile back office), Courier and voucher prototypes, the alarm clock app, WhatsApp extractor, and one-off Excel, SQL and analysis jobs.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+  dash.calc('per_project', {
+    inputs: ['projects', 'assumptions'],
+    title: 'Cost and speed per project',
+    description: 'Claude hours times the overhead, costed at the hourly rate plus a share of the subscription by hours, against hand-estimated hours at the same rate.',
+    fn: (projects, assumptions) => {
+      const a = {};
+      assumptions.forEach((r) => { a[r.key] = Number(r.value); });
+      const totalAi = projects.reduce((s, p) => s + Number(p.ai_hours), 0);
+      const subscription = a.claude_monthly * a.months;
+      return projects.map((p) => {
+        const ai = Number(p.ai_hours);
+        const manual = Number(p.manual_hours);
+        const eff = Math.round(ai * a.ai_overhead * 10) / 10;
+        const aiCost = Math.round(eff * a.dev_rate + subscription * ai / totalAi);
+        const manualCost = Math.round(manual * a.dev_rate);
+        return {
+          id: p.id, project: p.project, what: p.what, runs_on: p.runs_on, deploy: p.deploy,
+          days_to_live: p.days_to_live, ai_basis: p.ai_basis, basis: p.basis,
+          ai_hours: ai, ai_eff_hours: eff, manual_hours: manual,
+          manual_days: Math.round(manual / a.hours_per_day),
+          speedup: Math.round(manual / eff * 10) / 10,
+          ai_cost: aiCost, manual_cost: manualCost, saving: manualCost - aiCost,
+        };
+      });
+    },
+  });
+
+  dash.calc('totals', {
+    inputs: ['per_project', 'assumptions'],
+    title: 'Totals across projects',
+    description: 'Sums of the per-project hours and costs; developer-years at 240 working days a year.',
+    fn: (per_project, assumptions) => {
+      const hpd = Number(assumptions.find((r) => r.key === 'hours_per_day').value);
+      const sum = (k) => per_project.reduce((s, r) => s + Number(r[k]), 0);
+      const ai = Math.round(sum('ai_eff_hours'));
+      const manual = sum('manual_hours');
+      return [{
+        projects: per_project.length,
+        ai_measured: Math.round(sum('ai_hours')),
+        ai_hours: ai,
+        ai_days: Math.round(ai / hpd),
+        manual_hours: manual,
+        manual_years: Math.round(manual / hpd / 240 * 10) / 10,
+        ai_cost: sum('ai_cost'),
+        manual_cost: sum('manual_cost'),
+        saving: sum('saving'),
+        speedup: Math.round(manual / ai),
+      }];
+    },
+  });
+</script>
+
+<script>
+  const fmtH = (v) => (v < 10 ? d3.format('.1f')(v) : d3.format(',.0f')(v));
+  const inr = (v) => {
+    const a = Math.abs(v);
+    if (a >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
+    if (a >= 1e5) return '₹' + (v / 1e5).toFixed(1) + ' L';
+    return '₹' + Math.round(v).toLocaleString('en-IN');
+  };
+  const fail = (el) => { const d = document.createElement('div'); d.className = 'sv-fail'; d.textContent = 'Failed to load'; el.replaceChildren(d); };
+  const settle = (el, st) => {
+    el.classList.toggle('dash-skeleton', st === 'loading');
+    if (st === 'error') fail(el); else if (st !== 'ok') el.replaceChildren();
+  };
+  const measure = (svg, texts, size) => {
+    const g = svg.append('g').attr('font-size', size);
+    let w = 0;
+    texts.forEach((t) => { const n = g.append('text').text(t).node(); w = Math.max(w, n.getComputedTextLength()); });
+    g.remove();
+    return w;
+  };
+  const captionPx = () => parseFloat(getComputedStyle(document.getElementById('sv-time-chart')).fontSize) * 0.86 || 12;
+
+  function tip(box, html, event) {
+    let t = box.querySelector('.sv-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'sv-tip'; box.appendChild(t); }
+    t.replaceChildren(...html);
+    t.hidden = false;
+    const r = box.getBoundingClientRect();
+    const x = event.clientX - r.left, y = event.clientY - r.top;
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    t.style.left = Math.max(0, Math.min(r.width - tw, x + 14 > r.width - tw ? x - tw - 14 : x + 14)) + 'px';
+    t.style.top = Math.max(0, Math.min(r.height - th, y - th / 2)) + 'px';
+  }
+  const hideTip = (box) => { const t = box.querySelector('.sv-tip'); if (t) t.hidden = true; };
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const tipRow = (color, name, value) => {
+    const r = el('div', 'sv-tip-row');
+    if (color) { const i = el('i'); i.style.background = color; r.appendChild(i); }
+    r.appendChild(el('span', null, name));
+    r.appendChild(el('b', null, value));
+    return r;
+  };
+
+  function drawTime(P) {
+    const box = document.getElementById('sv-time-chart');
+    const legend = document.getElementById('sv-time-legend');
+    if (P.status !== 'ok') { settle(box, P.status); legend.replaceChildren(); return; }
+    box.classList.remove('dash-skeleton');
+    const c = dash.colors;
+    legend.replaceChildren(
+      ...[[c[0], 'With Claude (incl. your time)'], [c[1], 'By hand (estimate)']].map(([col, name]) => {
+        const s = el('span'); const i = el('i'); i.style.background = col; s.append(i, name); return s;
+      })
+    );
+    const rows = [...P.data].sort((a, b) => b.manual_hours - a.manual_hours);
+    const W = Math.max(300, box.clientWidth);
+    const fs = captionPx();
+    const rowH = 30, top = 6, bottom = 26;
+    const H = top + rows.length * rowH + bottom;
+    box.replaceChildren();
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', 'Hours with Claude versus estimated hours by hand, per project');
+    const left = measure(svg, rows.map((r) => r.project), fs) + 12;
+    const right = measure(svg, rows.map((r) => Math.round(r.speedup) + '× faster'), fs) + 14;
+    const x = d3.scaleLog([1, 2000], [left, W - right]).clamp(true);
+    const y = (i) => top + i * rowH + rowH / 2;
+    const ticks = [1, 10, 100, 1000];
+    const grid = svg.append('g');
+    ticks.forEach((t) => {
+      grid.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', top).attr('y2', H - bottom)
+        .attr('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
+      grid.append('text').attr('x', x(t)).attr('y', H - 8).attr('text-anchor', 'middle')
+        .attr('font-size', fs).attr('fill', 'var(--color-fg-muted)').text(d3.format(',')(t) + ' h');
+    });
+    const g = svg.selectAll('g.row').data(rows).join('g').attr('class', 'row');
+    g.append('text').attr('x', left - 12).attr('y', (d, i) => y(i)).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .attr('font-size', fs).attr('fill', 'var(--color-fg)').text((d) => d.project);
+    g.append('line').attr('x1', (d) => x(d.ai_eff_hours)).attr('x2', (d) => x(d.manual_hours))
+      .attr('y1', (d, i) => y(i)).attr('y2', (d, i) => y(i))
+      .attr('stroke', 'var(--cds-chart-muted)').attr('stroke-width', 2).attr('stroke-linecap', 'round');
+    g.append('circle').attr('cx', (d) => x(d.ai_eff_hours)).attr('cy', (d, i) => y(i)).attr('r', 5)
+      .attr('fill', c[0]).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+    g.append('circle').attr('cx', (d) => x(d.manual_hours)).attr('cy', (d, i) => y(i)).attr('r', 5)
+      .attr('fill', c[1]).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+    g.append('text').attr('x', W - right + 10).attr('y', (d, i) => y(i)).attr('dy', '0.35em')
+      .attr('font-size', fs).attr('fill', 'var(--color-fg-muted)').text((d) => Math.round(d.speedup) + '× faster');
+    g.append('rect').attr('x', 0).attr('width', W).attr('y', (d, i) => y(i) - rowH / 2).attr('height', rowH)
+      .attr('fill', 'transparent')
+      .on('mousemove', (event, d) => {
+        g.attr('opacity', (o) => (o === d ? 1 : 0.35));
+        tip(box, [
+          el('div', 'sv-tip-head', d.project + ' · ' + d.runs_on),
+          tipRow(c[0], 'With Claude', fmtH(d.ai_eff_hours) + ' h'),
+          tipRow(null, '  Claude sessions' + (d.ai_basis === 'estimated' ? ' (est.)' : ''), fmtH(d.ai_hours) + ' h'),
+          tipRow(c[1], 'By hand', d3.format(',')(d.manual_hours) + ' h · ' + d.manual_days + ' days'),
+          tipRow(null, 'Faster', Math.round(d.speedup) + '×'),
+        ], event);
+      })
+      .on('mouseleave', () => { g.attr('opacity', 1); hideTip(box); });
+  }
+
+  function drawSave(P) {
+    const box = document.getElementById('sv-save-chart');
+    if (P.status !== 'ok') { settle(box, P.status); return; }
+    box.classList.remove('dash-skeleton');
+    const col = dash.colors[2];
+    const rows = [...P.data].sort((a, b) => b.saving - a.saving);
+    const W = Math.max(300, box.clientWidth);
+    const fs = captionPx();
+    const rowH = 26, top = 4, bottom = 4;
+    const H = top + rows.length * rowH + bottom;
+    box.replaceChildren();
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+      .attr('role', 'img').attr('aria-label', 'Cost saved per project in rupees');
+    const left = measure(svg, rows.map((r) => r.project), fs) + 12;
+    const right = measure(svg, rows.map((r) => inr(r.saving)), fs) + 12;
+    const x = d3.scaleLinear([0, d3.max(rows, (r) => r.saving)], [left, W - right]);
+    const y = (i) => top + i * rowH;
+    svg.append('line').attr('x1', left).attr('x2', left).attr('y1', top).attr('y2', H - bottom)
+      .attr('stroke', 'var(--cds-chart-axis)').attr('stroke-width', 1);
+    const g = svg.selectAll('g.row').data(rows).join('g').attr('class', 'row');
+    g.append('text').attr('x', left - 12).attr('y', (d, i) => y(i) + rowH / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .attr('font-size', fs).attr('fill', 'var(--color-fg)').text((d) => d.project);
+    g.append('rect').attr('x', left).attr('y', (d, i) => y(i) + 5).attr('height', rowH - 10)
+      .attr('width', (d) => Math.max(2, x(d.saving) - left)).attr('rx', 4).attr('fill', col);
+    g.append('text').attr('x', (d) => x(d.saving) + 6).attr('y', (d, i) => y(i) + rowH / 2).attr('dy', '0.35em')
+      .attr('font-size', fs).attr('fill', 'var(--color-fg-muted)').text((d) => inr(d.saving));
+    g.append('rect').attr('x', 0).attr('width', W).attr('y', (d, i) => y(i)).attr('height', rowH).attr('fill', 'transparent')
+      .on('mousemove', (event, d) => {
+        g.attr('opacity', (o) => (o === d ? 1 : 0.35));
+        tip(box, [
+          el('div', 'sv-tip-head', d.project),
+          tipRow(null, 'Cost by hand', inr(d.manual_cost)),
+          tipRow(null, 'Cost with Claude', inr(d.ai_cost)),
+          tipRow(col, 'Saved', inr(d.saving)),
+        ], event);
+      })
+      .on('mouseleave', () => { g.attr('opacity', 1); hideTip(box); });
+  }
+
+  function drawTable(P) {
+    const body = document.querySelector('#sv-table tbody');
+    if (P.status !== 'ok') { body.replaceChildren(); return; }
+    const rows = [...P.data].sort((a, b) => b.saving - a.saving);
+    body.replaceChildren(...rows.map((d) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = d.id;
+      const name = el('td', 'w');
+      name.append(d.project, el('span', 'sv-sub', d.what));
+      tr.append(
+        name,
+        el('td', null, d.runs_on),
+        el('td', 'n', d.days_to_live == null ? '—' : d.days_to_live + (d.days_to_live === 1 ? ' day' : ' days')),
+        el('td', 'n', fmtH(d.ai_hours) + (d.ai_basis === 'estimated' ? ' est.' : '')),
+        el('td', 'n', fmtH(d.ai_eff_hours)),
+        el('td', 'n', d3.format(',')(d.manual_hours)),
+        el('td', 'n', Math.round(d.speedup) + '×'),
+        el('td', 'n', inr(d.ai_cost)),
+        el('td', 'n', inr(d.manual_cost)),
+        el('td', 'n', inr(d.saving)),
+      );
+      return tr;
+    }));
+  }
+
+  function drawTotals(T) {
+    const ok = T.status === 'ok';
+    const t = ok ? T.data[0] : null;
+    document.querySelectorAll('[data-source="totals"][data-field]').forEach((n) => {
+      n.classList.toggle('dash-skeleton', T.status === 'loading');
+      if (!ok) { n.textContent = '—'; return; }
+      const f = n.dataset.field, v = t[f];
+      n.textContent = ['ai_cost', 'manual_cost', 'saving'].includes(f) ? inr(v)
+        : f === 'speedup' ? v + '×'
+        : d3.format(',')(v);
+    });
+    const take = document.getElementById('sv-take');
+    take.classList.toggle('dash-skeleton', T.status === 'loading');
+    document.getElementById('sv-sub-ai').textContent = ok ? `${t.ai_measured} h in Claude sessions plus your own time · about ${t.ai_days} working days` : '—';
+    document.getElementById('sv-sub-manual').textContent = ok ? `About ${t.manual_years} developer-years for one person` : '—';
+    document.getElementById('sv-sub-cost').textContent = ok ? `${inr(t.ai_cost)} with Claude vs ${inr(t.manual_cost)} by hand` : '—';
+    take.textContent = ok
+      ? `${t.projects} projects shipped since June 2026 took about ${d3.format(',')(t.ai_hours)} hours with Claude. Built by hand they would have needed about ${d3.format(',')(t.manual_hours)} hours, so the work went roughly ${t.speedup}× faster and saved about ${inr(t.saving)}.`
+      : '';
+  }
+
+  function drawAssume(A) {
+    const body = document.querySelector('#sv-assume tbody');
+    if (A.status !== 'ok') { body.replaceChildren(); return; }
+    body.replaceChildren(...A.data.map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.key;
+      tr.append(el('td', null, r.label), el('td', 'n', d3.format(',')(Number(r.value))), el('td', null, r.unit), el('td', null, r.note));
+      return tr;
+    }));
+  }
+
+  dash.onData(() => {
+    const P = dash.data('per_project');
+    drawTotals(dash.data('totals'));
+    drawTime(P);
+    drawSave(P);
+    drawTable(P);
+    drawAssume(dash.data('assumptions'));
+  });
+</script>
+
+</div>
+<div class="footer-credit">
+  <span class="credit-label">Developed by</span>
+  <a class="credit" href="https://www.primecomputers.co.in" target="_blank" rel="noopener noreferrer">
+    <img class="credit-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAABGCAMAAAC+PCsEAAAAwFBMVEX///8eFFUMTaLI1uqOiaqFptBWT4DHxNQbWKhJernw8vcyabGouthzbJWqp79rk8bh5e4sI2BIQHXV099Yhb+UsdY6MWqzx+JlXoqBe6CcmLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfH837AAAAQHRSTlMA//////////////////////////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2lSRBAAABRxJREFUeNrtmtmaqyAMgFFA2VSsW6fv/6CHAG6tzhRrdXq+4UIsIOaHJAQsQvsn0dBGoONT2kZRsvXFmD4mximXx5Po8oZEFi2k/AkOFj+mwlTUxeEgJANtKDeRLHLEGGrk8SAErkm0gWSZ4yyQW2IuVRSFk6xwxLVAQtLDQcTlmuZtlt6n7CcSx8HwQ4dcclaf4LbEV5IsyfsDyRoHVGGMflP6luQbjnnKyZiUXrZSZ6enkDzNcedGkvSxBZSfNSfPczz4w68zQNZIAjgeHXt+BsgySQiHBbk4R0ha6KwUh9vICkkQhwVJBlf/ZOhzCEkYxwwEpdDXFW7SFDyYItreOxdg8gqiP+PolH9AEZLPXJ02JSTdtmDOSQI55iDWHhKXE1SZrtOJjdg6H8C2gKTKO/+gr87OSvIySSjHNyA2Ur0H8W8zsmqU9/7h2q9JY2x7Ea+RBHPMQfJ+gAHEDv09yLihyNS9p6tccXorJ3DbSMI5ZiCVHVHlZAaRy6Sag5RGa4TToLKNrhXSt2jooO2RROuGYDPJBg4L0roIxSn4ZZRZzdeRKBrks446c+F5X58PRdZpJFssPpmCxCr80TGV1SBzhR5BvKRf44Ij+vrLZBoAVL/ggjeQJEscU5nnIF5SMrGCvt5W+3TZpFvZvbGHkMxAWiJG4dQSCBpByLw+vY91yDaO22xbqIJAfIiS6pkbFgeDOI7sboOrtq0jS4FiCMh0D6tf4ggm2Q2kei1KfuAIJdkNBE0c3S4cgST7gSSTMpIRJV7lCCPZDyQfvXe1tK8J5wgi2Q/ErohlbiIYUoY5LbLGEUKyI0g1PdgNCBrzdY4Akh1BpiSZ2IfjO5L595E9QZBw2/7omqK9OAaSBt+ljnFas7edNep+Y/zkoU30E8f6ITZ8GqH1ScejSTiHGRy5+llBxL8J5Md9sVgk6exs/SKQJ/b3iyQSvo8UJ4IkZJ62fuIoGGdcnAiy27mlPvH7yK4gZ6Y/kD+QP5CTQHRhApkafzyIYmP8tXksKD8dRBuOAivp4paNCcfx6SCFCfMhkmGx/GgQEccueKRxrM1PKnt7KbgSxnokRj4z8nKOzNzJzt1DkTJFiJuHIEe4NnEcFX1TRs2zpk427wcxY8m9mjdiiDBhU8ljyu0nCl+IbWPVR8/YbQYozIV7yFANISlUd3FMkXw0wPeAUHjbkOqYdWYQrYw8lkxhcw9ZbWUx0rEaK6uFUxBoZYI3U1QIcB7UVktmbA+ghelWHAqi/QZfgtTcSSr7jFvpavcMnoH4a+Eml4KyArPwTZHQ6NgZaaydgETMzghCk8yBdI6XLoGwmMMfJgvPCeoEysZpdwCImuov9c7H5tyN7zTzwqMVkOlWum/Kj7IR0GV3Izl+GYRO+3WxgqqtvTdvX0e8DcB6Ivq31yD1MohCXsPwYEIDiHQDr/EUBFx8x2L+dhCjW1LbrAZRaidEswYCbY26CLin1qo8iLVsOCsz3np0aqooUO8q3h1rgRbDisaMiB2sZ4Vb5JdBXNvCmnYszRxYEAUmrQ0CK6jslxzs5tk4AD477nwXiPHydhXDfn5AVrEK0jC/4rmmhQ9OpLNwaw5MjarlO2fNIfsR3FDaK7RW/b3//+Y0A+lEQ1Uf8pqWwp9iKHeY3FHqvu6YcjF02IlftrGaWvBH7xB3AanKS7Lwt8nPA2kJwKTo01PVwvXr808fUvvXI/IfHKOAVok2/3yQPMpIm/0P51qakM+ej3+W5zcINNULmQAAAABJRU5ErkJggg==" alt="Prime Computers">
+  </a>
+</div>
+</body>
+</html>

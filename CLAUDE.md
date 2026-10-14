@@ -42,6 +42,7 @@ Express (backend/server.js)
    ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/)
    ├── /Prime_API_Integration (public — serves Prime_API_Integration/index.html verbatim,
    │                   built from prime-api-src/, no API)
+   ├── /PrimeXAI      (public, noindex — serves PrimeXAI/index.html verbatim, no API)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -134,6 +135,8 @@ Prime_API_Integration/
   index.html           Multi-courier shipping demo — BUILD OUTPUT of prime-api-src/ (one
                        self-contained file). Committed; never edit by hand.
 prime-api-src/         Its source: React + Vite + TypeScript + Tailwind, own package.json.
+PrimeXAI/
+  index.html           AI delivery savings dashboard — self-contained, data inlined as JSON blocks.
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -148,6 +151,14 @@ in the visitor's `localStorage`. Same build model as Rishta: `npm run build` in
 so the server needs only `git pull` + `pm2 reload`. Hash-routed (`#/shipping`, `#/track`…), so
 the one `/Prime_API_Integration` route serves every screen. Counted in Visitors as `prime-api`.
 Real courier APIs, when they come, belong behind a server-side adapter (keys never in the page).
+
+## PrimeXAI (AI delivery savings dashboard)
+A seventh hosting-only page: one self-contained HTML file showing, per live project, hours with
+Claude vs. an estimate by hand and the cost saved. It is a standalone copy of a claude.ai
+dashboard artifact: the project rows and cost assumptions sit in two
+`<script type="application/json">` blocks at the top (edit those to change figures), a small
+`window.dash` shim stands in for the artifact runtime, and d3 loads from cdnjs. Served with
+`X-Robots-Tag: noindex`. Counted in Visitors as `primexai`.
 
 
 ## Mokla Divas (shared availability calendar)
@@ -698,7 +709,8 @@ part of the Vite bundle), so a `git pull` + `pm2 reload` ships a change to any o
 Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`, Rishta Album
 at `https://leadtracker.primecomputers.co.in/rishta` (built locally from `rishta-src/` and
 committed — see Rishta Album), the Prime API Integration demo at
-`https://leadtracker.primecomputers.co.in/Prime_API_Integration` (same committed-build model), PrimeGem
+`https://leadtracker.primecomputers.co.in/Prime_API_Integration` (same committed-build model), PrimeXAI at
+`https://leadtracker.primecomputers.co.in/PrimeXAI`, PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
 them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching

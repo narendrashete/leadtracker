@@ -215,6 +215,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-15** — Added the फुलवरा आरती time (संध्याकाळी ठीक ७ वाजता) to the Shete Navratri
+  homepage event tile, the फुलवरा row on `upcoming.html`, and a new announcement box at the
+  top of `satvimaal.html` (the ७वी माळ ritual detail page the date row links to) — per a
+  poster the family circulated announcing the 17 Oct 7pm aarti.
 - **2026-10-15** — Updated the Shete Navratri homepage event tile (`index.html`) from घटस्थापना
   (11 Oct, passed) to फुलवरा/७वी माळ (17 Oct, the next date on `upcoming.html`). Hand-edited —
   this page has no date logic or build step (CLAUDE.md's "Edit in place per event" pattern) —

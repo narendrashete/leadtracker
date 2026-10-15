@@ -215,6 +215,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-15** — Updated the Shete Navratri homepage event tile (`index.html`) from घटस्थापना
+  (11 Oct, passed) to फुलवरा/७वी माळ (17 Oct, the next date on `upcoming.html`). Hand-edited —
+  this page has no date logic or build step (CLAUDE.md's "Edit in place per event" pattern) —
+  so it'll need the same manual bump once 17 Oct passes too.
 - **2026-10-14** — **PrimeXAI** hosted at `/PrimeXAI` (case-insensitive, noindex): the AI delivery savings dashboard (hours with Claude vs. estimated hand-built hours and cost saved, per live project). Standalone copy of the claude.ai dashboard artifact in `PrimeXAI/index.html` with data inlined, route in `server.js`, `primexai` visitor label, Prime Computers footer credit. No sidebar link.
 - **2026-10-13** — **Prime API Integration** demo hosted at `/Prime_API_Integration` (case-insensitive): the ShopSphere multi-courier shipping prototype (compare GATI / Xpressbees / Shiprocket rates at checkout, mock AWB, simulated tracking). Source moved in as `prime-api-src/` (React + Vite + TS + Tailwind), committed single-file build in `Prime_API_Integration/`, route in `server.js`, `prime-api` visitor label, admin sidebar link, Prime Computers footer credit. All courier data is still simulated — no real courier APIs yet.
 

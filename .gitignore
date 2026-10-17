@@ -24,3 +24,8 @@ shetenavratri/uploads/
 # leads.db (also git-ignored). Private content — never committed, survives
 # deploys because git pull never touches untracked files.
 rishta-data/
+
+# Thigdam album photos (original uploads + collage previews), referenced by
+# thigdam_photos rows in leads.db. Friends' personal photos — never committed
+# (this repo is public); survive deploys because git pull never touches them.
+thigdam-data/

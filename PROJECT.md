@@ -35,6 +35,10 @@ address/city/state to leads.
   PrimeGem. Also installable and fully offline at `/kinetic-gem/app` (Add to Home Screen on
   Android/iOS) — the same file with PWA tags injected, not a forked copy.
 
+- Thigdam: the friends group's shared photo album at `/thigdam` — collage by year, zoom
+  viewer, upload with optional note/date/year, originals kept untouched. See `CLAUDE.md` →
+  Thigdam.
+
 - Rishta Album: private marriage-profile album at `/rishta`. Imports the vadhu-var list PDFs
   in the browser, one card per profile with photo; filters by age, native place, job
   location, salary, education, height, weight; shortlist/hide/notes. React + Vite source in
@@ -214,6 +218,14 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-10-17** — **Thigdam** photo album at `/thigdam` for the owner's friends group:
+  masonry collage grouped by year, full-screen zoom viewer, friends upload photos with optional
+  note (hotel/event), date or year, and name; anyone can edit details, only the uploader's
+  browser (or an admin) can remove. Originals kept byte-for-byte via 768 KB chunked uploads
+  (nginx 1 MB limit); browser-drawn previews for tiles. New `thigdam_photos` table,
+  `routes/thigdam.js`, `thigdam/index.html`, git-ignored `thigdam-data/`, `thigdam` visitor
+  label. No build step — `git pull` + `pm2 reload` ships it.
 
 - **2026-10-15** — Added the फुलवरा आरती time (संध्याकाळी ठीक ७ वाजता) to the Shete Navratri
   homepage event tile, the फुलवरा row on `upcoming.html`, and a new announcement box at the

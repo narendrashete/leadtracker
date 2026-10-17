@@ -19,6 +19,7 @@ const PAGE_LABELS = {
   rishta:             'Rishta Album',
   'prime-api':        'Prime API Integration demo',
   primexai:           'PrimeXAI savings dashboard',
+  thigdam:            'Thigdam photo album',
   leadtracker:        'Lead Tracker app'
 };
 

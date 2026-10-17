@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Thigdam</title>
+<meta property="og:title" content="Thigdam">
+<meta property="og:description" content="Our group photo album. Add your photos too.">
+<meta name="theme-color" content="#1F6B4A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<!--
+  Thigdam — the friends' group photo album. One plain file, no build step.
+  Talks to /api/thigdam (backend/routes/thigdam.js). Photos are shown exactly as
+  uploaded: tiles use a small preview the uploading browser drew, the viewer
+  always opens the untouched original.
+-->
+<style>
+/* Layout: masonry columns of photos grouped by year, full-screen zoom viewer, sheet for adding photos */
+:root{
+  --bg:#F2F5F1; --surface:#FFFFFF; --fg:#17201B; --muted:#5B6A61; --accent:#1F6B4A; --accent-fg:#FFFFFF; --line:#D8E0DA; --danger:#B3261E;
+  --lb-bg:#0B0F0D; --lb-fg:#F1F5F2; --lb-chip:rgba(255,255,255,.13);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0E1411; --surface:#161E1A; --fg:#E5ECE7; --muted:#97A69D; --accent:#72C99D; --accent-fg:#0C1A12; --line:#27332C; --danger:#F2B8B5; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(24px + env(safe-area-inset-top,0px)) calc(48px + env(safe-area-inset-bottom,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 24px;margin-bottom:24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(40px,9vw,76px);line-height:.95;letter-spacing:-.03em;margin:0}
+h1 .dot{color:var(--accent)}
+.sub{color:var(--muted);margin:6px 0 0;font-size:15px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);min-height:44px;padding:0 18px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-size:15px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn:focus-visible,.tile:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.year{display:flex;align-items:baseline;gap:12px;margin:28px 0 12px}
+.year h2{font-family:var(--display);font-weight:700;font-size:28px;margin:0;letter-spacing:-.01em}
+.year span{color:var(--muted);font-size:14px}
+.year::after{content:"";flex:1;height:1px;background:var(--line);align-self:center}
+.masonry{columns:3 280px;column-gap:10px}
+.tile{display:block;width:100%;margin:0 0 10px;padding:0;border:0;border-radius:6px;overflow:hidden;background:var(--line);cursor:zoom-in;position:relative;break-inside:avoid;text-align:left}
+.tile img{display:block;width:100%;height:auto;max-width:100%}
+.tile .cap{position:absolute;left:0;right:0;bottom:0;padding:28px 10px 9px;background:linear-gradient(transparent,rgba(5,8,6,.72));color:#fff;font-size:14px;line-height:1.3;display:flex;flex-direction:column;gap:2px}
+.tile .cap b{font-weight:700}
+.tile .cap small{opacity:.85;font-size:12px;letter-spacing:.03em}
+@media (max-width:640px){.masonry{columns:2;column-gap:8px}.tile{margin-bottom:8px}.tile .cap{font-size:13px}}
+
+.empty{border:1px dashed var(--line);border-radius:10px;padding:40px 20px;text-align:center;color:var(--muted)}
+.empty p{margin:0 0 14px}
+.status{color:var(--muted);padding:30px 0}
+
+/* Sheets (add / edit) */
+.sheet-bg{position:fixed;inset:0;z-index:40;background:rgba(5,8,6,.5);display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;max-height:92dvh;overflow:auto;border-radius:16px 16px 0 0;padding:20px max(18px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-right,0px))}
+@media (min-width:700px){.sheet-bg{justify-content:center}.sheet{border-radius:16px}}
+.sheet h3{font-family:var(--display);font-size:24px;margin:0 0 4px}
+.sheet .lead{color:var(--muted);margin:0 0 16px;font-size:14px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--muted);letter-spacing:.02em}
+.field input{min-height:42px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:8px 10px;width:100%;min-width:0}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px}
+.item input{min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:6px 9px;width:100%;min-width:0;font-size:15px}
+.opt{font-weight:400;opacity:.8}
+.pick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--line);border-radius:12px;padding:22px;cursor:pointer;color:var(--muted);text-align:center;margin-bottom:16px}
+.pick strong{color:var(--accent);font-size:17px}
+.items{display:flex;flex-direction:column;gap:12px;margin:12px 0 16px}
+.item{display:grid;grid-template-columns:84px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.item img{width:84px;height:84px;object-fit:cover;border-radius:6px;background:var(--line)}
+.item .fields{display:flex;flex-direction:column;gap:8px;min-width:0}
+.item .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.item .meta button{border:0;background:none;color:var(--danger);cursor:pointer;padding:0;font-size:12px}
+.bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.item.done{opacity:.6}
+.item .err{color:var(--danger);font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:8px}
+.msg{font-size:14px;color:var(--muted);margin:8px 0 0}
+.msg.err{color:var(--danger)}
+
+/* Viewer */
+.lb{position:fixed;inset:0;z-index:30;background:var(--lb-bg);color:var(--lb-fg);display:flex;flex-direction:column;touch-action:none;user-select:none;-webkit-user-select:none}
+.lb-top,.lb-bot{display:flex;align-items:center;gap:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.lb-top{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:8px;justify-content:space-between}
+.lb-info{min-width:0}
+.lb-note{font-family:var(--display);font-weight:500;font-size:17px;line-height:1.25;overflow-wrap:anywhere}
+.lb-when{font-size:13px;opacity:.75}
+.lb-bot{padding-top:8px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));justify-content:center;flex-wrap:wrap}
+.lbtn{appearance:none;border:0;background:var(--lb-chip);color:var(--lb-fg);min-width:44px;height:44px;padding:0 14px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;flex-shrink:0}
+.lbtn:hover{background:rgba(255,255,255,.22)}
+.lbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.stage{position:relative;flex:1;overflow:hidden;min-height:0}
+.stage img{position:absolute;left:50%;top:50%;max-width:none;transform-origin:0 0;will-change:transform;cursor:grab;-webkit-user-drag:none}
+.nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;font-size:24px}
+.nav.prev{left:max(10px,env(safe-area-inset-left,0px))}
+.nav.next{right:max(10px,env(safe-area-inset-right,0px))}
+.zoomv{min-width:52px;font-variant-numeric:tabular-nums;opacity:.8;text-align:center;font-size:14px}
+.lb-count{font-size:13px;opacity:.7;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:640px){.nav{display:none}.lb-bot .zoomv,.lb-bot #zout,.lb-bot #zin{display:none}}
+footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Thigdam<span class="dot">.</span></h1>
+      <p class="sub" id="sub">Our photo album</p>
+    </div>
+    <button class="btn primary" id="addBtn" type="button">＋ Add photos</button>
+  </header>
+  <main id="album"><p class="status">Loading photos…</p></main>
+  <footer>Tap a photo to see it full size. Pinch or double-tap to zoom.</footer>
+</div>
+
+<!-- Add photos -->
+<div class="sheet-bg" id="addSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <h3 id="addTitle">Add photos</h3>
+    <p class="lead">Photos are kept exactly as they are. Note, date and year are optional.</p>
+    <label class="pick" for="fileIn"><strong>Choose photos</strong><span>JPEG, PNG or WebP · you can pick several</span></label>
+    <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" multiple hidden>
+    <div class="field"><label for="byIn">Your name <span class="opt">(optional)</span></label><input id="byIn" maxlength="60" autocomplete="name" placeholder="So friends know who added it"></div>
+    <div class="items" id="items"></div>
+    <p class="msg" id="addMsg"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="addCancel">Close</button>
+      <button class="btn primary" type="button" id="uploadBtn" disabled>Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit details -->
+<div class="sheet-bg" id="editSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <h3 id="editTitle">Photo details</h3>
+    <p class="lead">Everyone in the group sees these. Leave any of them blank.</p>
+    <div class="fields" style="display:flex;flex-direction:column;gap:10px">
+      <div class="field"><label for="eNote">Note — hotel, place or event</label><input id="eNote" maxlength="300" placeholder="e.g. Breakfast at Vaishali"></div>
+      <div class="row2">
+        <div class="field"><label for="eDate">Date</label><input id="eDate" type="date" min="1950-01-01" max="2100-12-31"></div>
+        <div class="field"><label for="eYear">or Year</label><input id="eYear" inputmode="numeric" maxlength="4" placeholder="2026"></div>
+      </div>
+      <div class="field"><label for="eBy">Added by</label><input id="eBy" maxlength="60"></div>
+    </div>
+    <p class="msg" id="editMsg"></p>
+    <div class="actions">
+      <button class="btn danger" type="button" id="delBtn" hidden>Remove photo</button>
+      <button class="btn" type="button" id="editCancel">Cancel</button>
+      <button class="btn primary" type="button" id="editSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Viewer -->
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <div class="lb-top">
+    <div class="lb-info"><div class="lb-note" id="lbNote"></div><div class="lb-when" id="lbWhen"></div></div>
+    <span class="lb-count" id="lbCount"></span>
+    <button class="lbtn" id="lbClose" aria-label="Close">✕</button>
+  </div>
+  <div class="stage" id="stage">
+    <button class="lbtn nav prev" id="prev" aria-label="Previous photo">‹</button>
+    <img id="lbImg" alt="" draggable="false">
+    <button class="lbtn nav next" id="next" aria-label="Next photo">›</button>
+  </div>
+  <div class="lb-bot">
+    <button class="lbtn" id="zout" aria-label="Zoom out">−</button>
+    <span class="zoomv" id="zv">100%</span>
+    <button class="lbtn" id="zin" aria-label="Zoom in">+</button>
+    <button class="lbtn" id="fitBtn">Fit</button>
+    <button class="lbtn" id="lbEdit">Edit details</button>
+    <a class="lbtn" id="orig" href="#" target="_blank" rel="noopener">Original</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var API='/api/thigdam';
+  var $=function(id){return document.getElementById(id)};
+  var photos=[], order=[];
+
+  // ---- small per-browser memory (who uploaded what, the name they use) ----
+  function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  var owned=load('thigdam.owned',{});
+  function adminToken(){try{return localStorage.getItem('lt_token')}catch(e){return null}}
+  function canRemove(p){return !!owned[p.id]||!!adminToken()}
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function when(p){
+    if(p.taken_on){var a=p.taken_on.split('-');return (+a[2])+' '+MONTHS[+a[1]-1]+' '+a[0]}
+    return p.taken_year?String(p.taken_year):'';
+  }
+
+  async function api(path,opt){
+    var r=await fetch(API+path,opt);
+    var body=null;try{body=await r.json()}catch(e){}
+    if(r.status===413)throw new Error('That piece was too large for the server.');
+    if(!r.ok)throw new Error((body&&body.error)||('Something went wrong ('+r.status+').'));
+    return body;
+  }
+
+  // ---- album ----
+  function sortKey(p){return (p.taken_on||(p.taken_year?p.taken_year+'-99-99':'0000'))+'|'+p.created_at}
+  function render(){
+    var el=$('album');
+    $('sub').textContent='Our photo album · '+photos.length+(photos.length===1?' photo':' photos');
+    if(!photos.length){
+      el.innerHTML='<div class="empty"><p>No photos yet. Be the first to add one.</p><button class="btn primary" type="button" id="emptyAdd">＋ Add photos</button></div>';
+      $('emptyAdd').onclick=openAdd;order=[];return;
+    }
+    var groups={};
+    photos.forEach(function(p){var y=p.taken_year||'Undated';(groups[y]=groups[y]||[]).push(p)});
+    var years=Object.keys(groups).sort(function(a,b){if(a==='Undated')return 1;if(b==='Undated')return -1;return b-a});
+    order=[];var html='';
+    years.forEach(function(y){
+      var list=groups[y].sort(function(a,b){return sortKey(b)<sortKey(a)?-1:1});
+      html+='<section><div class="year"><h2>'+esc(y)+'</h2><span>'+list.length+'</span></div><div class="masonry">';
+      list.forEach(function(p){
+        var i=order.length;order.push(p);
+        var ratio=(p.width&&p.height)?' style="aspect-ratio:'+p.width+'/'+p.height+'"':'';
+        var cap='';
+        var w=when(p);
+        if(p.note||w)cap='<span class="cap">'+(p.note?'<b>'+esc(p.note)+'</b>':'')+(w?'<small>'+esc(w)+'</small>':'')+'</span>';
+        html+='<button class="tile" type="button" data-i="'+i+'"><img src="'+esc(p.thumb_url||p.url)+'"'+ratio+' loading="lazy" alt="'+esc(p.note||'Group photo')+'">'+cap+'</button>';
+      });
+      html+='</div></section>';
+    });
+    el.innerHTML=html;
+  }
+  $('album').addEventListener('click',function(e){var t=e.target.closest('.tile');if(t)openViewer(+t.dataset.i)});
+
+  async function refresh(){
+    try{photos=await api('/photos');render()}
+    catch(e){$('album').innerHTML='<p class="status">Could not load the album. '+esc(e.message)+'</p>'}
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'&&$('lb').hidden&&$('addSheet').hidden&&$('editSheet').hidden)refresh();
+  });
+
+  // ---- EXIF date (JPEG only), used to pre-fill the optional date ----
+  async function exifDate(file){
+    if(file.type!=='image/jpeg')return '';
+    try{
+      var v=new DataView(await file.slice(0,262144).arrayBuffer());
+      if(v.getUint16(0)!==0xFFD8)return '';
+      var o=2;
+      while(o+4<v.byteLength){
+        var m=v.getUint16(o),len=v.getUint16(o+2);
+        if(m===0xFFE1&&v.getUint32(o+4)===0x45786966){
+          var t=o+10,le=v.getUint16(t)===0x4949;
+          var u16=function(p){return v.getUint16(p,le)},u32=function(p){return v.getUint32(p,le)};
+          var readStr=function(ifd,tag){
+            var n=u16(t+ifd);
+            for(var i=0;i<n;i++){var e=t+ifd+2+i*12;if(u16(e)===tag){var c=u32(e+4),off=c>4?t+u32(e+8):e+8,s='';for(var k=0;k<c-1;k++)s+=String.fromCharCode(v.getUint8(off+k));return s}}
+            return null;
+          };
+          var findPtr=function(ifd,tag){var n=u16(t+ifd);for(var i=0;i<n;i++){var e=t+ifd+2+i*12;if(u16(e)===tag)return u32(e+8)}return null};
+          var ifd0=u32(t+4),sub=findPtr(ifd0,0x8769);
+          var s=(sub&&readStr(sub,0x9003))||readStr(ifd0,0x0132)||'';
+          var mm=s.match(/^(\d{4}):(\d{2}):(\d{2})/);
+          return (mm&&mm[1]!=='0000')?mm[1]+'-'+mm[2]+'-'+mm[3]:'';
+        }
+        if((m&0xFF00)!==0xFF00)break;
+        o+=2+len;
+      }
+    }catch(e){}
+    return '';
+  }
+
+  // Small preview for the collage tile. The original is never changed.
+  function makeThumb(img){
+    var max=720,w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,max/Math.max(w,h));
+    var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    return new Promise(function(res){c.toBlob(function(b){res(b)},'image/jpeg',0.82)});
+  }
+  function decode(file){
+    return new Promise(function(res,rej){
+      var url=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){res({img:img,url:url})};
+      img.onerror=function(){URL.revokeObjectURL(url);rej(new Error('This browser cannot open that photo.'))};
+      img.src=url;
+    });
+  }
+
+  // ---- add photos ----
+  var queue=[];
+  $('byIn').value=load('thigdam.name','');
+  function openAdd(){queue=[];$('items').innerHTML='';$('addMsg').textContent='';$('addMsg').className='msg';$('uploadBtn').disabled=true;$('addSheet').hidden=false;$('fileIn').value='';$('byIn').value=load('thigdam.name','')}
+  $('addBtn').onclick=openAdd;
+  $('addCancel').onclick=function(){if(busy)return;$('addSheet').hidden=true;queue.forEach(function(q){if(q.url)URL.revokeObjectURL(q.url)});queue=[]};
+  $('fileIn').addEventListener('change',async function(){
+    var files=[].slice.call(this.files||[]);this.value='';
+    for(var f of files){
+      var q={file:f,state:'ready'};
+      var row=document.createElement('div');row.className='item';q.row=row;
+      var ok=/^image\/(jpeg|png|webp)$/.test(f.type);
+      row.innerHTML='<img alt=""><div class="fields">'+
+        '<div class="meta"><span>'+esc(f.name)+' · '+(f.size/1048576).toFixed(1)+' MB</span><button type="button">Remove</button></div>'+
+        (ok?'<input class="n" maxlength="300" placeholder="Note — hotel, place or event (optional)" aria-label="Note">'+
+        '<div class="row2"><input class="d" type="date" min="1950-01-01" max="2100-12-31" aria-label="Date (optional)"><input class="y" inputmode="numeric" maxlength="4" placeholder="Year" aria-label="Year (optional)"></div>'+
+        '<div class="bar"><i></i></div><div class="err"></div>':'<div class="err">Only JPEG, PNG or WebP photos can be added. On iPhone, pick it from Photos so it comes as JPEG.</div>')+'</div>';
+      row.querySelector('.meta button').onclick=function(q){return function(){if(busy)return;q.row.remove();queue=queue.filter(function(x){return x!==q});$('uploadBtn').disabled=!queue.some(function(x){return x.state==='ready'})}}(q);
+      $('items').appendChild(row);
+      if(!ok){q.state='bad';continue}
+      queue.push(q);
+      try{var d=await decode(f);q.img=d.img;q.url=d.url;row.querySelector('img').src=d.url}
+      catch(e){q.state='bad';row.querySelector('.err').textContent=e.message;continue}
+      var ex=await exifDate(f);if(ex)row.querySelector('.d').value=ex;
+    }
+    $('uploadBtn').disabled=!queue.some(function(x){return x.state==='ready'});
+  });
+
+  var busy=false;
+  async function uploadOne(q,by){
+    var row=q.row,bar=row.querySelector('.bar i'),err=row.querySelector('.err');
+    err.textContent='';
+    var f=q.file;
+    var start=await api('/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({size:f.size,mime:f.type})});
+    var cs=start.chunk_size,n=Math.ceil(f.size/cs);
+    for(var i=0;i<n;i++){
+      var piece=f.slice(i*cs,Math.min(f.size,(i+1)*cs)),tries=0;
+      for(;;){
+        try{await api('/uploads/'+start.upload_id+'/'+i,{method:'PUT',headers:{'Content-Type':'application/octet-stream'},body:piece});break}
+        catch(e){if(++tries>=3||/expired|order/.test(e.message))throw e;await new Promise(function(r){setTimeout(r,800*tries)})}
+      }
+      bar.style.width=Math.round((i+1)/n*90)+'%';
+    }
+    var date=row.querySelector('.d').value,year=row.querySelector('.y').value.trim();
+    var done=await api('/uploads/'+start.upload_id+'/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      note:row.querySelector('.n').value,taken_on:date,taken_year:date?'':year,added_by:by,
+      width:q.img?q.img.naturalWidth:'',height:q.img?q.img.naturalHeight:''})});
+    owned[done.photo.id]=done.owner_token;save('thigdam.owned',owned);
+    try{
+      if(q.img){var t=await makeThumb(q.img);if(t)await api('/photos/'+done.photo.id+'/thumb',{method:'PUT',headers:{'Content-Type':'image/jpeg','X-Owner-Token':done.owner_token},body:t})}
+    }catch(e){/* the tile falls back to the original */}
+    bar.style.width='100%';
+  }
+  $('uploadBtn').onclick=async function(){
+    if(busy)return;
+    var by=$('byIn').value.trim();save('thigdam.name',by);
+    var todo=queue.filter(function(q){return q.state==='ready'||q.state==='failed'});
+    for(var q of todo){var y=q.row.querySelector('.y').value.trim();if(y&&!/^(19[5-9]\d|20\d\d|2100)$/.test(y)){q.row.querySelector('.err').textContent='Year should look like 2026.';return}}
+    busy=true;this.disabled=true;$('addCancel').disabled=true;
+    var good=0,bad=0;
+    for(var q of todo){
+      $('addMsg').textContent='Uploading '+(good+bad+1)+' of '+todo.length+'…';
+      try{await uploadOne(q,by);q.state='done';q.row.classList.add('done');good++}
+      catch(e){q.state='failed';q.row.querySelector('.err').textContent=e.message;bad++}
+    }
+    busy=false;$('addCancel').disabled=false;
+    await refresh();
+    if(bad){$('addMsg').className='msg err';$('addMsg').textContent=good+' added, '+bad+' failed. Tap Upload to try the failed ones again.';this.disabled=false}
+    else{$('addMsg').className='msg';$('addMsg').textContent=good+(good===1?' photo':' photos')+' added to the album.';setTimeout(function(){if(!busy){$('addSheet').hidden=true}},900)}
+  };
+
+  // ---- edit details ----
+  var editing=null;
+  function openEdit(p){
+    editing=p;$('eNote').value=p.note||'';$('eDate').value=p.taken_on||'';$('eYear').value=p.taken_on?'':(p.taken_year||'');$('eBy').value=p.added_by||'';
+    $('editMsg').textContent='';$('editMsg').className='msg';$('delBtn').hidden=!canRemove(p);$('editSheet').hidden=false;$('eNote').focus();
+  }
+  $('editCancel').onclick=function(){$('editSheet').hidden=true};
+  $('eDate').addEventListener('input',function(){if(this.value)$('eYear').value=''});
+  $('editSave').onclick=async function(){
+    var y=$('eYear').value.trim(),d=$('eDate').value;
+    if(!d&&y&&!/^(19[5-9]\d|20\d\d|2100)$/.test(y)){$('editMsg').className='msg err';$('editMsg').textContent='Year should look like 2026.';return}
+    this.disabled=true;
+    try{
+      var p=await api('/photos/'+editing.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({note:$('eNote').value,taken_on:d,taken_year:d?'':y,added_by:$('eBy').value})});
+      var id=p.id;await refresh();$('editSheet').hidden=true;
+      if(!$('lb').hidden){var k=order.findIndex(function(x){return x.id===id});if(k>=0){idx=k;info()}}
+    }catch(e){$('editMsg').className='msg err';$('editMsg').textContent=e.message}
+    this.disabled=false;
+  };
+  var armed=false;
+  $('delBtn').onclick=async function(){
+    if(!armed){armed=true;this.textContent='Tap again to remove';var b=this;setTimeout(function(){armed=false;b.textContent='Remove photo'},4000);return}
+    armed=false;this.textContent='Remove photo';
+    var h={};if(owned[editing.id])h['X-Owner-Token']=owned[editing.id];var t=adminToken();if(t)h['Authorization']='Bearer '+t;
+    try{
+      await api('/photos/'+editing.id,{method:'DELETE',headers:h});
+      delete owned[editing.id];save('thigdam.owned',owned);
+      $('editSheet').hidden=true;closeViewer();await refresh();
+    }catch(e){$('editMsg').className='msg err';$('editMsg').textContent=e.message}
+  };
+
+  // ---- viewer with pinch / wheel / double-tap zoom ----
+  var lb=$('lb'),stage=$('stage'),img=$('lbImg');
+  var idx=0,fitS=1,s=1,x=0,y=0,nw=0,nh=0,lastFocus=null;
+  function apply(){img.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';$('zv').textContent=Math.round(s/fitS*100)+'%'}
+  function clamp(){var W=stage.clientWidth,H=stage.clientHeight,w=nw*s,h=nh*s;
+    x=w<=W?-w/2:Math.min(-W/2,Math.max(W/2-w,x));y=h<=H?-h/2:Math.min(-H/2,Math.max(H/2-h,y))}
+  function fit(){var W=stage.clientWidth,H=stage.clientHeight;if(!nw)return;fitS=Math.min(W/nw,H/nh);s=fitS;x=-nw*s/2;y=-nh*s/2;apply()}
+  function zoomAt(ns,cx,cy){ns=Math.max(fitS,Math.min(fitS*8,ns));x=cx-(cx-x)*(ns/s);y=cy-(cy-y)*(ns/s);s=ns;clamp();apply()}
+  function info(){
+    var p=order[idx];
+    $('lbNote').textContent=p.note||'';
+    var w=when(p),by=p.added_by?'Added by '+p.added_by:'';
+    $('lbWhen').textContent=[w,by].filter(Boolean).join(' · ');
+    $('lbCount').textContent=(idx+1)+' / '+order.length;
+  }
+  function show(i){
+    if(!order.length)return;
+    idx=(i+order.length)%order.length;var p=order[idx];info();
+    $('orig').href=p.url;img.alt=p.note||'Group photo';
+    nw=0;img.style.transform='translate(-50%,-50%) scale(0.0001)';
+    // While the original loads, show the preview so there is no blank screen.
+    var target=p.url;
+    img.onload=function(){
+      var w=img.naturalWidth,h=img.naturalHeight;
+      if(nw){ // preview → original: keep the same on-screen size and position
+        var r=w/nw;s/=r;fitS/=r;nw=w;nh=h;img.style.width=w+'px';img.style.height=h+'px';apply();
+      }else{nw=w;nh=h;img.style.width=w+'px';img.style.height=h+'px';fit()}
+    };
+    img.dataset.want=target;
+    if(p.thumb_url){
+      img.src=p.thumb_url;
+      var full=new Image();full.onload=function(){if(img.dataset.want===target){img.src=target}};full.src=target;
+    }else img.src=target;
+  }
+  function openViewer(i){lastFocus=document.activeElement;lb.hidden=false;document.body.style.overflow='hidden';show(i);$('lbClose').focus()}
+  function closeViewer(){lb.hidden=true;document.body.style.overflow='';if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+  $('lbClose').onclick=closeViewer;$('prev').onclick=function(){show(idx-1)};$('next').onclick=function(){show(idx+1)};
+  $('zin').onclick=function(){zoomAt(s*1.5,0,0)};$('zout').onclick=function(){zoomAt(s/1.5,0,0)};$('fitBtn').onclick=fit;
+  $('lbEdit').onclick=function(){openEdit(order[idx])};
+  addEventListener('keydown',function(e){
+    if(!$('editSheet').hidden){if(e.key==='Escape')$('editSheet').hidden=true;return}
+    if(!$('addSheet').hidden){if(e.key==='Escape'&&!busy)$('addSheet').hidden=true;return}
+    if(lb.hidden)return;
+    if(e.key==='Escape')closeViewer();else if(e.key==='ArrowLeft')show(idx-1);else if(e.key==='ArrowRight')show(idx+1);
+    else if(e.key==='+'||e.key==='=')zoomAt(s*1.5,0,0);else if(e.key==='-')zoomAt(s/1.5,0,0);
+  });
+  addEventListener('resize',function(){if(!lb.hidden&&nw)fit()});
+  function rel(e){var r=stage.getBoundingClientRect();return [e.clientX-r.left-r.width/2,e.clientY-r.top-r.height/2]}
+  stage.addEventListener('wheel',function(e){e.preventDefault();if(!nw)return;var c=rel(e);zoomAt(s*Math.exp(-e.deltaY*0.0015),c[0],c[1])},{passive:false});
+  var pts=new Map(),startDist=0,startS=1,startMid=null,startX=0,startY=0,swipeX=null,lastTap=0,moved=false;
+  stage.addEventListener('pointerdown',function(e){
+    if(e.target.closest('.lbtn'))return;
+    stage.setPointerCapture(e.pointerId);pts.set(e.pointerId,rel(e));moved=false;
+    if(pts.size===1){var p=rel(e);startMid=p;startX=x;startY=y;swipeX=p[0]}
+    if(pts.size===2){var v=[].slice.call(pts.values()),a=v[0],b=v[1];startDist=Math.hypot(a[0]-b[0],a[1]-b[1]);startS=s;startMid=[(a[0]+b[0])/2,(a[1]+b[1])/2];startX=x;startY=y}
+  });
+  stage.addEventListener('pointermove',function(e){
+    if(!pts.has(e.pointerId)||!nw)return;pts.set(e.pointerId,rel(e));
+    if(pts.size===2){var v=[].slice.call(pts.values()),a=v[0],b=v[1],d=Math.hypot(a[0]-b[0],a[1]-b[1]),mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+      var ns=Math.max(fitS,Math.min(fitS*8,startS*d/startDist));
+      x=mid[0]-(startMid[0]-startX)*(ns/startS);y=mid[1]-(startMid[1]-startY)*(ns/startS);s=ns;clamp();apply();moved=true}
+    else if(pts.size===1){var p=rel(e),dx=p[0]-startMid[0],dy=p[1]-startMid[1];if(Math.abs(dx)+Math.abs(dy)>6)moved=true;
+      if(s>fitS*1.01){x=startX+dx;y=startY+dy;clamp();apply()}}
+  });
+  function end(e){
+    if(!pts.has(e.pointerId))return;var p=pts.get(e.pointerId);pts.delete(e.pointerId);
+    if(pts.size===0){
+      if(s<=fitS*1.01&&swipeX!==null&&moved){var dx=p[0]-swipeX;if(dx>60)show(idx-1);else if(dx<-60)show(idx+1)}
+      else if(!moved){var now=Date.now();if(now-lastTap<300){if(s>fitS*1.01)fit();else zoomAt(fitS*2.5,p[0],p[1]);lastTap=0}else lastTap=now}
+      swipeX=null;
+    }else if(pts.size===1){startMid=[].slice.call(pts.values())[0];startX=x;startY=y;swipeX=null}
+  }
+  stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
+
+  refresh();
+})();
+</script>
+</body>
+</html>

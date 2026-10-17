@@ -25,6 +25,7 @@ const PRIME_API_PAGE = path.resolve(__dirname, '..', 'Prime_API_Integration', 'i
 const PRIMEXAI_PAGE  = path.resolve(__dirname, '..', 'PrimeXAI', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
+const THIGDAM_PAGE  = path.resolve(__dirname, '..', 'thigdam', 'index.html');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -39,6 +40,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const sheteRouter      = require('./routes/shete');
   const rishtaRouter     = require('./routes/rishta');
   const sheteAdminRouter = require('./routes/sheteAdmin');
+  const thigdamRouter    = require('./routes/thigdam');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -68,6 +70,8 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/api/shete', sheteRouter);
   // Public by the owner's choice (see CLAUDE.md → Rishta Album): no code, no login.
   app.use('/api/rishta', rishtaRouter);
+  // Public by the owner's choice (see CLAUDE.md → Thigdam): the friends' photo album.
+  app.use('/api/thigdam', thigdamRouter);
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
   // surface can never approve its own requests.
@@ -325,6 +329,32 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // Thigdam — the friends' group photo album. The page is one plain HTML file
+  // (no build step); the photos are the uploaded originals in thigdam-data/
+  // (git-ignored). A photo's file name is a random id that is never reused, so
+  // it can be cached for good.
+  app.use('/thigdam/photos', express.static(thigdamRouter.PHOTO_DIR, {
+    index: false,
+    redirect: false,
+    maxAge: '365d',
+    immutable: true,
+    setHeaders: (res) => res.setHeader('X-Robots-Tag', 'noindex, nofollow'),
+  }));
+  app.use('/thigdam/photos', (req, res) => {
+    res.status(404).type('text/plain').send('Photo not found.');
+  });
+  app.get('/thigdam', (req, res) => {
+    recordVisit(req, 'thigdam');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(THIGDAM_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Thigdam page missing.');
+      }
+    });
+  });
+
   // Prime API Integration — the multi-courier shipping (courier aggregator) demo.
   // One self-contained HTML file BUILT from prime-api-src/ (React + Vite + Tailwind,
   // inlined by vite-plugin-singlefile) and committed, like Rishta. No API, no
@@ -384,6 +414,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
+    console.log(`  Thigdam album:   http://localhost:${PORT}/thigdam`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

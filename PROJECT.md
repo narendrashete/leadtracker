@@ -219,6 +219,14 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-18** — Removed the passed "आगामी कार्यक्रम" (upcoming event) tile from the Shete
+  Navratri homepage (फुलवरा/17 Oct has now also passed, after घटस्थापना/11 Oct). Reset
+  `upcoming.html` to a neutral "this year's Utsav is complete; next year's details will
+  appear once announced" placeholder instead of leaving stale date/venue/aarti-time info
+  live, and removed the matching stale फुलवरा आरती announcement box from `satvimaal.html`
+  (its underlying ritual how-to content is untouched — that's reference info for next year
+  too). No page links to `upcoming.html` now; it stays reachable directly for next year's
+  "Edit in place per event" update.
 - **2026-10-17** — **Thigdam** photo album at `/thigdam` for the owner's friends group:
   masonry collage grouped by year, full-screen zoom viewer, friends upload photos with optional
   note (hotel/event), date or year, and name; anyone can edit details, only the uploader's

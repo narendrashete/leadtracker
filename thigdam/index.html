@@ -128,14 +128,24 @@ footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
     <h3 id="addTitle">Add photos</h3>
     <p class="lead">Photos are kept exactly as they are. Note, date and year are optional.</p>
-    <label class="pick" for="fileIn"><strong>Choose photos</strong><span>JPEG, PNG or WebP · you can pick several</span></label>
-    <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" multiple hidden>
-    <div class="field"><label for="byIn">Your name <span class="opt">(optional)</span></label><input id="byIn" maxlength="60" autocomplete="name" placeholder="So friends know who added it"></div>
-    <div class="items" id="items"></div>
-    <p class="msg" id="addMsg"></p>
-    <div class="actions">
-      <button class="btn" type="button" id="addCancel">Close</button>
-      <button class="btn primary" type="button" id="uploadBtn" disabled>Upload</button>
+    <div id="mobGate">
+      <div class="field"><label for="mobIn">Your mobile number</label><input id="mobIn" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="Registered Thigdam mobile number"></div>
+      <p class="msg" id="mobMsg"></p>
+      <div class="actions">
+        <button class="btn" type="button" id="mobCancel">Close</button>
+        <button class="btn primary" type="button" id="mobVerify">Continue</button>
+      </div>
+    </div>
+    <div id="mobVerified" hidden>
+      <label class="pick" for="fileIn"><strong>Choose photos</strong><span>JPEG, PNG or WebP · you can pick several</span></label>
+      <input type="file" id="fileIn" accept="image/jpeg,image/png,image/webp" multiple hidden>
+      <div class="field"><label for="byIn">Your name <span class="opt">(optional)</span></label><input id="byIn" maxlength="60" autocomplete="name" placeholder="So friends know who added it"></div>
+      <div class="items" id="items"></div>
+      <p class="msg" id="addMsg"></p>
+      <div class="actions">
+        <button class="btn" type="button" id="addCancel">Close</button>
+        <button class="btn primary" type="button" id="uploadBtn" disabled>Upload</button>
+      </div>
     </div>
   </div>
 </div>
@@ -299,8 +309,35 @@ footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
   // ---- add photos ----
   var queue=[];
   $('byIn').value=load('thigdam.name','');
-  function openAdd(){queue=[];$('items').innerHTML='';$('addMsg').textContent='';$('addMsg').className='msg';$('uploadBtn').disabled=true;$('addSheet').hidden=false;$('fileIn').value='';$('byIn').value=load('thigdam.name','')}
+
+  // ---- mobile gate: only the three Thigdam friends can add photos ----
+  function showPicker(){
+    $('mobGate').hidden=true;$('mobVerified').hidden=false;
+    queue=[];$('items').innerHTML='';$('addMsg').textContent='';$('addMsg').className='msg';
+    $('uploadBtn').disabled=true;$('fileIn').value='';$('byIn').value=load('thigdam.name','');
+  }
+  function openAdd(){
+    $('addSheet').hidden=false;
+    var mob=load('thigdam.mobile','');
+    if(mob){showPicker();return}
+    $('mobGate').hidden=false;$('mobVerified').hidden=true;
+    $('mobIn').value='';$('mobMsg').textContent='';$('mobMsg').className='msg';
+  }
   $('addBtn').onclick=openAdd;
+  var mobBusy=false;
+  $('mobVerify').onclick=async function(){
+    if(mobBusy)return;
+    var mob=$('mobIn').value.trim();
+    if(mob.replace(/\D/g,'').length<10){$('mobMsg').className='msg err';$('mobMsg').textContent='Enter a valid mobile number.';return}
+    mobBusy=true;this.disabled=true;$('mobMsg').textContent='Checking…';$('mobMsg').className='msg';
+    try{
+      await api('/verify-mobile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:mob})});
+      save('thigdam.mobile',mob);
+      showPicker();
+    }catch(e){$('mobMsg').className='msg err';$('mobMsg').textContent=e.message}
+    finally{mobBusy=false;this.disabled=false}
+  };
+  $('mobCancel').onclick=function(){$('addSheet').hidden=true};
   $('addCancel').onclick=function(){if(busy)return;$('addSheet').hidden=true;queue.forEach(function(q){if(q.url)URL.revokeObjectURL(q.url)});queue=[]};
   $('fileIn').addEventListener('change',async function(){
     var files=[].slice.call(this.files||[]);this.value='';
@@ -329,7 +366,7 @@ footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
     var row=q.row,bar=row.querySelector('.bar i'),err=row.querySelector('.err');
     err.textContent='';
     var f=q.file;
-    var start=await api('/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({size:f.size,mime:f.type})});
+    var start=await api('/uploads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({size:f.size,mime:f.type,mobile:load('thigdam.mobile','')})});
     var cs=start.chunk_size,n=Math.ceil(f.size/cs);
     for(var i=0;i<n;i++){
       var piece=f.slice(i*cs,Math.min(f.size,(i+1)*cs)),tries=0;

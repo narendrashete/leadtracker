@@ -579,6 +579,16 @@ zooms (pinch, wheel, double-tap) and swipes.
   narrower**: the uploading browser keeps an `owner_token` (localStorage `thigdam.owned`) and
   sends it as `X-Owner-Token`; a Lead Tracker admin token (`lt_token` in localStorage, same
   origin) also works. The owner token is never returned by `GET /photos`.
+- **Only the three Thigdam friends can ADD a photo — viewing stays public.** The link is
+  shared more widely than just this group, so `POST /verify-mobile` and `POST /uploads` both
+  check the submitted `mobile` against `ALLOWED_MOBILES` (last-10-digits match, so a national
+  or E.164-with-country-code number both normalize the same way) and reject with one generic
+  message otherwise — the real numbers never round-trip to the browser. The page shows a
+  mobile-number gate the first time "Add photos" is tapped (`#mobGate`/`#mobVerify` in
+  `thigdam/index.html`); a verified number is remembered in `localStorage('thigdam.mobile')`
+  so the gate doesn't reappear, but `/uploads` re-validates it server-side on every photo
+  regardless — the client check is only for UX. To add or change a friend, edit
+  `ALLOWED_MOBILES` in `routes/thigdam.js`.
 - Rows in `thigdam_photos` (leads.db); files in `thigdam-data/` (git-ignored — **this repo is
   public**, never commit the photos). Photo files have random never-reused names, so they are
   served with a 1-year immutable cache. Everything carries `X-Robots-Tag: noindex`.

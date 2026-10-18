@@ -25,6 +25,19 @@ const TMP_DIR   = path.join(DATA_DIR, 'tmp');
 fs.mkdirSync(PHOTO_DIR, { recursive: true });
 fs.mkdirSync(TMP_DIR, { recursive: true });
 
+// Only these three friends can add photos — everyone else can still view, zoom
+// and swipe, since the album itself stays public. Matched on the last 10
+// digits so a national (9820677340) or E.164-with-country-code
+// (+1 201 923 8479) number both normalize the same way; a wrong digit, or a
+// mobile not on this list, is rejected with the same generic message so the
+// real numbers never round-trip to the browser.
+const ALLOWED_MOBILES = new Set(['2019238479', '9820677340', '9820101355']);
+const WRONG_MOBILE_MSG = 'Only Siddharth, Riyaz or Narendra can add photos to this album. Please check the mobile number.';
+
+function normalizeMobile(s) {
+  return String(s || '').replace(/\D/g, '').slice(-10);
+}
+
 const CHUNK = 768 * 1024;            // stays under nginx's default 1 MB body limit
 const MAX_BYTES = 40 * 1024 * 1024;  // a big phone photo, with room to spare
 const MAX_THUMB = 600 * 1024;
@@ -123,6 +136,17 @@ function dropStale() {
   }
 }
 
+// Checked once up front so the page can show one clear message before the
+// friend picks files, rather than failing on every queued photo at once.
+// The real numbers never leave the server either way.
+router.post('/verify-mobile', (req, res) => {
+  const mobile = normalizeMobile((req.body || {}).mobile);
+  if (mobile.length !== 10 || !ALLOWED_MOBILES.has(mobile)) {
+    return res.status(403).json({ error: WRONG_MOBILE_MSG });
+  }
+  res.json({ ok: true });
+});
+
 router.get('/photos', (req, res, next) => {
   try {
     res.set('Cache-Control', 'no-store');
@@ -136,6 +160,10 @@ router.post('/uploads', (req, res, next) => {
   try {
     dropStale();
     const b = req.body || {};
+    const mobile = normalizeMobile(b.mobile);
+    if (mobile.length !== 10 || !ALLOWED_MOBILES.has(mobile)) {
+      return res.status(403).json({ error: WRONG_MOBILE_MSG });
+    }
     const size = parseInt(b.size, 10);
     if (!TYPES[b.mime]) return res.status(400).json({ error: 'Only JPEG, PNG or WebP photos can be added.' });
     if (!(size > 100)) return res.status(400).json({ error: 'That file looks empty.' });

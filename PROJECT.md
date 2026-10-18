@@ -219,6 +219,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-18** — Gated Thigdam photo uploads to the three group members (Siddharth, Riyaz,
+  Narendra) by mobile number. The album link gets shared more widely than the group itself,
+  so viewing stays public but "Add photos" now requires a matching mobile, checked server-side
+  (`ALLOWED_MOBILES` in `routes/thigdam.js`, last-10-digits normalized so a national or
+  E.164 number both match) on both a one-time `POST /verify-mobile` gate and every
+  `POST /uploads` call — the client-side localStorage memory is UX only, never trusted alone.
+  Wrong/missing numbers get one generic rejection message; the real numbers never reach the
+  browser. Verified end-to-end with a local server and Playwright: wrong number rejected,
+  correct number (in all three input formats) unlocks the picker and is remembered on reopen.
 - **2026-10-18** — Removed the passed "आगामी कार्यक्रम" (upcoming event) tile from the Shete
   Navratri homepage (फुलवरा/17 Oct has now also passed, after घटस्थापना/11 Oct). Reset
   `upcoming.html` to a neutral "this year's Utsav is complete; next year's details will

@@ -173,3 +173,16 @@
 .copy-list label{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f1e6d4;font-size:13.5px;}
 .copy-list label input{width:18px;height:18px;flex-shrink:0;}
 .copy-list .has-tree{font-size:11px;color:#8a5a00;margin-left:auto;white-space:nowrap;}
+
+/* Full-screen tree viewer (admin पहा) */
+.tree-viewer{position:fixed;inset:0;z-index:200;background:var(--cream);display:none;flex-direction:column;}
+.tree-viewer.open{display:flex;}
+.tv-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));color:#fff;}
+.tv-bar b{flex:1;min-width:0;font-size:15px;}
+.tv-tools{display:flex;gap:6px;}
+.tv-tools button{border:none;border-radius:8px;padding:7px 11px;font-family:inherit;font-weight:700;font-size:13px;background:rgba(255,255,255,0.18);color:#fff;cursor:pointer;}
+.tv-tools .tv-dl{background:var(--gold);color:var(--maroon-dark);}
+.tv-body{flex:1;overflow:auto;padding:16px;}
+.tv-body #tvTree{transform-origin:0 0;}
+.tv-body .ft-scroll{overflow:visible;}
+.tv-body .ft-tree{min-width:0;}

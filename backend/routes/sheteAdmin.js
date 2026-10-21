@@ -226,6 +226,43 @@ router.post('/trees/:memberId/reopen', (req, res) => {
   res.json({ ok: true });
 });
 
+// Copy one member's tree to other members (brothers/cousins sharing the same
+// family). The copy is published and locked straight away — the admin is the
+// one choosing it, so there is nothing left to approve. A target's existing
+// tree is replaced. Source = its approved copy if it has one, else its draft.
+router.post('/trees/:memberId/copy', (req, res) => {
+  const srcId = Number(req.params.memberId);
+  const src = query(
+    `SELECT t.data, t.published, m.name FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
+     WHERE t.member_id = ?`, [srcId]
+  )[0];
+  if (!src) return res.status(404).json({ error: 'मूळ वृक्ष सापडला नाही.' });
+  const ids = parseIds(req.body).filter(id => id !== srcId);
+  if (!ids.length) return res.status(400).json({ error: 'कोणताही सभासद निवडला नाही.' });
+
+  const tree = src.published || src.data;
+  const ownerName = 'Admin (' + src.name + ' यांच्या वृक्षावरून कॉपी)';
+  let copied = 0;
+  for (const id of ids) {
+    if (!query(`SELECT id FROM shete_members WHERE id = ?`, [id]).length) continue;
+    if (query(`SELECT id FROM shete_family_trees WHERE member_id = ?`, [id]).length) {
+      run(
+        `UPDATE shete_family_trees SET owner_name = ?, data = ?, published = ?, status = 'approved',
+           updated_at = datetime('now','localtime'), approved_at = datetime('now','localtime') WHERE member_id = ?`,
+        [ownerName, tree, tree, id]
+      );
+    } else {
+      run(
+        `INSERT INTO shete_family_trees (member_id, owner_name, data, published, status, approved_at)
+         VALUES (?,?,?,?, 'approved', datetime('now','localtime'))`,
+        [id, ownerName, tree, tree]
+      );
+    }
+    copied++;
+  }
+  res.json({ ok: true, copied });
+});
+
 // ---- History list (add/edit/delete) ----
 
 function parseYear(raw) {

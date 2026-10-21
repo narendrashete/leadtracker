@@ -219,6 +219,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-21** — Family tree **copy** (admin): each tree row in the admin कुटुंब वृक्ष tab has "कॉपी करा", which opens a searchable member picker and copies that tree (approved copy if any, else draft) to the selected members via `POST /api/shete-admin/trees/:memberId/copy` `{ids}`. Copies are published and locked immediately; an existing tree on a target is replaced (flagged "आधीचा वृक्ष बदलेल" in the picker).
+
 - **2026-10-21** — **Shete Navratri family tree (कुटुंब वृक्ष).** Members open `familytree.html` (link on the members page), identify with first/father/surname + their registered mobile, then build a tree from the मूळपुरुष down (➕ child, ✏️ edit, 🗑 delete subtree; each person has name + optional spouse, each with a मयत (deceased) flag shown as a tag in the tree). Save as draft or submit for approval; editable until approved, then locked. Admin page gets a **कुटुंब वृक्ष** tab: preview, approve (working copy → published), or reopen an approved tree for editing (old published copy stays live until re-approved). Members list shows a 🌳 icon only for members with a published tree → `tree.html?m=<id>`. New table `shete_family_trees` (`data` working copy, `published` approved copy, `status` draft/pending/approved). Routes: `POST /api/shete/tree/login`, `PUT /api/shete/tree`, `GET /api/shete/tree/:memberId` (published only); admin `GET /api/shete-admin/trees`, `POST .../trees/:memberId/approve|reopen`. Renderer is a pure CSS org chart (`assets/js/tree-render.js`), shared by viewer, editor and admin preview.
 
 - **2026-10-18** — Gated Thigdam photo uploads to the three group members (Siddharth, Riyaz,

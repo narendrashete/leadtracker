@@ -566,6 +566,7 @@
             (r.status === 'approved'
               ? '<button class="btn-reject" data-act="reopen" data-id="' + r.memberId + '">संपादनासाठी उघडा</button>'
               : '<button class="btn-approve" data-act="approve" data-id="' + r.memberId + '">मंजूर</button>') +
+            '<button class="btn-save" data-act="copy" data-id="' + r.memberId + '">कॉपी करा</button>' +
           '</div></div>';
       }).join('');
     });
@@ -583,10 +584,69 @@
     } else if (btn.dataset.act === 'approve') {
       if (row.status === 'draft' && !confirm('सभासदाने हा वृक्ष अजून मंजुरीसाठी पाठवलेला नाही. तरीही मंजूर करायचा?')) return;
       api('/api/shete-admin/trees/' + id + '/approve', { method: 'POST' }).then(loadTrees);
+    } else if (btn.dataset.act === 'copy') {
+      openCopy(row);
     } else if (btn.dataset.act === 'reopen') {
       if (!confirm('हा वृक्ष सभासदाला पुन्हा संपादनासाठी उघडायचा? (मंजुरीपर्यंत जुना वृक्ष प्रकाशित राहील.)')) return;
       api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
     }
+  });
+
+  // ---- Copy a tree to other members (brothers / cousins of the same family) ----
+  const copyOverlay = document.getElementById('copyOverlay');
+  const copyList = document.getElementById('copyList');
+  const copySearch = document.getElementById('copySearch');
+  const copyMsg = document.getElementById('copyMsg');
+  let copySource = null;
+  let copyMembers = [];
+  const copyChecked = new Set();
+
+  function renderCopyList() {
+    const q = copySearch.value.trim().toLowerCase();
+    const withTree = new Set(treeRows.map(function (r) { return r.memberId; }));
+    copyList.innerHTML = copyMembers.filter(function (m) {
+      return m.id !== copySource.memberId && (!q ||
+        [m.name, m.nameEn, m.village, m.villageEn, m.mobile].some(function (v) { return (v || '').toLowerCase().includes(q); }));
+    }).map(function (m) {
+      return '<label><input type="checkbox" value="' + m.id + '"' + (copyChecked.has(m.id) ? ' checked' : '') + '>' +
+        '<span>' + escapeHtml(m.name) + '<br><small style="color:var(--text-soft);">' + escapeHtml(m.village) + '</small></span>' +
+        (withTree.has(m.id) ? '<span class="has-tree">आधीचा वृक्ष बदलेल</span>' : '') + '</label>';
+    }).join('');
+  }
+
+  function openCopy(row) {
+    copySource = row;
+    copyChecked.clear();
+    copySearch.value = '';
+    copyMsg.textContent = '';
+    copyMsg.className = 'form-msg';
+    document.getElementById('copyHint').textContent = '"' + row.name + '" यांचा वृक्ष निवडलेल्या सभासदांसाठी कॉपी होईल आणि लगेच प्रकाशित (मंजूर) होईल.';
+    copyOverlay.classList.add('open');
+    api('/api/shete-admin/members').then(function (res) { copyMembers = res.body || []; renderCopyList(); });
+  }
+
+  copySearch.addEventListener('input', renderCopyList);
+  copyList.addEventListener('change', function (e) {
+    const id = Number(e.target.value);
+    if (e.target.checked) copyChecked.add(id); else copyChecked.delete(id);
+  });
+  document.getElementById('copyClose').addEventListener('click', function () { copyOverlay.classList.remove('open'); });
+  copyOverlay.addEventListener('click', function (e) { if (e.target === copyOverlay) copyOverlay.classList.remove('open'); });
+
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    const ids = Array.from(copyChecked);
+    if (!ids.length) { copyMsg.textContent = 'किमान एक सभासद निवडा.'; copyMsg.className = 'form-msg error'; return; }
+    const names = copyMembers.filter(function (m) { return copyChecked.has(m.id); }).map(function (m) { return m.name; });
+    if (!confirm('हा वृक्ष खालील सभासदांना कॉपी करायचा?\n\n' + names.join('\n'))) return;
+    api('/api/shete-admin/trees/' + copySource.memberId + '/copy', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: ids }),
+    }).then(function (res) {
+      if (!res.ok) { copyMsg.textContent = res.body.error || 'काहीतरी चूक झाली.'; copyMsg.className = 'form-msg error'; return; }
+      copyMsg.textContent = res.body.copied + ' सभासदांना वृक्ष कॉपी झाला.';
+      copyMsg.className = 'form-msg success';
+      loadTrees();
+      setTimeout(function () { copyOverlay.classList.remove('open'); }, 1500);
+    });
   });
 
   function loadAll() {

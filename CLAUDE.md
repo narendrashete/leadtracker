@@ -43,6 +43,9 @@ Express (backend/server.js)
    ├── /Prime_API_Integration (public — serves Prime_API_Integration/index.html verbatim,
    │                   built from prime-api-src/, no API)
    ├── /PrimeXAI      (public, noindex — serves PrimeXAI/index.html verbatim, no API)
+   ├── /api/thigdam   (public by owner's choice — Thigdam friends' photo album)
+   ├── /thigdam       (public, noindex — serves thigdam/index.html verbatim, no build step)
+   ├── /thigdam/photos/*  (public — uploaded originals + collage previews from thigdam-data/)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -145,6 +148,10 @@ Prime_API_Integration/
 prime-api-src/         Its source: React + Vite + TypeScript + Tailwind, own package.json.
 PrimeXAI/
   index.html           AI delivery savings dashboard — self-contained, data inlined as JSON blocks.
+thigdam/
+  index.html           Thigdam — the friends' group photo album (collage + zoom viewer +
+                       upload). One plain file, no build step. API in routes/thigdam.js.
+thigdam-data/photos/   Thigdam uploads: original bytes + small -thumb.jpg previews (git-ignored)
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -558,6 +565,46 @@ notes is seen by everyone who opens `/rishta`.
   overrides in `edits`, and `derive()` recomputes filter values from raw + edits.
 - Counted in Visitors as `rishta`. Express routing is case-insensitive, so `/Rishta` works.
 
+## Thigdam (friends' photo album)
+A seventh app sharing this process. "Thigdam" is the owner's friends group (also the name of
+one of the Mokla Divas calendar groups); `/thigdam` is their shared photo album. Friends add
+photos with an optional note (hotel, place, event), optional date or bare year, and optional
+name; the album groups by year (undated last) in a masonry collage, and a full-screen viewer
+zooms (pinch, wheel, double-tap) and swipes.
+- **Photos are stored byte-for-byte as picked — never resized or re-encoded.** That was the
+  owner's explicit requirement. nginx refuses bodies over 1 MB, so the page uploads in 768 KB
+  chunks: `POST /uploads` (size + mime) → `PUT /uploads/:uid/:n` in order → `POST
+  /uploads/:uid/finish` (details), which checks the byte count and magic bytes
+  (JPEG/PNG/WebP only) before moving the file into `thigdam-data/photos/<id>.<ext>`.
+  Unfinished uploads live in an in-memory Map and `thigdam-data/tmp/`, cleared at boot and
+  after an hour. Max 40 MB per photo.
+- **Collage tiles use a preview, the viewer uses the original.** After finishing, the
+  uploading browser draws a ≤720px JPEG and PUTs it to `/photos/:id/thumb`; without one the
+  tile loads the original. The viewer shows the preview first, then swaps in the original at
+  the same on-screen size.
+- **Public with no code or login — the owner's explicit choice.** Anyone with the link can
+  view, add, and edit the note/date/name on any photo (`PATCH /photos/:id`). **Delete is
+  narrower**: the uploading browser keeps an `owner_token` (localStorage `thigdam.owned`) and
+  sends it as `X-Owner-Token`; a Lead Tracker admin token (`lt_token` in localStorage, same
+  origin) also works. The owner token is never returned by `GET /photos`.
+- **Only the three Thigdam friends can ADD a photo — viewing stays public.** The link is
+  shared more widely than just this group, so `POST /verify-mobile` and `POST /uploads` both
+  check the submitted `mobile` against `ALLOWED_MOBILES` (last-10-digits match, so a national
+  or E.164-with-country-code number both normalize the same way) and reject with one generic
+  message otherwise — the real numbers never round-trip to the browser. The page shows a
+  mobile-number gate the first time "Add photos" is tapped (`#mobGate`/`#mobVerify` in
+  `thigdam/index.html`); a verified number is remembered in `localStorage('thigdam.mobile')`
+  so the gate doesn't reappear, but `/uploads` re-validates it server-side on every photo
+  regardless — the client check is only for UX. To add or change a friend, edit
+  `ALLOWED_MOBILES` in `routes/thigdam.js`.
+- Rows in `thigdam_photos` (leads.db); files in `thigdam-data/` (git-ignored — **this repo is
+  public**, never commit the photos). Photo files have random never-reused names, so they are
+  served with a 1-year immutable cache. Everything carries `X-Robots-Tag: noindex`.
+- Date rule (`cleanDetails` in `routes/thigdam.js`): a full date wins and sets the year; a
+  bare year (1950–2100) is allowed alone; both blank is fine. The page pre-fills the date
+  from JPEG EXIF when present (chat apps usually strip it).
+- Counted in Visitors as `thigdam`.
+
 ## Visitor Counting
 Server-side, in `analytics.js`, recorded on the three public pages and on the SPA's own
 HTML loads. Admin-only, shown on the **Visitors** screen.
@@ -718,7 +765,8 @@ Sangrah is then live at `https://leadtracker.primecomputers.co.in/aartisangrah`,
 at `https://leadtracker.primecomputers.co.in/rishta` (built locally from `rishta-src/` and
 committed — see Rishta Album), the Prime API Integration demo at
 `https://leadtracker.primecomputers.co.in/Prime_API_Integration` (same committed-build model), PrimeXAI at
-`https://leadtracker.primecomputers.co.in/PrimeXAI`, PrimeGem
+`https://leadtracker.primecomputers.co.in/PrimeXAI`, the Thigdam photo album at
+`https://leadtracker.primecomputers.co.in/thigdam` (photos persist in `thigdam-data/`), PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
 them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching

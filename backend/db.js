@@ -425,6 +425,30 @@ async function getDb() {
     )
   `);
 
+  // Thigdam — the friends' group photo album at /thigdam. One row per photo;
+  // the photo itself (original bytes, never re-encoded) and its small preview
+  // are files in thigdam-data/photos, not blobs here, because run() rewrites
+  // this whole file on every write. note/taken_on/taken_year/added_by are all
+  // optional. owner_token lets the browser that uploaded a photo delete it.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS thigdam_photos (
+      id TEXT PRIMARY KEY,
+      file TEXT NOT NULL,
+      thumb TEXT,
+      mime TEXT NOT NULL,
+      bytes INTEGER NOT NULL,
+      width INTEGER,
+      height INTEGER,
+      note TEXT,
+      taken_on TEXT,
+      taken_year INTEGER,
+      added_by TEXT,
+      owner_token TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      updated_at TEXT
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

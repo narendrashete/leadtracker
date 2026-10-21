@@ -35,6 +35,10 @@ address/city/state to leads.
   PrimeGem. Also installable and fully offline at `/kinetic-gem/app` (Add to Home Screen on
   Android/iOS) — the same file with PWA tags injected, not a forked copy.
 
+- Thigdam: the friends group's shared photo album at `/thigdam` — collage by year, zoom
+  viewer, upload with optional note/date/year, originals kept untouched. See `CLAUDE.md` →
+  Thigdam.
+
 - Rishta Album: private marriage-profile album at `/rishta`. Imports the vadhu-var list PDFs
   in the browser, one card per profile with photo; filters by age, native place, job
   location, salary, education, height, weight; shortlist/hide/notes. React + Vite source in
@@ -217,6 +221,39 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 - **2026-10-21** — **Shete Navratri family tree (कुटुंब वृक्ष).** Members open `familytree.html` (link on the members page), identify with first/father/surname + their registered mobile, then build a tree from the मूळपुरुष down (➕ child, ✏️ edit, 🗑 delete subtree; each person has name + optional spouse, each with a मयत (deceased) flag shown as a tag in the tree). Save as draft or submit for approval; editable until approved, then locked. Admin page gets a **कुटुंब वृक्ष** tab: preview, approve (working copy → published), or reopen an approved tree for editing (old published copy stays live until re-approved). Members list shows a 🌳 icon only for members with a published tree → `tree.html?m=<id>`. New table `shete_family_trees` (`data` working copy, `published` approved copy, `status` draft/pending/approved). Routes: `POST /api/shete/tree/login`, `PUT /api/shete/tree`, `GET /api/shete/tree/:memberId` (published only); admin `GET /api/shete-admin/trees`, `POST .../trees/:memberId/approve|reopen`. Renderer is a pure CSS org chart (`assets/js/tree-render.js`), shared by viewer, editor and admin preview.
 
+- **2026-10-18** — Gated Thigdam photo uploads to the three group members (Siddharth, Riyaz,
+  Narendra) by mobile number. The album link gets shared more widely than the group itself,
+  so viewing stays public but "Add photos" now requires a matching mobile, checked server-side
+  (`ALLOWED_MOBILES` in `routes/thigdam.js`, last-10-digits normalized so a national or
+  E.164 number both match) on both a one-time `POST /verify-mobile` gate and every
+  `POST /uploads` call — the client-side localStorage memory is UX only, never trusted alone.
+  Wrong/missing numbers get one generic rejection message; the real numbers never reach the
+  browser. Verified end-to-end with a local server and Playwright: wrong number rejected,
+  correct number (in all three input formats) unlocks the picker and is remembered on reopen.
+- **2026-10-18** — Removed the passed "आगामी कार्यक्रम" (upcoming event) tile from the Shete
+  Navratri homepage (फुलवरा/17 Oct has now also passed, after घटस्थापना/11 Oct). Reset
+  `upcoming.html` to a neutral "this year's Utsav is complete; next year's details will
+  appear once announced" placeholder instead of leaving stale date/venue/aarti-time info
+  live, and removed the matching stale फुलवरा आरती announcement box from `satvimaal.html`
+  (its underlying ritual how-to content is untouched — that's reference info for next year
+  too). No page links to `upcoming.html` now; it stays reachable directly for next year's
+  "Edit in place per event" update.
+- **2026-10-17** — **Thigdam** photo album at `/thigdam` for the owner's friends group:
+  masonry collage grouped by year, full-screen zoom viewer, friends upload photos with optional
+  note (hotel/event), date or year, and name; anyone can edit details, only the uploader's
+  browser (or an admin) can remove. Originals kept byte-for-byte via 768 KB chunked uploads
+  (nginx 1 MB limit); browser-drawn previews for tiles. New `thigdam_photos` table,
+  `routes/thigdam.js`, `thigdam/index.html`, git-ignored `thigdam-data/`, `thigdam` visitor
+  label. No build step — `git pull` + `pm2 reload` ships it.
+
+- **2026-10-15** — Added the फुलवरा आरती time (संध्याकाळी ठीक ७ वाजता) to the Shete Navratri
+  homepage event tile, the फुलवरा row on `upcoming.html`, and a new announcement box at the
+  top of `satvimaal.html` (the ७वी माळ ritual detail page the date row links to) — per a
+  poster the family circulated announcing the 17 Oct 7pm aarti.
+- **2026-10-15** — Updated the Shete Navratri homepage event tile (`index.html`) from घटस्थापना
+  (11 Oct, passed) to फुलवरा/७वी माळ (17 Oct, the next date on `upcoming.html`). Hand-edited —
+  this page has no date logic or build step (CLAUDE.md's "Edit in place per event" pattern) —
+  so it'll need the same manual bump once 17 Oct passes too.
 - **2026-10-14** — **PrimeXAI** hosted at `/PrimeXAI` (case-insensitive, noindex): the AI delivery savings dashboard (hours with Claude vs. estimated hand-built hours and cost saved, per live project). Standalone copy of the claude.ai dashboard artifact in `PrimeXAI/index.html` with data inlined, route in `server.js`, `primexai` visitor label, Prime Computers footer credit. No sidebar link.
 - **2026-10-13** — **Prime API Integration** demo hosted at `/Prime_API_Integration` (case-insensitive): the ShopSphere multi-courier shipping prototype (compare GATI / Xpressbees / Shiprocket rates at checkout, mock AWB, simulated tracking). Source moved in as `prime-api-src/` (React + Vite + TS + Tailwind), committed single-file build in `Prime_API_Integration/`, route in `server.js`, `prime-api` visitor label, admin sidebar link, Prime Computers footer credit. All courier data is still simulated — no real courier APIs yet.
 

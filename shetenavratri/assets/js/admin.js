@@ -578,9 +578,7 @@
     const id = Number(btn.dataset.id);
     const row = treeRows.find(function (r) { return r.memberId === id; });
     if (btn.dataset.act === 'view') {
-      treePreview.innerHTML = '<h3 style="margin:0;color:var(--maroon-dark);">' + escapeHtml(row.name) + '</h3><div id="treePreviewBox"></div>';
-      FamilyTree.render(document.getElementById('treePreviewBox'), row.data);
-      treePreview.scrollIntoView({ behavior: 'smooth' });
+      openViewer(row);
     } else if (btn.dataset.act === 'approve') {
       if (row.status === 'draft' && !confirm('सभासदाने हा वृक्ष अजून मंजुरीसाठी पाठवलेला नाही. तरीही मंजूर करायचा?')) return;
       api('/api/shete-admin/trees/' + id + '/approve', { method: 'POST' }).then(loadTrees);
@@ -590,6 +588,50 @@
       if (!confirm('हा वृक्ष सभासदाला पुन्हा संपादनासाठी उघडायचा? (मंजुरीपर्यंत जुना वृक्ष प्रकाशित राहील.)')) return;
       api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
     }
+  });
+
+  // ---- Full-screen viewer: fits the whole tree on screen, zoom, PNG download ----
+  const treeViewer = document.getElementById('treeViewer');
+  const tvBody = document.getElementById('tvBody');
+  const tvTree = document.getElementById('tvTree');
+  let tvRow = null, tvZoom = 1;
+
+  function tvApply() {
+    const inner = tvTree.querySelector('.ft-tree');
+    tvTree.style.transform = 'scale(' + tvZoom + ')';
+    // A transform doesn't change layout size, so size the wrapper by hand or
+    // the scrollbars would still cover the unscaled tree.
+    tvTree.style.width = inner.offsetWidth + 'px';
+    tvTree.style.height = inner.offsetHeight + 'px';
+    tvTree.style.marginBottom = (inner.offsetHeight * (tvZoom - 1)) + 'px';
+    tvTree.style.marginRight = (inner.offsetWidth * (tvZoom - 1)) + 'px';
+    tvTree.style.marginLeft = Math.max(0, (tvBody.clientWidth - 32 - inner.offsetWidth * tvZoom) / 2) + 'px';
+  }
+  function tvFit() {
+    const inner = tvTree.querySelector('.ft-tree');
+    const fw = (tvBody.clientWidth - 32) / inner.offsetWidth;
+    const fh = (tvBody.clientHeight - 32) / inner.offsetHeight;
+    tvZoom = Math.min(1, fw, fh);
+    tvApply();
+  }
+  function openViewer(row) {
+    tvRow = row;
+    document.getElementById('tvTitle').textContent = row.name + ' — कुटुंब वृक्ष';
+    treeViewer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    FamilyTree.render(tvTree, row.data);
+    tvTree.querySelector('.ft-tree').style.display = 'inline-block';
+    tvFit();
+  }
+  document.getElementById('tvFit').addEventListener('click', tvFit);
+  document.getElementById('tvIn').addEventListener('click', function () { tvZoom = Math.min(2, tvZoom * 1.2); tvApply(); });
+  document.getElementById('tvOut').addEventListener('click', function () { tvZoom = Math.max(0.2, tvZoom / 1.2); tvApply(); });
+  document.getElementById('tvClose').addEventListener('click', function () {
+    treeViewer.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+  document.getElementById('tvPng').addEventListener('click', function () {
+    FamilyTree.downloadPng(tvRow.data, tvRow.name + ' — कुटुंब वृक्ष', 'kutumb-vruksha-' + tvRow.memberId + '.png');
   });
 
   // ---- Copy a tree to other members (brothers / cousins of the same family) ----

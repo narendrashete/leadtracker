@@ -75,9 +75,11 @@
       document.getElementById('membersTab').style.display = tab === 'members' ? 'block' : 'none';
       document.getElementById('rosterTab').style.display = tab === 'roster' ? 'block' : 'none';
       document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+      document.getElementById('treesTab').style.display = tab === 'trees' ? 'block' : 'none';
       if (tab === 'approved') loadGalleryApproved();
       if (tab === 'roster') loadRoster();
       if (tab === 'history') loadHistoryAdmin();
+      if (tab === 'trees') loadTrees();
     });
   });
 
@@ -539,9 +541,58 @@
     if (e.target === previewOverlay) previewOverlay.classList.remove('open');
   });
 
+  // ---- Family trees (approve / reopen for editing) ----
+  const treesList = document.getElementById('treesList');
+  const treePreview = document.getElementById('treePreview');
+  const TREE_STATUS = { draft: 'मसुदा (अजून पाठवला नाही)', pending: 'मंजुरीसाठी प्रलंबित', approved: 'मंजूर व प्रकाशित' };
+  let treeRows = [];
+
+  function loadTrees() {
+    api('/api/shete-admin/trees').then(function (res) {
+      treeRows = res.body || [];
+      treePreview.innerHTML = '';
+      document.getElementById('treesCount').textContent = treeRows.filter(function (r) { return r.status === 'pending'; }).length || '';
+      document.getElementById('treesEmpty').style.display = treeRows.length ? 'none' : 'block';
+      treesList.innerHTML = treeRows.map(function (r) {
+        return '<div class="request-card">' +
+          '<div class="request-info">' +
+            '<div class="rtitle">' + escapeHtml(r.name) + '</div>' +
+            '<div class="rmeta">भरणारे: ' + escapeHtml(r.ownerName) + ' · ' + r.mobile + ' · ' + FamilyTree.count(r.data) + ' व्यक्ती · ' + r.updatedAt + '</div>' +
+            '<div class="rmeta"><span class="ft-status ' + r.status + '">' + TREE_STATUS[r.status] + '</span>' +
+              (r.status !== 'approved' && r.hasPublished ? ' (जुना मंजूर वृक्ष प्रकाशित आहे)' : '') + '</div>' +
+          '</div>' +
+          '<div class="request-btns">' +
+            '<button class="btn-save" data-act="view" data-id="' + r.memberId + '">पहा</button>' +
+            (r.status === 'approved'
+              ? '<button class="btn-reject" data-act="reopen" data-id="' + r.memberId + '">संपादनासाठी उघडा</button>'
+              : '<button class="btn-approve" data-act="approve" data-id="' + r.memberId + '">मंजूर</button>') +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  treesList.addEventListener('click', function (e) {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const row = treeRows.find(function (r) { return r.memberId === id; });
+    if (btn.dataset.act === 'view') {
+      treePreview.innerHTML = '<h3 style="margin:0;color:var(--maroon-dark);">' + escapeHtml(row.name) + '</h3><div id="treePreviewBox"></div>';
+      FamilyTree.render(document.getElementById('treePreviewBox'), row.data);
+      treePreview.scrollIntoView({ behavior: 'smooth' });
+    } else if (btn.dataset.act === 'approve') {
+      if (row.status === 'draft' && !confirm('सभासदाने हा वृक्ष अजून मंजुरीसाठी पाठवलेला नाही. तरीही मंजूर करायचा?')) return;
+      api('/api/shete-admin/trees/' + id + '/approve', { method: 'POST' }).then(loadTrees);
+    } else if (btn.dataset.act === 'reopen') {
+      if (!confirm('हा वृक्ष सभासदाला पुन्हा संपादनासाठी उघडायचा? (मंजुरीपर्यंत जुना वृक्ष प्रकाशित राहील.)')) return;
+      api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
+    }
+  });
+
   function loadAll() {
     loadGalleryPending();
     loadMembersPending();
+    loadTrees();
   }
 
   // ---- Boot ----

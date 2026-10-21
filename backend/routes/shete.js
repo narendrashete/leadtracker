@@ -40,10 +40,11 @@ function galleryUrl(imageFile) {
 // up immediately with no redeploy.
 router.get('/members/approved', (req, res) => {
   const rows = query(
-    `SELECT id, name, name_en AS nameEn, village, village_en AS villageEn, mobile, alt_mobile AS altMobile
-     FROM shete_members ORDER BY id`
+    `SELECT m.id, m.name, m.name_en AS nameEn, m.village, m.village_en AS villageEn, m.mobile,
+            m.alt_mobile AS altMobile, (t.published IS NOT NULL) AS hasTree
+     FROM shete_members m LEFT JOIN shete_family_trees t ON t.member_id = m.id ORDER BY m.id`
   );
-  res.json(rows.map((r, i) => ({ ...r, sr: i + 1 })));
+  res.json(rows.map((r, i) => ({ ...r, hasTree: !!r.hasTree, sr: i + 1 })));
 });
 
 // Public: submit a new member for the admin to review. No mobile-gating here
@@ -146,6 +147,106 @@ router.post('/gallery/request', (req, res) => {
     );
     res.json({ ok: true, message: 'फोटो सबमिट झाला. Admin कडून मंजुरीनंतर गॅलरीत दिसेल.' });
   });
+});
+
+// ---- Family tree ----
+// A tree is nested JSON: { id, name, spouse, children: [...] }, root = मूळपुरुष.
+// The client's tree is never stored as sent — sanitizeTree() rebuilds it from
+// the allowed fields only, with size/depth caps.
+const TREE_MAX_NODES = 400;
+const TREE_MAX_DEPTH = 15;
+const TREE_NAME_MAX = 80;
+
+function sanitizeTree(node) {
+  let count = 0;
+  function walk(n, depth) {
+    if (!n || typeof n !== 'object') throw new Error('अवैध वृक्ष.');
+    if (++count > TREE_MAX_NODES) throw new Error(`जास्तीत जास्त ${TREE_MAX_NODES} व्यक्ती जोडता येतील.`);
+    if (depth > TREE_MAX_DEPTH) throw new Error(`जास्तीत जास्त ${TREE_MAX_DEPTH} पिढ्या जोडता येतील.`);
+    const name = (n.name || '').toString().trim().slice(0, TREE_NAME_MAX);
+    if (!name) throw new Error('प्रत्येक व्यक्तीचे नाव आवश्यक आहे.');
+    const id = /^[a-z0-9]{1,24}$/.test(n.id) ? n.id : crypto.randomBytes(6).toString('hex');
+    const kids = Array.isArray(n.children) ? n.children : [];
+    return {
+      id,
+      name,
+      spouse: (n.spouse || '').toString().trim().slice(0, TREE_NAME_MAX),
+      dead: n.dead === true,
+      spouseDead: n.spouseDead === true,
+      children: kids.map(k => walk(k, depth + 1)),
+    };
+  }
+  return walk(node, 1);
+}
+
+function memberByMobile(mobile) {
+  if (!MOBILE_RE.test(mobile)) return null;
+  return query(
+    `SELECT id, name FROM shete_members WHERE mobile = ? OR alt_mobile = ?`, [mobile, mobile]
+  )[0] || null;
+}
+
+function treeState(memberId) {
+  const t = query(`SELECT * FROM shete_family_trees WHERE member_id = ?`, [memberId])[0];
+  if (!t) return { status: 'none', data: null, hasPublished: false };
+  return { status: t.status, data: JSON.parse(t.data), hasPublished: !!t.published, ownerName: t.owner_name };
+}
+
+function ownerNameFrom(body) {
+  const parts = ['firstName', 'fatherName', 'surname'].map(k => (body[k] || '').toString().trim().slice(0, 40));
+  return parts.every(Boolean) ? parts.join(' ') : null;
+}
+
+// Identify the member (full name + registered mobile) and return their tree.
+router.post('/tree/login', (req, res) => {
+  const ownerName = ownerNameFrom(req.body);
+  if (!ownerName) return res.status(400).json({ error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.' });
+  const member = memberByMobile((req.body.mobile || '').toString().trim());
+  if (!member) return res.status(403).json({ error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.' });
+  res.json({ memberId: member.id, memberName: member.name, ownerName, ...treeState(member.id) });
+});
+
+// Save (draft) or submit (pending) the working copy. Refused once approved.
+router.put('/tree', (req, res) => {
+  const ownerName = ownerNameFrom(req.body);
+  if (!ownerName) return res.status(400).json({ error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.' });
+  const member = memberByMobile((req.body.mobile || '').toString().trim());
+  if (!member) return res.status(403).json({ error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.' });
+
+  let tree;
+  try { tree = sanitizeTree(req.body.data); } catch (e) { return res.status(400).json({ error: e.message }); }
+  const status = req.body.submit ? 'pending' : 'draft';
+
+  const existing = query(`SELECT id, status FROM shete_family_trees WHERE member_id = ?`, [member.id])[0];
+  if (existing && existing.status === 'approved') {
+    return res.status(423).json({ error: 'वृक्ष मंजूर झाला आहे. बदलासाठी Admin शी संपर्क करा.' });
+  }
+  if (existing) {
+    run(
+      `UPDATE shete_family_trees SET owner_name = ?, data = ?, status = ?, updated_at = datetime('now','localtime') WHERE id = ?`,
+      [ownerName, JSON.stringify(tree), status, existing.id]
+    );
+  } else {
+    run(
+      `INSERT INTO shete_family_trees (member_id, owner_name, data, status) VALUES (?,?,?,?)`,
+      [member.id, ownerName, JSON.stringify(tree), status]
+    );
+  }
+  res.json({
+    ok: true, status, data: tree,
+    message: status === 'pending' ? 'वृक्ष मंजुरीसाठी पाठवला. मंजुरीपर्यंत बदल करता येतील.' : 'वृक्ष जतन केला.',
+  });
+});
+
+// Public: the published (approved) tree only — never the working copy.
+router.get('/tree/:memberId', (req, res) => {
+  const t = query(
+    `SELECT t.published, t.owner_name AS ownerName, t.approved_at AS approvedAt, m.name AS memberName
+     FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
+     WHERE t.member_id = ? AND t.published IS NOT NULL`, [Number(req.params.memberId)]
+  )[0];
+  if (!t) return res.status(404).json({ error: 'प्रकाशित कुटुंब वृक्ष सापडला नाही.' });
+  res.json({ memberName: t.memberName, ownerName: t.ownerName, approvedAt: t.approvedAt, data: JSON.parse(t.published) });
 });
 
 module.exports = router;

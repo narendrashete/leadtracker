@@ -691,3 +691,69 @@ button{font-family:inherit;}
 }
 .cal-icon .dd{flex:1;display:flex;align-items:center;font-weight:800;font-size:22px;color:var(--maroon-dark);line-height:1;}
 .cal-icon .mm{width:100%;background:#c0102a;color:#fff;font-size:10.5px;font-weight:700;padding:1px 0 3px;text-align:center;}
+
+/* ---------- Family tree (कुटुंब वृक्ष) ---------- */
+/* Classic CSS org chart: each <li> draws the horizontal sibling bar (::before
+   / ::after) and each nested <ul> drops the vertical line from its parent. */
+.ft-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 0 16px;}
+.ft-tree{display:inline-block;min-width:100%;text-align:center;}
+.ft-tree ul{display:flex;justify-content:center;padding:18px 0 0;margin:0;position:relative;}
+.ft-tree > ul{padding-top:0;}
+.ft-tree li{list-style:none;position:relative;padding:18px 5px 0;display:flex;flex-direction:column;align-items:center;}
+.ft-tree li::before,.ft-tree li::after{
+  content:'';position:absolute;top:0;right:50%;width:50%;height:18px;border-top:2px solid var(--gold);
+}
+.ft-tree li::after{right:auto;left:50%;border-left:2px solid var(--gold);}
+.ft-tree li:only-child::before,.ft-tree li:only-child::after{display:none;}
+.ft-tree li:only-child{padding-top:0;}
+.ft-tree li:first-child::before,.ft-tree li:last-child::after{border:0 none;}
+.ft-tree li:last-child::before{border-right:2px solid var(--gold);border-radius:0 6px 0 0;}
+.ft-tree li:first-child::after{border-radius:6px 0 0 0;}
+.ft-tree ul ul::before{content:'';position:absolute;top:0;left:50%;height:18px;border-left:2px solid var(--gold);}
+.ft-tree > ul > li{padding-top:0;}
+.ft-tree > ul > li::before,.ft-tree > ul > li::after{display:none;}
+.ft-node{
+  background:#fff;border:1.5px solid #ecd9b8;border-radius:12px;padding:8px 12px;
+  min-width:110px;max-width:180px;box-shadow:0 3px 10px rgba(122,16,36,0.10);
+}
+.ft-root{background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));border-color:var(--maroon-dark);color:#fff;}
+.ft-tag{font-size:10px;font-weight:700;color:var(--gold-light);letter-spacing:0.5px;margin-bottom:2px;}
+.ft-name{font-weight:700;font-size:13.5px;color:var(--maroon-dark);line-height:1.3;}
+.ft-root .ft-name{color:#fff;}
+.ft-spouse{font-size:12px;color:var(--text-soft);margin-top:3px;padding-top:3px;border-top:1px dashed #eadfd0;}
+.ft-root .ft-spouse{color:var(--gold-light);border-color:rgba(255,255,255,0.25);}
+.ft-tools{display:flex;justify-content:center;gap:4px;margin-top:6px;}
+.ft-tools button{border:none;background:var(--cream);border-radius:8px;width:30px;height:28px;font-size:13px;cursor:pointer;}
+.ft-root .ft-tools button{background:rgba(255,255,255,0.18);}
+
+.tree-btn{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--gold-light),var(--gold));font-size:18px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+.tree-cta{
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;
+  padding:10px;border-radius:12px;background:#fff;color:var(--maroon-dark);
+  font-weight:700;font-size:13.5px;box-shadow:0 2px 8px rgba(122,16,36,0.08);
+}
+.ft-card{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:20px 18px;}
+.ft-card h2{margin:0 0 6px;font-size:18px;color:var(--maroon-dark);}
+.ft-form label{display:block;font-size:12.5px;font-weight:600;color:var(--maroon-dark);margin-bottom:12px;}
+.ft-form input{
+  display:block;width:100%;margin-top:6px;padding:11px 13px;border-radius:10px;
+  border:1px solid #e2d3c0;font-size:14px;font-family:inherit;background:#fff;color:var(--text);
+}
+.ft-form input:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.ft-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+.ft-status.draft{background:#eee;color:#555;}
+.ft-status.pending{background:#fff1cc;color:#8a5a00;}
+.ft-status.approved{background:#dcf3e3;color:#1f6b3a;}
+.ft-bar{display:flex;gap:8px;margin-top:12px;}
+.ft-bar .form-submit{flex:1;}
+.ft-bar .ghost{background:#fff;color:var(--maroon-dark);border:1.5px solid var(--maroon);}
+.ft-meta{font-size:12.5px;color:var(--text-soft);margin:6px 0 0;}
+
+.ft-dead{display:inline-block;font-size:10px;font-weight:700;padding:0 6px;border-radius:8px;background:#5b5b5b;color:#fff;vertical-align:middle;}
+.ft-form .ft-check{display:flex;align-items:center;gap:8px;font-weight:500;}
+.ft-form .ft-check input{width:auto;margin:0;}

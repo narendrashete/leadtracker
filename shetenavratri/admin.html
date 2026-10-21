@@ -34,6 +34,7 @@
     <button class="admin-tab" data-tab="members">सभासद विनंत्या <span id="membersCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="roster">सभासद यादी संपादन</button>
     <button class="admin-tab" data-tab="history">इतिहास यादी</button>
+    <button class="admin-tab" data-tab="trees">कुटुंब वृक्ष <span id="treesCount" class="badge"></span></button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -87,6 +88,12 @@
     <input type="text" id="historyAdminSearch" class="roster-search" placeholder="नाव, गाव किंवा वर्ष शोधा...">
     <div id="historyAdminList" class="request-list"></div>
   </section>
+
+  <section id="treesTab" class="admin-section" style="display:none;">
+    <div id="treesList" class="request-list"></div>
+    <div class="no-results" id="treesEmpty" style="display:none;">अजून कोणताही कुटुंब वृक्ष नाही</div>
+    <div id="treePreview" style="margin-top:14px;"></div>
+  </section>
 </div>
 
 <div class="modal-overlay" id="previewOverlay">
@@ -95,6 +102,7 @@
   <div class="modal-caption" id="previewCaption"></div>
 </div>
 
+<script src="/shetenavratri/assets/js/tree-render.js"></script>
 <script src="/shetenavratri/assets/js/admin.js"></script>
 </body>
 </html>

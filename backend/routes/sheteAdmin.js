@@ -192,6 +192,40 @@ router.delete('/members/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- Family trees ----
+
+router.get('/trees', (req, res) => {
+  const rows = query(
+    `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
+            t.published IS NOT NULL AS hasPublished, t.updated_at AS updatedAt, m.name, m.mobile
+     FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
+     ORDER BY CASE t.status WHEN 'pending' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END, t.updated_at DESC`
+  );
+  res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, data: JSON.parse(r.data) })));
+});
+
+// Approve: the working copy becomes the published one and is locked.
+router.post('/trees/:memberId/approve', (req, res) => {
+  const id = Number(req.params.memberId);
+  const t = query(`SELECT id FROM shete_family_trees WHERE member_id = ? AND status != 'approved'`, [id])[0];
+  if (!t) return res.status(404).json({ error: 'वृक्ष सापडला नाही किंवा आधीच मंजूर.' });
+  run(
+    `UPDATE shete_family_trees SET published = data, status = 'approved', approved_at = datetime('now','localtime') WHERE id = ?`,
+    [t.id]
+  );
+  res.json({ ok: true });
+});
+
+// Reopen: unlock an approved tree for the member to edit. The published copy
+// stays visible to everyone until the next approval replaces it.
+router.post('/trees/:memberId/reopen', (req, res) => {
+  const id = Number(req.params.memberId);
+  const t = query(`SELECT id FROM shete_family_trees WHERE member_id = ? AND status = 'approved'`, [id])[0];
+  if (!t) return res.status(404).json({ error: 'मंजूर वृक्ष सापडला नाही.' });
+  run(`UPDATE shete_family_trees SET status = 'draft' WHERE id = ?`, [t.id]);
+  res.json({ ok: true });
+});
+
 // ---- History list (add/edit/delete) ----
 
 function parseYear(raw) {

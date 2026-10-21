@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>कुटुंब वृक्ष तयार करा — शेटे परिवार नवरात्री</title>
+<link rel="stylesheet" href="/shetenavratri/assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/shetenavratri/members.html" class="back-link">←</a>
+  <div>
+    <h1>कुटुंब वृक्ष तयार / संपादन</h1>
+    <div class="sub">Create / Edit Family Tree</div>
+  </div>
+</header>
+
+<!-- Step 1: identify the member -->
+<div class="page" id="loginView">
+  <div class="ft-card">
+    <h2>सभासद ओळख</h2>
+    <p class="form-hint">सभासद यादीत नोंदवलेला WhatsApp क्रमांक टाका.</p>
+    <form class="ft-form" id="loginForm">
+      <label>नाव (First name) *<input type="text" id="fFirst" required maxlength="40"></label>
+      <label>वडिलांचे नाव (Father's name) *<input type="text" id="fFather" required maxlength="40"></label>
+      <label>आडनाव (Surname) *<input type="text" id="fSurname" required maxlength="40" value="शेटे"></label>
+      <label>WhatsApp क्रमांक *<input type="tel" id="fMobile" required pattern="[0-9]{10}" maxlength="10" placeholder="10 अंकी मोबाईल क्रमांक"></label>
+      <div class="form-msg" id="loginMsg"></div>
+      <button type="submit" class="form-submit">पुढे जा</button>
+    </form>
+  </div>
+</div>
+
+<!-- Step 2: the editor -->
+<div class="page" id="editView" style="display:none;max-width:none;">
+  <div class="ft-card" style="max-width:640px;margin:0 auto;">
+    <div><b id="eOwner"></b> <span class="ft-status" id="eStatus"></span></div>
+    <p class="ft-meta" id="eHint"></p>
+    <div class="ft-bar" id="eBar">
+      <button class="form-submit ghost" id="saveBtn">जतन करा (Draft)</button>
+      <button class="form-submit" id="submitBtn">मंजुरीसाठी पाठवा</button>
+    </div>
+    <div class="form-msg" id="eMsg" style="margin-top:8px;"></div>
+  </div>
+  <div id="startBox" class="ft-card" style="max-width:640px;margin:14px auto 0;display:none;">
+    <h2>मूळपुरुष</h2>
+    <p class="form-hint">वृक्षाची सुरुवात सर्वात जुन्या ज्ञात पूर्वजापासून करा.</p>
+    <button class="form-submit" id="startBtn">मूळपुरुष जोडा</button>
+  </div>
+  <div id="treeEdit" style="margin-top:14px;"></div>
+</div>
+
+<!-- Person add/edit sheet -->
+<div class="modal-overlay form-overlay" id="personOverlay">
+  <div class="form-sheet">
+    <button class="modal-close" id="personClose">✕</button>
+    <h2 id="personTitle">व्यक्ती</h2>
+    <form class="ft-form" id="personForm">
+      <label>पूर्ण नाव *<input type="text" id="pName" required maxlength="80" placeholder="उदा. गजानन महादेव शेटे"></label>
+      <label>पती / पत्नीचे नाव (optional)<input type="text" id="pSpouse" maxlength="80" placeholder="उदा. इंदिराबाई गजानन शेटे"></label>
+      <label class="ft-check"><input type="checkbox" id="pDead"> ही व्यक्ती मयत आहे</label>
+      <label class="ft-check"><input type="checkbox" id="pSpouseDead"> पती / पत्नी मयत आहे</label>
+      <button type="submit" class="form-submit">ठीक आहे</button>
+    </form>
+  </div>
+</div>
+
+<script src="/shetenavratri/assets/js/tree-render.js"></script>
+<script src="/shetenavratri/assets/js/familytree.js"></script>
+</body>
+</html>

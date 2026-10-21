@@ -74,7 +74,9 @@
               '<span class="spacer"></span>' +
             '</div>' +
           '</div>' : '') +
-        '</div>';
+        '</div>' +
+        // Only members with an admin-approved tree get the icon.
+        (m.hasTree ? '<a class="tree-btn" href="/shetenavratri/tree.html?m=' + m.id + '" aria-label="कुटुंब वृक्ष" title="कुटुंब वृक्ष">🌳</a>' : '');
       frag.appendChild(card);
     });
     listEl.appendChild(frag);

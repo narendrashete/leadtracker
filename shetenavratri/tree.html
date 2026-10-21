@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>कुटुंब वृक्ष — शेटे परिवार नवरात्री</title>
+<link rel="stylesheet" href="/shetenavratri/assets/css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/shetenavratri/members.html" class="back-link">←</a>
+  <div>
+    <h1>कुटुंब वृक्ष</h1>
+    <div class="sub" id="treeSub">Family Tree</div>
+  </div>
+</header>
+
+<div class="page" style="max-width:none;">
+  <div class="loading-note" id="treeMsg">कुटुंब वृक्ष लोड होत आहे...</div>
+  <div id="treeView"></div>
+</div>
+
+<script src="/shetenavratri/assets/js/tree-render.js"></script>
+<script>
+(function () {
+  const id = new URLSearchParams(location.search).get('m');
+  const msg = document.getElementById('treeMsg');
+  fetch('/api/shete/tree/' + encodeURIComponent(id || ''))
+    .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+    .then(function (res) {
+      if (!res.ok) { msg.textContent = res.body.error || 'वृक्ष सापडला नाही.'; return; }
+      msg.style.display = 'none';
+      document.getElementById('treeSub').textContent = res.body.memberName;
+      FamilyTree.render(document.getElementById('treeView'), res.body.data);
+    })
+    .catch(function () { msg.textContent = 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.'; });
+})();
+</script>
+</body>
+</html>

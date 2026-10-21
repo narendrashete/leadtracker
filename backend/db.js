@@ -408,6 +408,23 @@ async function getDb() {
     )
   `);
 
+  // Family tree per member (one row per member). `data` is the working copy the
+  // member edits; `published` is the last admin-approved copy, the only one the
+  // public viewer ever reads. status: draft → pending (submitted) → approved
+  // (locked until an admin reopens it, which sets it back to draft).
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_family_trees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL UNIQUE,
+      owner_name TEXT NOT NULL,
+      data TEXT NOT NULL,
+      published TEXT,
+      status TEXT NOT NULL DEFAULT 'draft',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      approved_at TEXT
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

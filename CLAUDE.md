@@ -116,6 +116,14 @@ shetenavratri/
   history.html          आत्तापर्यंतची नवरात्री झालेली यादी — placeholder, content pending.
   upcoming.html         आगामी कार्यक्रम — next event + venue + map link; the home
                        tile carries a "★ NEW" ribbon (`.new-badge`). Edit in place per event.
+  familytree.html        कुटुंब वृक्ष editor — member identifies (full name + registered
+                       mobile), builds tree from मूळपुरुष, saves draft / submits for admin
+                       approval; locked once approved until admin reopens it.
+  tree.html             Public viewer: published (approved) tree only, ?m=<member id>.
+                       Members list shows 🌳 only when one exists. Renderer shared by
+                       viewer/editor/admin: assets/js/tree-render.js (CSS org chart, no lib).
+                       Mobile gating is weak (mobiles are public on the members page) —
+                       admin approval is the real gate; nothing reaches the public unapproved.
   gallery.html           क्षणचित्रे — photo collage + modal viewer (mock placeholders
                        until real photos are supplied).
   assets/                css/js shared by all four pages.

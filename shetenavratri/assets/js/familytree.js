@@ -5,6 +5,7 @@
 (function () {
   const $ = function (id) { return document.getElementById(id); };
   let ident = null;   // { firstName, fatherName, surname, mobile }
+  let memberId = null;
   let tree = null;    // working copy
   let status = 'none';
   let dirty = false;
@@ -35,6 +36,7 @@
     post('POST', '/api/shete/tree/login', body).then(function (res) {
       if (!res.ok) return setMsg($('loginMsg'), res.body.error || 'काहीतरी चूक झाली.', 'error');
       ident = body;
+      memberId = res.body.memberId;
       tree = res.body.data;
       status = res.body.status;
       $('eOwner').textContent = res.body.ownerName;
@@ -59,7 +61,7 @@
     $('eBar').style.display = locked() ? 'none' : 'flex';
     $('startBox').style.display = !tree && !locked() ? 'block' : 'none';
     const box = $('treeEdit');
-    if (tree) FamilyTree.render(box, tree, { editable: !locked() });
+    if (tree) FamilyTree.render(box, tree, { editable: !locked(), ownerId: memberId });
     else box.innerHTML = '';
   }
 

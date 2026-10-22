@@ -619,7 +619,7 @@
     document.getElementById('tvTitle').textContent = row.name + ' — कुटुंब वृक्ष';
     treeViewer.classList.add('open');
     document.body.style.overflow = 'hidden';
-    FamilyTree.render(tvTree, row.data);
+    FamilyTree.render(tvTree, row.data, { ownerId: row.memberId });
     tvTree.querySelector('.ft-tree').style.display = 'inline-block';
     tvFit();
   }

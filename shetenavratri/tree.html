@@ -32,7 +32,7 @@
       if (!res.ok) { msg.textContent = res.body.error || 'वृक्ष सापडला नाही.'; return; }
       msg.style.display = 'none';
       document.getElementById('treeSub').textContent = res.body.memberName;
-      FamilyTree.render(document.getElementById('treeView'), res.body.data);
+      FamilyTree.render(document.getElementById('treeView'), res.body.data, { ownerId: id });
     })
     .catch(function () { msg.textContent = 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.'; });
 })();

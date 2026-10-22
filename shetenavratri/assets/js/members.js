@@ -45,6 +45,7 @@
     list.forEach(function (m) {
       const card = document.createElement('div');
       card.className = 'member-card';
+      card.dataset.id = m.id;
       card.innerHTML =
         '<div class="sr">' + m.sr + '</div>' +
         '<div class="member-info">' +
@@ -106,6 +107,16 @@
     });
   }
 
+  // Arriving from a family-tree badge (members.html?m=<id>): bring that
+  // member's card into view and flash it so the call buttons are right there.
+  function showLinkedMember() {
+    const id = new URLSearchParams(location.search).get('m');
+    const card = id && listEl.querySelector('.member-card[data-id="' + CSS.escape(id) + '"]');
+    if (!card) return;
+    card.classList.add('linked');
+    card.scrollIntoView({ block: 'center' });
+  }
+
   searchEl.addEventListener('input', function () {
     render(filterMembers(searchEl.value));
   });
@@ -116,6 +127,7 @@
       MEMBERS_DATA = data;
       loadingEl.style.display = 'none';
       render(MEMBERS_DATA);
+      showLinkedMember();
     })
     .catch(function () {
       loadingEl.textContent = 'सभासद यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';

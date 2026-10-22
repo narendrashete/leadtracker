@@ -13,7 +13,7 @@ window.FamilyTree = (function () {
   function nodeHtml(n, depth, editable) {
     let h = '<li><div class="ft-node' + (depth === 0 ? ' ft-root' : '') + '" data-id="' + esc(n.id) + '">' +
       (depth === 0 ? '<div class="ft-tag">मूळपुरुष</div>' : '') +
-      '<div class="ft-name">' + esc(n.name) + (n.dead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' +
+      '<div class="ft-name" data-name="' + esc(n.name) + '">' + esc(n.name) + (n.dead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' +
       (n.spouse ? '<div class="ft-spouse">⚭ ' + esc(n.spouse) + (n.spouseDead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' : '') +
       (editable
         ? '<div class="ft-tools">' +
@@ -35,6 +35,37 @@ window.FamilyTree = (function () {
     container.innerHTML = '<div class="ft-tree"><ul>' + nodeHtml(data, 0, !!opts.editable) + '</ul></div>';
     // Start a wide tree scrolled to its centre, where the मूळपुरुष sits.
     container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+    linkMembers(container);
+  }
+
+  // People in the tree who are also in the सभासद यादी get their membership
+  // number as a blue badge linking to their card. Matched by name, ignoring
+  // the श्री./सौ. prefix and punctuation; a name shared by two members is
+  // left unlinked rather than guessed.
+  let membersReq = null;
+  function nameKey(s) {
+    return (s || '').replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ)\s*\.\s*/, '').replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function linkMembers(container) {
+    membersReq = membersReq || fetch('/api/shete/members/approved')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (list) {
+        const byName = {};
+        list.forEach(function (m) {
+          const k = nameKey(m.name);
+          byName[k] = byName.hasOwnProperty(k) ? null : m;
+        });
+        return byName;
+      })
+      .catch(function () { return {}; });
+    membersReq.then(function (byName) {
+      container.querySelectorAll('.ft-name[data-name]').forEach(function (el) {
+        const m = byName[nameKey(el.dataset.name)];
+        if (!m || el.querySelector('.ft-sr')) return;
+        el.insertAdjacentHTML('beforeend', ' <a class="ft-sr" href="/shetenavratri/members.html?m=' + m.id +
+          '" title="सभासद क्र. ' + m.sr + '">' + m.sr + '</a>');
+      });
+    });
   }
 
   function find(node, id, parent) {

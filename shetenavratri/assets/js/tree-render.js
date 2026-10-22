@@ -40,11 +40,13 @@ window.FamilyTree = (function () {
 
   // People in the tree who are also in the सभासद यादी get their membership
   // number as a blue badge linking to their card. Matched by name, ignoring
-  // the श्री./सौ. prefix and punctuation; a name shared by two members is
+  // the श्री./सौ. prefix, punctuation and common spelling variants (ी/ि, ू/ु,
+  // a dropped े/ै as in दत्तात्रेय/दत्तात्रय); a name shared by two members is
   // left unlinked rather than guessed.
   let membersReq = null;
   function nameKey(s) {
-    return (s || '').replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ)\s*\.\s*/, '').replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim();
+    return (s || '').replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ)\s*\.\s*/, '').replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim()
+      .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/[ेै]/g, '');
   }
   function linkMembers(container) {
     membersReq = membersReq || fetch('/api/shete/members/approved')

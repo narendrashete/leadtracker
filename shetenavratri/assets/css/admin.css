@@ -174,6 +174,15 @@
 .copy-list label input{width:18px;height:18px;flex-shrink:0;}
 .copy-list .has-tree{font-size:11px;color:#8a5a00;margin-left:auto;white-space:nowrap;}
 
+/* WhatsApp यादी */
+.wa-summary{margin:4px 0 8px;font-size:13px;color:#7a5a50;}
+.wa-filter{display:flex;gap:8px;align-items:center;}
+.wa-filter select{padding:9px;border-radius:10px;border:1px solid #e2d3c0;font-family:inherit;}
+.wa-filter .roster-search{flex:1;min-width:0;}
+.wa-status{font-size:12px;margin:2px 0 4px;}
+.wa-status.ok{color:#1d8f4a;}
+.wa-status.miss{color:#b26a00;}
+
 /* Full-screen tree viewer (admin पहा) */
 .tree-viewer{position:fixed;inset:0;z-index:200;background:var(--cream);display:none;flex-direction:column;}
 .tree-viewer.open{display:flex;}

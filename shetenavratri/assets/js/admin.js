@@ -76,10 +76,12 @@
       document.getElementById('rosterTab').style.display = tab === 'roster' ? 'block' : 'none';
       document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
       document.getElementById('treesTab').style.display = tab === 'trees' ? 'block' : 'none';
+      document.getElementById('waTab').style.display = tab === 'wa' ? 'block' : 'none';
       if (tab === 'approved') loadGalleryApproved();
       if (tab === 'roster') loadRoster();
       if (tab === 'history') loadHistoryAdmin();
       if (tab === 'trees') loadTrees();
+      if (tab === 'wa') loadWa();
     });
   });
 
@@ -688,6 +690,203 @@
       copyMsg.className = 'form-msg success';
       loadTrees();
       setTimeout(function () { copyOverlay.classList.remove('open'); }, 1500);
+    });
+  });
+
+  // ---- WhatsApp group list ----
+  // Each contact shows which tree people it already covers (by the member
+  // whose number it is, or by name); the ones covering nobody are for the
+  // admin to pin to a tree name by hand, which then shows WA in every tree.
+  const waList = document.getElementById('waList');
+  const waSearch = document.getElementById('waSearch');
+  const waFilter = document.getElementById('waFilter');
+  let WA = [], WA_MEMBERS = [], WA_TREE_NAMES = [];
+
+  function waMatches(c) {
+    const key = FamilyTree.nameKey;
+    const member = WA_MEMBERS.find(function (m) { return m.mobile === c.mobile || m.altMobile === c.mobile; });
+    const memberKeys = member ? [key(member.name), key(member.nameEn)].filter(Boolean) : [];
+    const pinned = c.treeName ? key(c.treeName) : null;
+    const hits = WA_TREE_NAMES.filter(function (n) {
+      const k = key(n);
+      return k === pinned || memberKeys.indexOf(k) >= 0 || (c.name && FamilyTree.waNameMatch(n, c.name));
+    });
+    return { member: member, hits: hits };
+  }
+
+  // Minimal CSV reader: quoted fields with commas and "" escapes, as WhatsApp
+  // export tools write them.
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], field = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (ch === '"') q = false;
+        else field += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); rows.push(row); row = []; field = '';
+      } else field += ch;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function waCard(c) {
+    const st = waMatches(c);
+    const card = document.createElement('div');
+    card.className = 'roster-card';
+    card.dataset.id = c.id;
+    card.innerHTML =
+      '<div class="roster-row"><div class="roster-fields">' +
+        '<label>नाव<input type="text" class="w-name" value="' + escapeHtml(c.name) + '" placeholder="(नाव नाही)"></label>' +
+        '<label>WhatsApp क्रमांक<input type="text" class="w-mobile" value="' + escapeHtml(c.mobile) + '" maxlength="10"></label>' +
+      '</div></div>' +
+      '<div class="wa-status ' + (st.hits.length ? 'ok' : 'miss') + '">' +
+        (st.member ? 'सभासद: ' + escapeHtml(st.member.name) + ' · ' : '') +
+        (st.hits.length ? '✓ वृक्षात: ' + escapeHtml(st.hits.join(', ')) : '⚠ वृक्षात जुळले नाही — खाली वृक्षातील नाव निवडा') +
+      '</div>' +
+      '<div class="roster-row"><div class="roster-fields">' +
+        '<label>वृक्षातील नाव (Admin जुळवणी)<input type="text" class="w-tree" list="waTreeNames" value="' +
+          escapeHtml(c.treeName) + '" placeholder="वृक्षातील व्यक्तीचे नाव निवडा"></label>' +
+      '</div></div>' +
+      '<div class="roster-msg"></div>' +
+      '<div class="roster-actions">' +
+        '<button class="btn-delete">काढून टाका</button>' +
+        '<button class="btn-save">जतन करा</button>' +
+      '</div>';
+    return card;
+  }
+
+  function renderWa() {
+    const q = normalize(waSearch.value), f = waFilter.value;
+    let matched = 0;
+    const shown = WA.filter(function (c) {
+      const hit = waMatches(c).hits.length > 0;
+      if (hit) matched++;
+      if (f === 'matched' && !hit) return false;
+      if (f === 'unmatched' && hit) return false;
+      return !q || normalize(c.name).includes(q) || c.mobile.includes(q) || normalize(c.treeName).includes(q);
+    });
+    document.getElementById('waSummary').textContent =
+      WA.length + ' संपर्क · ' + matched + ' वृक्षात जुळले · ' + (WA.length - matched) + ' जुळले नाहीत';
+    waList.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    shown.forEach(function (c) { frag.appendChild(waCard(c)); });
+    waList.appendChild(frag);
+  }
+
+  function loadWa() {
+    Promise.all([
+      api('/api/shete-admin/wa'), api('/api/shete-admin/members'), api('/api/shete-admin/trees'),
+    ]).then(function (res) {
+      WA = res[0].body || [];
+      WA_MEMBERS = res[1].body || [];
+      const names = new Set();
+      (res[2].body || []).forEach(function (t) {
+        (function walk(n) {
+          if (!n) return;
+          if (n.name) names.add(n.name.trim());
+          if (n.spouse) names.add(n.spouse.trim());
+          (n.children || []).forEach(walk);
+        })(t.data);
+      });
+      WA_TREE_NAMES = Array.from(names).sort();
+      document.getElementById('waTreeNames').innerHTML = WA_TREE_NAMES.map(function (n) {
+        return '<option value="' + escapeHtml(n) + '">';
+      }).join('');
+      renderWa();
+    });
+  }
+
+  waSearch.addEventListener('input', renderWa);
+  waFilter.addEventListener('change', renderWa);
+
+  document.getElementById('waImportBtn').addEventListener('click', function () {
+    const msg = document.getElementById('waImportMsg');
+    const file = document.getElementById('waFile').files[0];
+    if (!file) { msg.textContent = 'आधी CSV फाईल निवडा.'; msg.className = 'roster-msg error'; return; }
+    file.text().then(function (text) {
+      const rows = parseCsv(text.replace(/^﻿/, ''));
+      const head = (rows.shift() || []).map(function (h) { return h.trim().toLowerCase(); });
+      const col = function (n) { return head.indexOf(n); };
+      const iName = col('name'), iSaved = col('saved name'), iPush = col('push name');
+      const iPhone = col('phone number') >= 0 ? col('phone number') : col('phone');
+      if (iPhone < 0) { msg.textContent = 'CSV मध्ये "Phone Number" कॉलम सापडला नाही.'; msg.className = 'roster-msg error'; return; }
+      const payload = rows.map(function (r) {
+        const name = [iName, iSaved, iPush].map(function (i) { return i >= 0 ? (r[i] || '').trim() : ''; })
+          .find(Boolean) || '';
+        return { name: name, mobile: r[iPhone] || '' };
+      });
+      return api('/api/shete-admin/wa/import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: payload }),
+      }).then(function (res) {
+        if (!res.ok) { msg.textContent = res.body.error || 'आयात अयशस्वी.'; msg.className = 'roster-msg error'; return; }
+        msg.textContent = res.body.added + ' नवीन जोडले, ' + res.body.updated + ' नावे भरली, ' + res.body.skipped + ' आधीच होते/अवैध.';
+        msg.className = 'roster-msg success';
+        loadWa();
+      });
+    });
+  });
+
+  document.getElementById('waAddBtn').addEventListener('click', function (e) {
+    const msg = document.getElementById('waAddMsg');
+    const body = {
+      name: document.getElementById('waAddName').value.trim(),
+      mobile: document.getElementById('waAddMobile').value.trim(),
+    };
+    e.target.disabled = true;
+    api('/api/shete-admin/wa', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(function (res) {
+      e.target.disabled = false;
+      if (!res.ok) { msg.textContent = res.body.error || 'जोडता आले नाही.'; msg.className = 'roster-msg error'; return; }
+      msg.textContent = 'संपर्क जोडला.';
+      msg.className = 'roster-msg success';
+      document.getElementById('waAddName').value = document.getElementById('waAddMobile').value = '';
+      loadWa();
+    });
+  });
+
+  waList.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('btn-save') && !e.target.classList.contains('btn-delete')) return;
+    const card = e.target.closest('.roster-card');
+    const id = card.dataset.id;
+    const msgEl = card.querySelector('.roster-msg');
+    const fail = function (res, text) {
+      e.target.disabled = false;
+      msgEl.textContent = res.body.error || text;
+      msgEl.className = 'roster-msg error';
+    };
+
+    if (e.target.classList.contains('btn-delete')) {
+      if (!confirm('हा संपर्क WhatsApp यादीतून काढायचा?')) return;
+      e.target.disabled = true;
+      api('/api/shete-admin/wa/' + id, { method: 'DELETE' }).then(function (res) {
+        if (!res.ok) return fail(res, 'काढता आले नाही.');
+        WA = WA.filter(function (c) { return String(c.id) !== String(id); });
+        renderWa();
+      });
+      return;
+    }
+
+    const payload = {
+      name: card.querySelector('.w-name').value.trim(),
+      mobile: card.querySelector('.w-mobile').value.trim(),
+      treeName: card.querySelector('.w-tree').value.trim(),
+    };
+    e.target.disabled = true;
+    api('/api/shete-admin/wa/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    }).then(function (res) {
+      if (!res.ok) return fail(res, 'जतन करता आले नाही.');
+      const idx = WA.findIndex(function (c) { return String(c.id) === String(id); });
+      if (idx !== -1) WA[idx] = Object.assign({}, WA[idx], payload);
+      renderWa();
     });
   });
 

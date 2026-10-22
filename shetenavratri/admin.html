@@ -35,6 +35,7 @@
     <button class="admin-tab" data-tab="roster">सभासद यादी संपादन</button>
     <button class="admin-tab" data-tab="history">इतिहास यादी</button>
     <button class="admin-tab" data-tab="trees">कुटुंब वृक्ष <span id="treesCount" class="badge"></span></button>
+    <button class="admin-tab" data-tab="wa">WhatsApp यादी</button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -93,6 +94,39 @@
     <div id="treesList" class="request-list"></div>
     <div class="no-results" id="treesEmpty" style="display:none;">अजून कोणताही कुटुंब वृक्ष नाही</div>
     <div id="treePreview" style="margin-top:14px;"></div>
+  </section>
+
+  <section id="waTab" class="admin-section" style="display:none;">
+    <div class="roster-card">
+      <div class="roster-row">
+        <div class="roster-fields">
+          <label>WhatsApp ग्रुप CSV<input type="file" id="waFile" accept=".csv,text/csv"></label>
+        </div>
+      </div>
+      <div class="roster-msg" id="waImportMsg"></div>
+      <div class="roster-actions"><button class="btn-save" id="waImportBtn">CSV आयात करा</button></div>
+    </div>
+    <div class="roster-card">
+      <div class="roster-row">
+        <div class="roster-fields">
+          <label>नाव<input type="text" id="waAddName" placeholder="उदा. Ramesh Ganpat Shete"></label>
+          <label>WhatsApp क्रमांक<input type="text" id="waAddMobile" maxlength="10"></label>
+        </div>
+      </div>
+      <div class="roster-msg" id="waAddMsg"></div>
+      <div class="roster-actions"><button class="btn-save" id="waAddBtn">संपर्क जोडा</button></div>
+    </div>
+    <p class="wa-summary" id="waSummary"></p>
+    <div class="wa-filter">
+      <select id="waFilter">
+        <option value="all">सर्व संपर्क</option>
+        <option value="unmatched">वृक्षात न जुळलेले</option>
+        <option value="matched">वृक्षात जुळलेले</option>
+      </select>
+      <input type="text" id="waSearch" class="roster-search" placeholder="नाव, क्रमांक किंवा वृक्षातील नाव शोधा...">
+    </div>
+    <div id="waList" class="request-list"></div>
+    <datalist id="waTreeNames"></datalist>
   </section>
 </div>
 

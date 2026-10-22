@@ -35,34 +35,41 @@ window.FamilyTree = (function () {
     container.innerHTML = '<div class="ft-tree"><ul>' + nodeHtml(data, 0, !!opts.editable) + '</ul></div>';
     // Start a wide tree scrolled to its centre, where the मूळपुरुष sits.
     container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
-    linkMembers(container);
+    linkMembers(container, opts.ownerId);
   }
 
   // People in the tree who are also in the सभासद यादी get their membership
   // number as a blue badge linking to their card. Matched by name, ignoring
   // the श्री./सौ. prefix, punctuation and common spelling variants (ी/ि, ू/ु,
-  // a dropped े/ै as in दत्तात्रेय/दत्तात्रय); a name shared by two members is
-  // left unlinked rather than guessed.
+  // a dropped े/ै as in दत्तात्रेय/दत्तात्रय). When two members share a name,
+  // the tree's owner wins, else the one from the owner's village; if that
+  // still leaves a tie the name is left unlinked rather than guessed.
   let membersReq = null;
   function nameKey(s) {
     return (s || '').replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ)\s*\.\s*/, '').replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim()
       .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/[ेै]/g, '');
   }
-  function linkMembers(container) {
+  function pick(cands, owner) {
+    if (!cands) return null;
+    if (cands.length === 1) return cands[0];
+    if (!owner) return null;
+    if (cands.indexOf(owner) >= 0) return owner;
+    const local = cands.filter(function (m) { return m.village === owner.village; });
+    return local.length === 1 ? local[0] : null;
+  }
+  function linkMembers(container, ownerId) {
     membersReq = membersReq || fetch('/api/shete/members/approved')
       .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (list) {
-        const byName = {};
-        list.forEach(function (m) {
-          const k = nameKey(m.name);
-          byName[k] = byName.hasOwnProperty(k) ? null : m;
-        });
-        return byName;
-      })
-      .catch(function () { return {}; });
-    membersReq.then(function (byName) {
+      .catch(function () { return []; });
+    membersReq.then(function (list) {
+      const byName = {};
+      list.forEach(function (m) {
+        const k = nameKey(m.name);
+        (byName[k] = byName[k] || []).push(m);
+      });
+      const owner = list.find(function (m) { return String(m.id) === String(ownerId); });
       container.querySelectorAll('.ft-name[data-name]').forEach(function (el) {
-        const m = byName[nameKey(el.dataset.name)];
+        const m = pick(byName[nameKey(el.dataset.name)], owner);
         if (!m || el.querySelector('.ft-sr')) return;
         el.insertAdjacentHTML('beforeend', ' <a class="ft-sr" href="/shetenavratri/members.html?m=' + m.id +
           '" title="सभासद क्र. ' + m.sr + '">' + m.sr + '</a>');

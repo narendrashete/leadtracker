@@ -14,7 +14,7 @@ window.FamilyTree = (function () {
     let h = '<li><div class="ft-node' + (depth === 0 ? ' ft-root' : '') + '" data-id="' + esc(n.id) + '">' +
       (depth === 0 ? '<div class="ft-tag">मूळपुरुष</div>' : '') +
       '<div class="ft-name" data-name="' + esc(n.name) + '">' + esc(n.name) + (n.dead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' +
-      (n.spouse ? '<div class="ft-spouse">⚭ ' + esc(n.spouse) + (n.spouseDead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' : '') +
+      (n.spouse ? '<div class="ft-spouse" data-name="' + esc(n.spouse) + '">⚭ ' + esc(n.spouse) + (n.spouseDead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' : '') +
       (editable
         ? '<div class="ft-tools">' +
             '<button type="button" data-act="add" title="अपत्य जोडा">➕</button>' +
@@ -61,11 +61,31 @@ window.FamilyTree = (function () {
     const local = cands.filter(function (m) { return m.village === owner.village; });
     return local.length === 1 ? local[0] : null;
   }
+  // A WhatsApp contact saved as "Ramesh Ganpat Shete Kalyan" covers the tree's
+  // "Ramesh Ganpat Shete": every word of the tree name, in order, among the
+  // contact's words. Needs a full three-part name, so a bare "Sunil Shete" on
+  // the group isn't pinned on whichever Sunil comes first.
+  function waNameMatch(treeName, contactName) {
+    const t = nameKey(treeName).split(' '), c = nameKey(contactName).split(' ');
+    if (t.length < 3) return false;
+    let i = 0;
+    c.forEach(function (w) { if (w === t[i]) i++; });
+    return i === t.length;
+  }
+
+  function getJson(url, fallback) {
+    return fetch(url).then(function (r) { return r.ok ? r.json() : fallback; }).catch(function () { return fallback; });
+  }
+
+  // People on the family's WhatsApp group get a green WA tag: their member's
+  // number is on it, their name matches a contact's, or the admin pinned their
+  // tree name to a contact.
+  let waReq = null;
   function linkMembers(container, ownerId) {
-    membersReq = membersReq || fetch('/api/shete/members/approved')
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .catch(function () { return []; });
-    membersReq.then(function (list) {
+    membersReq = membersReq || getJson('/api/shete/members/approved', []);
+    waReq = waReq || getJson('/api/shete/wa', { memberIds: [], names: [], treeNames: [] });
+    Promise.all([membersReq, waReq]).then(function (res) {
+      const list = res[0], wa = res[1];
       const byName = {};
       list.forEach(function (m) {
         [m.name, m.nameEn].forEach(function (n) {
@@ -74,11 +94,19 @@ window.FamilyTree = (function () {
         });
       });
       const owner = list.find(function (m) { return String(m.id) === String(ownerId); });
-      container.querySelectorAll('.ft-name[data-name]').forEach(function (el) {
-        const m = pick(byName[nameKey(el.dataset.name)], owner);
-        if (!m || el.querySelector('.ft-sr')) return;
-        el.insertAdjacentHTML('beforeend', ' <a class="ft-sr" href="/shetenavratri/members.html?m=' + m.id +
-          '" title="सभासद क्र. ' + m.sr + '">' + m.sr + '</a>');
+      const waMembers = new Set(wa.memberIds.map(String));
+      const pinned = new Set(wa.treeNames.map(nameKey));
+      container.querySelectorAll('.ft-name[data-name], .ft-spouse[data-name]').forEach(function (el) {
+        if (el.querySelector('.ft-sr, .ft-wa')) return;
+        const name = el.dataset.name;
+        const m = el.classList.contains('ft-name') ? pick(byName[nameKey(name)], owner) : null;
+        if (m) {
+          el.insertAdjacentHTML('beforeend', ' <a class="ft-sr" href="/shetenavratri/members.html?m=' + m.id +
+            '" title="सभासद क्र. ' + m.sr + '">' + m.sr + '</a>');
+        }
+        const onWa = (m && waMembers.has(String(m.id))) || pinned.has(nameKey(name)) ||
+          wa.names.some(function (c) { return waNameMatch(name, c); });
+        if (onWa) el.insertAdjacentHTML('beforeend', ' <span class="ft-wa" title="शेटे नवरात्री WhatsApp ग्रुपमध्ये">WA</span>');
       });
     });
   }
@@ -227,5 +255,6 @@ window.FamilyTree = (function () {
     });
   }
 
-  return { render: render, find: find, count: count, newId: newId, esc: esc, downloadPng: downloadPng };
+  return { render: render, find: find, count: count, newId: newId, esc: esc, downloadPng: downloadPng,
+    nameKey: nameKey, waNameMatch: waNameMatch };
 })();

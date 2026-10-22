@@ -219,6 +219,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-22** — **Tree badges.** Tree people who are members get a blue membership-number badge linking to `members.html?m=<id>` (card scrolled to and outlined). Matching is by name in Marathi or English with spelling variants folded; a shared name is resolved by the tree's owner, then the owner's village, else left unlinked. **WhatsApp यादी** admin tab: import the group's CSV export (Name/Saved Name/Push Name + Phone Number; new numbers added, existing kept), add/edit/delete contacts, and pin a contact to a tree name when auto-match fails. Trees show a green **WA** tag (people and spouses) when their member's number is on the list, their full three-part name matches a contact's name in order, or the admin pinned it. New table `shete_wa_contacts`; routes `GET /api/shete/wa` (member ids + names only, never numbers), admin `GET|POST /api/shete-admin/wa`, `POST .../wa/import`, `PATCH|DELETE .../wa/:id`.
+
 - **2026-10-21** — Admin tree **पहा** now opens a full-screen viewer that fits the whole tree on screen (−/+/फिट zoom), with **⬇ फोटो डाउनलोड** to save a crisp 2x PNG for WhatsApp. The PNG is drawn on a canvas by its own layout (`FamilyTree.downloadPng` in `tree-render.js`), not a DOM screenshot — no library.
 
 - **2026-10-21** — Family tree **copy** (admin): each tree row in the admin कुटुंब वृक्ष tab has "कॉपी करा", which opens a searchable member picker and copies that tree (approved copy if any, else draft) to the selected members via `POST /api/shete-admin/trees/:memberId/copy` `{ids}`. Copies are published and locked immediately; an existing tree on a target is replaced (flagged "आधीचा वृक्ष बदलेल" in the picker).

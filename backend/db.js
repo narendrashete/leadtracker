@@ -425,6 +425,21 @@ async function getDb() {
     )
   `);
 
+  // The family's Navratri WhatsApp group roster, imported from the group's CSV
+  // export and edited by the admin. Wider than shete_members (spouses, kids,
+  // siblings). A tree flags a person "WA" when their member's number is here,
+  // their name matches `name`, or the admin pinned them to a contact via
+  // `tree_name`.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_wa_contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL DEFAULT '',
+      mobile TEXT NOT NULL UNIQUE,
+      tree_name TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+
   // Thigdam — the friends' group photo album at /thigdam. One row per photo;
   // the photo itself (original bytes, never re-encoded) and its small preview
   // are files in thigdam-data/photos, not blobs here, because run() rewrites

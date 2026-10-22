@@ -47,6 +47,22 @@ router.get('/members/approved', (req, res) => {
   res.json(rows.map((r, i) => ({ ...r, hasTree: !!r.hasTree, sr: i + 1 })));
 });
 
+// Public: what the tree viewers need to flag people on the WhatsApp group —
+// the members whose number is on it, the contacts' names and the tree names the
+// admin pinned. The group's numbers themselves never leave the server.
+router.get('/wa', (req, res) => {
+  const contacts = query(`SELECT name, mobile, tree_name AS treeName FROM shete_wa_contacts`);
+  const mobiles = new Set(contacts.map(c => c.mobile));
+  const memberIds = query(`SELECT id, mobile, alt_mobile AS altMobile FROM shete_members`)
+    .filter(m => mobiles.has(m.mobile) || mobiles.has(m.altMobile))
+    .map(m => m.id);
+  res.json({
+    memberIds,
+    names: contacts.map(c => c.name).filter(Boolean),
+    treeNames: contacts.map(c => c.treeName).filter(Boolean),
+  });
+});
+
 // Public: submit a new member for the admin to review. No mobile-gating here
 // (there is nothing yet to gate against — that is the point of this form) but
 // duplicate mobiles are rejected so the same person can't queue twice.

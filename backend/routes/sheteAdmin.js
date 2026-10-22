@@ -316,4 +316,77 @@ router.delete('/history/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- WhatsApp group list ----
+
+// Keeps the last 10 digits, so +91 / 91 / spaces from a phone export all land
+// on the same number the members table uses.
+function waMobile(raw) {
+  const d = (raw || '').toString().replace(/\D/g, '');
+  return d.length >= 10 ? d.slice(-10) : '';
+}
+
+router.get('/wa', (req, res) => {
+  res.json(query(`SELECT id, name, mobile, tree_name AS treeName FROM shete_wa_contacts ORDER BY name = '', name, id`));
+});
+
+router.post('/wa', (req, res) => {
+  const name = (req.body.name || '').toString().trim();
+  const mobile = waMobile(req.body.mobile);
+  if (!MOBILE_RE.test(mobile)) return res.status(400).json({ error: 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.' });
+  if (query(`SELECT id FROM shete_wa_contacts WHERE mobile = ?`, [mobile]).length) {
+    return res.status(409).json({ error: 'हा क्रमांक आधीच यादीत आहे.' });
+  }
+  run(`INSERT INTO shete_wa_contacts (name, mobile) VALUES (?,?)`, [name, mobile]);
+  res.json({ ok: true });
+});
+
+// Bulk import from the WhatsApp group CSV export (parsed in the browser into
+// { name, mobile } rows). New numbers are added; a number already on the list
+// only gets its name filled in if the admin left it blank.
+router.post('/wa/import', (req, res) => {
+  const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+  let added = 0, updated = 0, skipped = 0;
+  for (const r of rows) {
+    const mobile = waMobile(r.mobile);
+    const name = (r.name || '').toString().trim().slice(0, 100);
+    if (!MOBILE_RE.test(mobile)) { skipped++; continue; }
+    const existing = query(`SELECT id, name FROM shete_wa_contacts WHERE mobile = ?`, [mobile])[0];
+    if (!existing) {
+      run(`INSERT INTO shete_wa_contacts (name, mobile) VALUES (?,?)`, [name, mobile]);
+      added++;
+    } else if (!existing.name && name) {
+      run(`UPDATE shete_wa_contacts SET name = ? WHERE id = ?`, [name, existing.id]);
+      updated++;
+    } else {
+      skipped++;
+    }
+  }
+  res.json({ ok: true, added, updated, skipped });
+});
+
+router.patch('/wa/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_wa_contacts WHERE id = ?`, [id]).length) {
+    return res.status(404).json({ error: 'संपर्क सापडला नाही.' });
+  }
+  const name = (req.body.name || '').toString().trim();
+  const mobile = waMobile(req.body.mobile);
+  const treeName = (req.body.treeName || '').toString().trim();
+  if (!MOBILE_RE.test(mobile)) return res.status(400).json({ error: 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.' });
+  if (query(`SELECT id FROM shete_wa_contacts WHERE mobile = ? AND id != ?`, [mobile, id]).length) {
+    return res.status(409).json({ error: 'हा क्रमांक आधीच दुसऱ्या संपर्काकडे आहे.' });
+  }
+  run(`UPDATE shete_wa_contacts SET name = ?, mobile = ?, tree_name = ? WHERE id = ?`, [name, mobile, treeName || null, id]);
+  res.json({ ok: true });
+});
+
+router.delete('/wa/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_wa_contacts WHERE id = ?`, [id]).length) {
+    return res.status(404).json({ error: 'संपर्क सापडला नाही.' });
+  }
+  run(`DELETE FROM shete_wa_contacts WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
 module.exports = router;

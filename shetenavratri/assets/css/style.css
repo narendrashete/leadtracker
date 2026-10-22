@@ -722,6 +722,7 @@ button{font-family:inherit;}
 .ft-root .ft-name{color:#fff;}
 .ft-sr{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:#1565c0;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;text-decoration:none;vertical-align:middle;}
 .ft-sr:hover{background:#0d47a1;}
+.ft-wa{display:inline-block;padding:0 6px;border-radius:10px;background:#25d366;color:#fff;font-size:10.5px;font-weight:700;line-height:18px;vertical-align:middle;letter-spacing:.3px;}
 .member-card.linked{box-shadow:0 0 0 3px #1565c0;animation:newPulse 1.2s ease-in-out 3;}
 .ft-spouse{font-size:12px;color:var(--text-soft);margin-top:3px;padding-top:3px;border-top:1px dashed #eadfd0;}
 .ft-root .ft-spouse{color:var(--gold-light);border-color:rgba(255,255,255,0.25);}

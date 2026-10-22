@@ -41,13 +41,17 @@ window.FamilyTree = (function () {
   // People in the tree who are also in the सभासद यादी get their membership
   // number as a blue badge linking to their card. Matched by name, ignoring
   // the श्री./सौ. prefix, punctuation and common spelling variants (ी/ि, ू/ु,
-  // a dropped े/ै as in दत्तात्रेय/दत्तात्रय). When two members share a name,
-  // the tree's owner wins, else the one from the owner's village; if that
-  // still leaves a tie the name is left unlinked rather than guessed.
+  // a dropped े/ै as in दत्तात्रेय/दत्तात्रय). Trees typed in English match the
+  // member's English name the same way (Dattatrey/Dattatray, ee/i, oo/u, w/v).
+  // When two members share a name, the tree's owner wins, else the one from
+  // the owner's village; if that still leaves a tie the name is left unlinked
+  // rather than guessed.
   let membersReq = null;
   function nameKey(s) {
-    return (s || '').replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ)\s*\.\s*/, '').replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim()
-      .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/[ेै]/g, '');
+    return (s || '').toLowerCase().replace(/^\s*(श्रीमती|श्री|सौ|कु|डॉ|shri|smt|mr|mrs)\s*\.\s*/, '')
+      .replace(/[.,()]/g, ' ').replace(/\s+/g, ' ').trim()
+      .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/[ेै]/g, '')
+      .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/w/g, 'v').replace(/ey\b/g, 'ay');
   }
   function pick(cands, owner) {
     if (!cands) return null;
@@ -64,8 +68,10 @@ window.FamilyTree = (function () {
     membersReq.then(function (list) {
       const byName = {};
       list.forEach(function (m) {
-        const k = nameKey(m.name);
-        (byName[k] = byName[k] || []).push(m);
+        [m.name, m.nameEn].forEach(function (n) {
+          const k = nameKey(n);
+          if (k) (byName[k] = byName[k] || []).push(m);
+        });
       });
       const owner = list.find(function (m) { return String(m.id) === String(ownerId); });
       container.querySelectorAll('.ft-name[data-name]').forEach(function (el) {

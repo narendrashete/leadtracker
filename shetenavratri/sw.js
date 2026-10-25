@@ -14,16 +14,16 @@
 // on when you tap the home-screen icon, plus its manifest and icons)
 // available instantly and offline; everything you tap from inside the app
 // goes to the network exactly as it would in a normal browser tab.
-const CACHE_VERSION = 'shete-v1';
+const CACHE_VERSION = 'shete-v2';
 const CACHE_NAME = 'shetenavratri-' + CACHE_VERSION;
 
 const SHELL_URLS = [
   '/shetenavratri/app',
   '/shetenavratri/manifest.webmanifest',
-  '/shetenavratri/icons/icon-192.jpg',
-  '/shetenavratri/icons/icon-512.jpg',
-  '/shetenavratri/icons/icon-maskable-192.jpg',
-  '/shetenavratri/icons/icon-maskable-512.jpg',
+  '/shetenavratri/icons/icon-192.png',
+  '/shetenavratri/icons/icon-512.png',
+  '/shetenavratri/icons/icon-maskable-192.png',
+  '/shetenavratri/icons/icon-maskable-512.png',
 ];
 
 self.addEventListener('install', (event) => {

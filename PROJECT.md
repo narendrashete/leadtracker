@@ -219,6 +219,11 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-25** — Fixed "This app cannot be installed" on the new `/shetenavratri/app`:
+  Chrome rejected the JPEG manifest icons (`manifest-missing-suitable-icon`). Icons regenerated
+  from the source photo as 256-colour PNGs (~380 KB set), manifest/app.html/sw.js pointed at
+  them, `CACHE_VERSION` → `shete-v2`. Verified with CDP `Page.getInstallabilityErrors`: only
+  the headless-only `in-incognito` remains, same as the working PrimeGem app.
 - **2026-10-25** — **Shete Parivar Navratri installable app.** `/shetenavratri/app` — Add to
   Home Screen on Android/iOS, forked from `index.html` (not injected) because the plain
   `/shetenavratri` link is already circulated. Icon is the homepage's own kulswamini photo

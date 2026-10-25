@@ -646,13 +646,17 @@ manifest link or service-worker registration without regressing every bookmark o
   could do for their reference app). `start_url`/`scope` are both `/shetenavratri/app`.
 - **Icon is the homepage's own kulswamini photo** (`assets/img/devicha-photo.jpg`, the same
   image in the hero circle), not a drawn icon — center-square-cropped with ImageMagick to
-  `icons/icon-{192,512}.jpg` (full-bleed, matching the hero circle's own `object-fit:cover`
-  crop) and `icons/icon-maskable-{192,512}.jpg` (same photo inset at 72% over a maroon→
+  `icons/icon-{192,512}.png` (full-bleed, matching the hero circle's own `object-fit:cover`
+  crop) and `icons/icon-maskable-{192,512}.png` (same photo inset at 72% over a maroon→
   maroon-dark gradient, so Android's circular/squircle adaptive-icon mask has safe margin and
-  never crops the idol). `icons/apple-touch-icon-180.jpg` for iOS. JPEG, not PNG — this is
-  photographic content, and PNG was 5x the size for no visible difference (~1.3 MB → ~220 KB
-  for the whole icon set). Regenerating means re-cropping from the source photo with the same
-  ImageMagick recipe, not hand-editing a PNG.
+  never crops the idol). `icons/apple-touch-icon-180.png` for iOS. **Must be PNG, not JPEG.**
+  They first shipped as JPEG to save space, and Chrome then refused to install the app at all
+  ("This app cannot be installed"; DevTools installability error
+  `manifest-missing-suitable-icon`) — it does not accept JPEG manifest icons. To keep size
+  down they are 256-colour palette PNGs (`convert … -colors 256 PNG8:`), ~380 KB for the set
+  and indistinguishable at icon size. Check installability before shipping any icon change:
+  CDP `Page.getInstallabilityErrors` in headless Chromium should report only `in-incognito`.
+  Regenerating means re-cropping from the source photo with the same ImageMagick recipe.
 - **`sw.js` deliberately caches only the app shell** (`app.html`, the manifest, the icons) —
   *not* the rest of the site. Unlike Aarti Sangrah's static aarti texts, members.html,
   gallery.html, history.html and every family tree are edited continuously through the admin

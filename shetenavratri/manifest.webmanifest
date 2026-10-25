@@ -10,9 +10,9 @@
   "theme_color": "#7a1024",
   "lang": "mr",
   "icons": [
-    { "src": "/shetenavratri/icons/icon-192.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any" },
-    { "src": "/shetenavratri/icons/icon-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" },
-    { "src": "/shetenavratri/icons/icon-maskable-192.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "maskable" },
-    { "src": "/shetenavratri/icons/icon-maskable-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "maskable" }
+    { "src": "/shetenavratri/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/shetenavratri/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/shetenavratri/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/shetenavratri/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

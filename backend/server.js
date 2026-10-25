@@ -297,6 +297,11 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/shetenavratri', express.static(SHETE_DIR, {
     index: false,
     redirect: false,
+    setHeaders: (res, filePath) => {
+      // Same service-worker gotcha as the Aarti Sangrah and PrimeGem mounts:
+      // never let a stale cache delay the browser noticing a new sw.js.
+      if (filePath.endsWith('sw.js')) res.setHeader('Cache-Control', 'no-cache');
+    },
   }));
 
   app.get('/shetenavratri', (req, res) => {
@@ -307,6 +312,24 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
       // process. See the Aarti Sangrah route above for the same guard.
       if (err && !res.headersSent) {
         res.status(500).type('text/plain').send('Shete Parivar Navratri page missing.');
+      }
+    });
+  });
+
+  // The installable, offline-shell copy — a separate page (app.html), kept
+  // apart from the plain /shetenavratri link on purpose: that link is what
+  // families already have bookmarked and have been sharing (tinyurl, WhatsApp
+  // groups), and it must keep behaving exactly as it always has, with no
+  // service worker ever registered from it. This one is meant to be installed
+  // (Add to Home Screen) from its own link; its service worker is scoped to
+  // this path only (see app.html and sw.js), so it can never take over the
+  // plain page even on the same phone. Same split as Aarti Sangrah/PrimeGem.
+  app.get('/shetenavratri/app', (req, res) => {
+    recordVisit(req, 'shetenavratri-app');
+    const SHETE_APP_PAGE = path.resolve(__dirname, '..', 'shetenavratri', 'app.html');
+    res.sendFile(SHETE_APP_PAGE, (err) => {
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Shete Parivar Navratri (app) page missing.');
       }
     });
   });
@@ -411,6 +434,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  PrimeGem:        http://localhost:${PORT}/kinetic-gem`);
     console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
     console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
+    console.log(`  Shete Navratri app: http://localhost:${PORT}/shetenavratri/app  (installable)`);
     console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);

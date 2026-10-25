@@ -713,8 +713,16 @@ button{font-family:inherit;}
 .ft-tree > ul > li{padding-top:0;}
 .ft-tree > ul > li::before,.ft-tree > ul > li::after{display:none;}
 .ft-node{
+  position:relative;
   background:#fff;border:1.5px solid #ecd9b8;border-radius:12px;padding:8px 12px;
   min-width:110px;max-width:180px;box-shadow:0 3px 10px rgba(122,16,36,0.10);
+}
+.ft-seq{
+  position:absolute;top:-9px;left:-9px;
+  width:20px;height:20px;border-radius:50%;
+  background:#7b3fa0;color:#fff;border:2px solid #fff;
+  font-size:11px;font-weight:700;line-height:16px;text-align:center;
+  box-shadow:0 2px 5px rgba(0,0,0,0.2);
 }
 .ft-root{background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));border-color:var(--maroon-dark);color:#fff;}
 .ft-tag{font-size:10px;font-weight:700;color:var(--gold-light);letter-spacing:0.5px;margin-bottom:2px;}

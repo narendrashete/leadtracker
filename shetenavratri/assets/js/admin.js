@@ -569,6 +569,8 @@
               ? '<button class="btn-reject" data-act="reopen" data-id="' + r.memberId + '">संपादनासाठी उघडा</button>'
               : '<button class="btn-approve" data-act="approve" data-id="' + r.memberId + '">मंजूर</button>') +
             '<button class="btn-save" data-act="copy" data-id="' + r.memberId + '">कॉपी करा</button>' +
+            (FamilyTree.siblingGroups(r.data).length
+              ? '<button class="btn-save" data-act="order" data-id="' + r.memberId + '">भावंडांचा क्रम</button>' : '') +
           '</div></div>';
       }).join('');
     });
@@ -586,6 +588,8 @@
       api('/api/shete-admin/trees/' + id + '/approve', { method: 'POST' }).then(loadTrees);
     } else if (btn.dataset.act === 'copy') {
       openCopy(row);
+    } else if (btn.dataset.act === 'order') {
+      openOrder(row);
     } else if (btn.dataset.act === 'reopen') {
       if (!confirm('हा वृक्ष सभासदाला पुन्हा संपादनासाठी उघडायचा? (मंजुरीपर्यंत जुना वृक्ष प्रकाशित राहील.)')) return;
       api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
@@ -691,6 +695,68 @@
       loadTrees();
       setTimeout(function () { copyOverlay.classList.remove('open'); }, 1500);
     });
+  });
+
+  // ---- Sibling order ----
+  const orderOverlay = document.getElementById('orderOverlay');
+  const orderList = document.getElementById('orderList');
+  const orderMsg = document.getElementById('orderMsg');
+  let orderRow = null, orderGroups = [];
+
+  function openOrder(row) {
+    orderRow = row;
+    orderGroups = FamilyTree.siblingGroups(row.data);
+    orderMsg.textContent = '';
+    orderMsg.className = 'form-msg';
+    orderList.innerHTML = orderGroups.map(function (g, gi) {
+      return '<div class="order-group" data-g="' + gi + '">' +
+        '<div class="order-parent">' + escapeHtml(g.parentName) + ' यांची अपत्ये</div>' +
+        g.children.map(function (c, i) {
+          return '<div class="order-row" data-child="' + escapeHtml(c.id) + '">' +
+            '<input type="number" class="order-num" min="1" value="' + (i + 1) + '">' +
+            '<span class="order-name">' + escapeHtml(c.name) + '</span></div>';
+        }).join('') + '</div>';
+    }).join('') || '<p class="form-hint">या वृक्षात २ किंवा अधिक अपत्ये असलेला कोणताही सभासद नाही.</p>';
+    orderOverlay.classList.add('open');
+  }
+  document.getElementById('orderClose').addEventListener('click', function () { orderOverlay.classList.remove('open'); });
+  orderOverlay.addEventListener('click', function (e) { if (e.target === orderOverlay) orderOverlay.classList.remove('open'); });
+
+  document.getElementById('orderSaveBtn').addEventListener('click', function () {
+    const btn = this;
+    const calls = [];
+    orderList.querySelectorAll('.order-group').forEach(function (el) {
+      const g = orderGroups[Number(el.dataset.g)];
+      const rows = Array.from(el.querySelectorAll('.order-row'));
+      const ranked = rows.map(function (r, i) {
+        return { id: r.dataset.child, n: parseFloat(r.querySelector('.order-num').value) || (i + 1) };
+      }).sort(function (a, b) { return a.n - b.n; });
+      const newOrder = ranked.map(function (r) { return r.id; });
+      const same = newOrder.every(function (id, i) { return id === String(g.children[i].id); });
+      if (!same) calls.push({ parentId: g.parentId, order: newOrder });
+    });
+    if (!calls.length) { orderMsg.textContent = 'काहीही बदल नाही.'; orderMsg.className = 'form-msg'; return; }
+    btn.disabled = true;
+    orderMsg.textContent = 'जतन होत आहे...';
+    orderMsg.className = 'form-msg';
+    let updated = 0, failed = false;
+    (function next(i) {
+      if (i >= calls.length) {
+        btn.disabled = false;
+        if (failed) { orderMsg.textContent = 'काही बदल जतन होऊ शकले नाहीत.'; orderMsg.className = 'form-msg error'; return; }
+        orderMsg.textContent = 'क्रम जतन झाला — ' + updated + ' वृक्षांमध्ये लागू झाला.';
+        orderMsg.className = 'form-msg success';
+        loadTrees();
+        setTimeout(function () { orderOverlay.classList.remove('open'); }, 1200);
+        return;
+      }
+      api('/api/shete-admin/trees/' + orderRow.memberId + '/reorder', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(calls[i]),
+      }).then(function (res) {
+        if (res.ok) updated = Math.max(updated, res.body.updated || 0); else failed = true;
+        next(i + 1);
+      }).catch(function () { failed = true; next(i + 1); });
+    })(0);
   });
 
   // ---- WhatsApp group list ----

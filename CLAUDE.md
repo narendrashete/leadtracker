@@ -38,6 +38,8 @@ Express (backend/server.js)
    ├── /kinetic-gem/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    ├── /shetenavratri (public — serves shetenavratri/index.html + members/history/gallery
    │                   pages + assets/, no API, no build step)
+   ├── /shetenavratri/app  (public — separate installable/offline-shell copy, app.html)
+   ├── /shetenavratri/{manifest.webmanifest,sw.js,icons/*}  (public — offline app shell)
    ├── /api/rishta    (public by owner's choice — shared Rishta Album profiles/images)
    ├── /rishta        (public — serves rishta/index.html verbatim, built from rishta-src/)
    ├── /Prime_API_Integration (public — serves Prime_API_Integration/index.html verbatim,
@@ -111,6 +113,9 @@ kinetic-gem/
 shetenavratri/
   index.html            Shete Parivar Navratri — public family site: dashboard home,
                        plain HTML pages, no build step, no React, no API.
+  app.html               Same homepage, forked (not injected — see "installable app" section)
+                       for the installable/offline-shell copy. Served at /shetenavratri/app.
+  manifest.webmanifest, sw.js, icons/   The offline app shell for app.html only.
   members.html          सभासद यादी — 66-member directory (assets/js/members-data.js),
                        bilingual (Devanagari + English) search, Call/WhatsApp icon
                        buttons (tel:/wa.me), copy/right-click blocked on names & numbers.
@@ -605,6 +610,68 @@ zooms (pinch, wheel, double-tap) and swipes.
   from JPEG EXIF when present (chat apps usually strip it).
 - Counted in Visitors as `thigdam`.
 
+## Family tree — sibling order
+Every tree node renders its children left-to-right in `n.children` array order; a small
+numbered badge (`.ft-seq`, purple, distinct from the blue सभासद-number badge and the green WA
+tag) shows each child's 1-based position among its own siblings, on every tree view (public
+`tree.html`/`familytree.html`, the admin preview, and the downloaded PNG) — it is derived from
+array position on every render, never stored on the node, so reordering the array is the whole
+mechanism. `FamilyTree.siblingGroups(data)` (`tree-render.js`) walks a tree and returns every
+node with 2+ children, for admin's "भावंडांचा क्रम" (sibling order) editor (admin.html's family
+tree tab, `openOrder()`/`orderSaveBtn` in `admin.js`): one numbered-circle input per child,
+admin types the wanted order, save computes the new id order and posts it.
+- **`POST /api/shete-admin/trees/:memberId/reorder`** (`{ parentId, order: [childId, …] }`,
+  `sheteAdmin.js`) reorders one node's children and propagates the identical order to every
+  OTHER row in `shete_family_trees` whose root id matches — i.e. every copy made via the
+  existing `/trees/:memberId/copy` admin feature, since a copy carries the original node ids
+  forward byte-for-byte unchanged (never regenerated), which is what makes id-based matching
+  safe without a separate "these trees are linked" column. A copy that has since diverged (a
+  child added/removed only there) just keeps whichever of the requested ids it still has
+  (`reorderTreeChildren`), rather than erroring.
+- Writes both `data` and `published` on every row it touches, unconditionally — matching the
+  `/copy` route's own convention — since this is an admin action, not a member's own edit that
+  should wait for approval.
+
+## Shete Parivar Navratri — installable app (/shetenavratri/app)
+Installable (Add to Home Screen) and offline-shell-capable, the same distribution model as
+Aarti Sangrah's app: no APK/IPA, no app store, a link people install from their browser. It is
+a **fork** of `index.html` (`app.html`), the Aarti Sangrah pattern, not PrimeGem's head-tag
+injection — because the plain `/shetenavratri` link is already circulated (tinyurl, WhatsApp
+groups; CLAUDE.md's own earlier draft messages used it), so `index.html` can never gain a
+manifest link or service-worker registration without regressing every bookmark of it.
+- **`manifest.webmanifest`**: `name` is the Marathi "शेटे परिवार नवरात्री" (used for the splash
+  screen / install prompt), `short_name` is the English "Shete Parivar Navratri" (the
+  under-icon home-screen label, chosen in English on purpose so the installed app is findable
+  by typing its English name in the phone's search, same as the person who asked for this
+  could do for their reference app). `start_url`/`scope` are both `/shetenavratri/app`.
+- **Icon is the homepage's own kulswamini photo** (`assets/img/devicha-photo.jpg`, the same
+  image in the hero circle), not a drawn icon — center-square-cropped with ImageMagick to
+  `icons/icon-{192,512}.jpg` (full-bleed, matching the hero circle's own `object-fit:cover`
+  crop) and `icons/icon-maskable-{192,512}.jpg` (same photo inset at 72% over a maroon→
+  maroon-dark gradient, so Android's circular/squircle adaptive-icon mask has safe margin and
+  never crops the idol). `icons/apple-touch-icon-180.jpg` for iOS. JPEG, not PNG — this is
+  photographic content, and PNG was 5x the size for no visible difference (~1.3 MB → ~220 KB
+  for the whole icon set). Regenerating means re-cropping from the source photo with the same
+  ImageMagick recipe, not hand-editing a PNG.
+- **`sw.js` deliberately caches only the app shell** (`app.html`, the manifest, the icons) —
+  *not* the rest of the site. Unlike Aarti Sangrah's static aarti texts, members.html,
+  gallery.html, history.html and every family tree are edited continuously through the admin
+  panel (new members, photo approvals, history entries, reordered siblings), so aggressively
+  caching them would show a family member confidently wrong, stale data instead of just asking
+  for a network request — worse than not caching at all. The fetch handler only intercepts the
+  exact `SHELL_URLS`; every link tapped from inside the installed app goes straight to the
+  network like an ordinary browser tab. Bump `CACHE_VERSION` whenever `app.html`, the manifest
+  or an icon changes, or installed phones keep serving the old shell.
+- Same scope trap as the other two installable apps: `sw.js` lives at `/shetenavratri/sw.js`,
+  so the explicit `{ scope: '/shetenavratri/app' }` in its registration call is load-bearing —
+  without it the worker would default to controlling everything under `/shetenavratri/`,
+  including the plain page. Verified: after visiting `/shetenavratri/app`,
+  `navigator.serviceWorker.controller` on the plain `/shetenavratri` page is still `null`.
+  `redirect: false` + `index: false` stay on the `/shetenavratri` static mount for the same
+  reason as the other apps' mounts (a bare path must never 301 to a trailing slash).
+- Counted in Visitors as `shetenavratri-app` (`PAGE_LABELS` in `routes/stats.js`), alongside
+  the existing `shetenavratri` (online) key — same split as Aarti Sangrah/PrimeGem's `-app` keys.
+
 ## Visitor Counting
 Server-side, in `analytics.js`, recorded on the three public pages and on the SPA's own
 HTML loads. Admin-only, shown on the **Visitors** screen.
@@ -768,10 +835,12 @@ committed — see Rishta Album), the Prime API Integration demo at
 `https://leadtracker.primecomputers.co.in/PrimeXAI`, the Thigdam photo album at
 `https://leadtracker.primecomputers.co.in/thigdam` (photos persist in `thigdam-data/`), PrimeGem
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
-`/kinetic-gem/app`). Both installable apps cache themselves on the devices that installed
-them, so shipping a change to either means bumping its `CACHE_VERSION` in the matching
-`sw.js` — without that, installed phones keep serving the version they cached, however many
-times you redeploy. The **Calendar Links** admin
+`/kinetic-gem/app`), and Shete Parivar Navratri at
+`https://leadtracker.primecomputers.co.in/shetenavratri` (installable copy at
+`/shetenavratri/app`). All three installable apps cache themselves on the devices that
+installed them, so shipping a change to any of them means bumping its `CACHE_VERSION` in the
+matching `sw.js` — without that, installed phones keep serving the version they cached, however
+many times you redeploy. The **Calendar Links** admin
 page is React, so any change touching `frontend/src` still needs the `npm run build` step
 above. To find the calendar links after a
 deploy, open **Calendar Links** in the app, or run `pm2 logs leadtracker --lines 40` and look

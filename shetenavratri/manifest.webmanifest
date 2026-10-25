@@ -1,0 +1,18 @@
+{
+  "name": "शेटे परिवार नवरात्री",
+  "short_name": "Shete Parivar Navratri",
+  "description": "शेटे कुटुंबीय नवरात्री महोत्सव — सभासद यादी, आरती संग्रह, कुटुंब वृक्ष, छायाचित्रे आणि बरेच काही.",
+  "start_url": "/shetenavratri/app",
+  "scope": "/shetenavratri/app",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8ec",
+  "theme_color": "#7a1024",
+  "lang": "mr",
+  "icons": [
+    { "src": "/shetenavratri/icons/icon-192.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any" },
+    { "src": "/shetenavratri/icons/icon-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" },
+    { "src": "/shetenavratri/icons/icon-maskable-192.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "maskable" },
+    { "src": "/shetenavratri/icons/icon-maskable-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "maskable" }
+  ]
+}

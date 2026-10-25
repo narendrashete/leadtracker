@@ -195,3 +195,15 @@
 .tv-body #tvTree{transform-origin:0 0;}
 .tv-body .ft-scroll{overflow:visible;}
 .tv-body .ft-tree{min-width:0;}
+
+/* Sibling-order editor */
+#orderList{max-height:50vh;overflow-y:auto;}
+.order-group{background:#fff;border-radius:12px;border:1px solid #e2d3c0;padding:10px 12px;margin-bottom:10px;}
+.order-parent{font-weight:700;font-size:13px;color:var(--maroon-dark);margin-bottom:8px;}
+.order-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+.order-num{
+  width:34px;height:34px;flex-shrink:0;border-radius:50%;border:2px solid #fff;
+  background:#7b3fa0;color:#fff;font-weight:700;font-size:14px;text-align:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+.order-name{font-size:13.5px;color:var(--text);}

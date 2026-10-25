@@ -10,9 +10,14 @@ window.FamilyTree = (function () {
     });
   }
 
-  function nodeHtml(n, depth, editable) {
+  // seq is this node's 1-based position among its own siblings (undefined for
+  // the root, which has none) — shown as a small coloured badge so birth
+  // order reads at a glance instead of only from left-to-right position.
+  // Recomputed from the children array on every render, never stored on the
+  // node itself, so reordering (admin) is simply reordering that array.
+  function nodeHtml(n, depth, editable, seq) {
     let h = '<li><div class="ft-node' + (depth === 0 ? ' ft-root' : '') + '" data-id="' + esc(n.id) + '">' +
-      (depth === 0 ? '<div class="ft-tag">मूळपुरुष</div>' : '') +
+      (depth === 0 ? '<div class="ft-tag">मूळपुरुष</div>' : '<div class="ft-seq" title="भावंड क्रमांक ' + seq + '">' + seq + '</div>') +
       '<div class="ft-name" data-name="' + esc(n.name) + '">' + esc(n.name) + (n.dead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' +
       (n.spouse ? '<div class="ft-spouse" data-name="' + esc(n.spouse) + '">⚭ ' + esc(n.spouse) + (n.spouseDead ? ' <span class="ft-dead">मयत</span>' : '') + '</div>' : '') +
       (editable
@@ -24,7 +29,7 @@ window.FamilyTree = (function () {
         : '') +
       '</div>';
     if (n.children && n.children.length) {
-      h += '<ul>' + n.children.map(function (c) { return nodeHtml(c, depth + 1, editable); }).join('') + '</ul>';
+      h += '<ul>' + n.children.map(function (c, i) { return nodeHtml(c, depth + 1, editable, i + 1); }).join('') + '</ul>';
     }
     return h + '</li>';
   }
@@ -124,6 +129,17 @@ window.FamilyTree = (function () {
     return 1 + (node.children || []).reduce(function (s, c) { return s + count(c); }, 0);
   }
 
+  // Every node with 2+ children, as a reorderable group — used by the admin's
+  // sibling-order editor. Depth-first, root first.
+  function siblingGroups(node, out) {
+    out = out || [];
+    if (node.children && node.children.length >= 2) {
+      out.push({ parentId: node.id, parentName: node.name, children: node.children.slice() });
+    }
+    (node.children || []).forEach(function (c) { siblingGroups(c, out); });
+    return out;
+  }
+
   function newId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
@@ -143,7 +159,7 @@ window.FamilyTree = (function () {
     n._w = Math.max(120, Math.ceil(w) + PAD * 2);
     n._h = PAD + LINE + (n.spouse ? LINE + 4 : 0) + (n._root ? 16 : 0) + PAD - 6;
     let kids = 0;
-    (n.children || []).forEach(function (c) { measure(ctx, c); kids += c._sw; });
+    (n.children || []).forEach(function (c, i) { c._seq = i + 1; measure(ctx, c); kids += c._sw; });
     if (n.children && n.children.length) kids += GAP_X * (n.children.length - 1);
     n._sw = Math.max(n._w, kids);
   }
@@ -194,6 +210,16 @@ window.FamilyTree = (function () {
     ctx.fillStyle = root ? '#6a0d20' : '#fff'; ctx.fill();
     ctx.shadowColor = 'transparent';
     ctx.strokeStyle = root ? '#520a19' : '#ecd9b8'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    if (n._seq) {
+      const r = 10;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#7b3fa0'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = '700 11px ' + FONT;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(n._seq), x, y + 1);
+    }
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     let ty = y + PAD + 4;
@@ -256,5 +282,5 @@ window.FamilyTree = (function () {
   }
 
   return { render: render, find: find, count: count, newId: newId, esc: esc, downloadPng: downloadPng,
-    nameKey: nameKey, waNameMatch: waNameMatch };
+    nameKey: nameKey, waNameMatch: waNameMatch, siblingGroups: siblingGroups };
 })();

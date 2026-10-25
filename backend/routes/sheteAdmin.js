@@ -263,6 +263,67 @@ router.post('/trees/:memberId/copy', (req, res) => {
   res.json({ ok: true, copied });
 });
 
+function findTreeNode(node, id) {
+  if (String(node.id) === id) return node;
+  for (const c of (node.children || [])) {
+    const r = findTreeNode(c, id);
+    if (r) return r;
+  }
+  return null;
+}
+
+// Reorders one node's children to match `order` (a list of child ids). Child
+// ids not in `order` (e.g. one copy has since had a child added/removed) keep
+// their existing relative order, appended after the ones that were placed.
+function reorderTreeChildren(tree, parentId, order) {
+  const parent = findTreeNode(tree, parentId);
+  if (!parent || !parent.children || parent.children.length < 2) return false;
+  const byId = {};
+  parent.children.forEach(c => { byId[String(c.id)] = c; });
+  const placed = order.filter(id => byId[id]);
+  const rest = parent.children.filter(c => placed.indexOf(String(c.id)) === -1);
+  parent.children = placed.map(id => byId[id]).concat(rest);
+  return true;
+}
+
+// Reorders siblings under one node, and applies the identical order to every
+// OTHER tree in the table whose root id matches — i.e. every copy made via
+// /copy above, since a copy carries the original node ids forward unchanged.
+// A copy that has since diverged (a child added/removed only there) just
+// keeps whichever of the requested ids it still has; see reorderTreeChildren.
+router.post('/trees/:memberId/reorder', (req, res) => {
+  const id = Number(req.params.memberId);
+  const parentId = (req.body.parentId || '').toString();
+  const order = Array.isArray(req.body.order) ? req.body.order.map(String) : [];
+  if (!parentId || order.length < 2) return res.status(400).json({ error: 'अपुरी माहिती.' });
+
+  const src = query(`SELECT data FROM shete_family_trees WHERE member_id = ?`, [id])[0];
+  if (!src) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  let rootId;
+  try { rootId = JSON.parse(src.data).id; } catch { return res.status(400).json({ error: 'वृक्ष वाचता आला नाही.' }); }
+
+  const rows = query(`SELECT member_id AS memberId, data, published FROM shete_family_trees`);
+  let updated = 0;
+  for (const row of rows) {
+    let data;
+    try { data = JSON.parse(row.data); } catch { continue; }
+    if (data.id !== rootId) continue;
+    if (!reorderTreeChildren(data, parentId, order)) continue;
+
+    let pub = row.published;
+    if (pub) {
+      try {
+        const pubData = JSON.parse(pub);
+        if (pubData.id === rootId) { reorderTreeChildren(pubData, parentId, order); pub = JSON.stringify(pubData); }
+      } catch { /* leave published as it was if it won't parse */ }
+    }
+    run(`UPDATE shete_family_trees SET data = ?, published = ?, updated_at = datetime('now','localtime') WHERE member_id = ?`,
+      [JSON.stringify(data), pub, row.memberId]);
+    updated++;
+  }
+  res.json({ ok: true, updated });
+});
+
 // ---- History list (add/edit/delete) ----
 
 function parseYear(raw) {

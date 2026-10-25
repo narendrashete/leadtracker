@@ -219,6 +219,28 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-25** — **Shete Parivar Navratri installable app.** `/shetenavratri/app` — Add to
+  Home Screen on Android/iOS, forked from `index.html` (not injected) because the plain
+  `/shetenavratri` link is already circulated. Icon is the homepage's own kulswamini photo
+  (center-cropped with ImageMagick into `any` + `maskable` + apple-touch variants, JPEG not
+  PNG — ~220 KB total vs ~1.3 MB as PNG). `name` is Marathi ("शेटे परिवार नवरात्री"),
+  `short_name` is English ("Shete Parivar Navratri") so the installed icon is findable by its
+  English name in phone search. `sw.js` caches only the app shell (page + manifest + icons),
+  deliberately not the rest of the site, since members/gallery/history/trees change
+  continuously through the admin panel and stale-caching them would be actively misleading.
+  Verified end-to-end: plain `/shetenavratri` page's `serviceWorker.controller` stays `null`
+  after visiting the app, and the app shell loads fully with the browser context offline.
+- **2026-10-25** — **Family tree sibling order.** Admin can now reorder a node's children
+  (भावंडांचा क्रम, new tab button + overlay in admin.html) — each child gets a purple numbered
+  badge (`.ft-seq`), shown on every tree view (member editor, public viewer, admin preview, the
+  downloaded PNG), derived from array position so reordering the array is the whole mechanism.
+  New `POST /api/shete-admin/trees/:memberId/reorder` propagates the same order to every OTHER
+  tree row sharing the same root id — i.e. every copy made via the existing "कॉपी करा" admin
+  feature, since a copy carries node ids forward unchanged, which is what makes id-based
+  matching safe with no new "these trees are linked" column. Verified end-to-end with a local
+  server: built a 4-child tree, approved + copied it to a second member, reordered via the
+  admin UI, confirmed both the source and the copy picked up the identical new order (data,
+  published, and the public `/api/shete/tree/:id` all agreed).
 - **2026-10-22** — **Tree badges.** Tree people who are members get a blue membership-number badge linking to `members.html?m=<id>` (card scrolled to and outlined). Matching is by name in Marathi or English with spelling variants folded; a shared name is resolved by the tree's owner, then the owner's village, else left unlinked. **WhatsApp यादी** admin tab: import the group's CSV export (Name/Saved Name/Push Name + Phone Number; new numbers added, existing kept), add/edit/delete contacts, and pin a contact to a tree name when auto-match fails. Trees show a green **WA** tag (people and spouses) when their member's number is on the list, their full three-part name matches a contact's name in order, or the admin pinned it. New table `shete_wa_contacts`; routes `GET /api/shete/wa` (member ids + names only, never numbers), admin `GET|POST /api/shete-admin/wa`, `POST .../wa/import`, `PATCH|DELETE .../wa/:id`.
 
 - **2026-10-21** — Admin tree **पहा** now opens a full-screen viewer that fits the whole tree on screen (−/+/फिट zoom), with **⬇ फोटो डाउनलोड** to save a crisp 2x PNG for WhatsApp. The PNG is drawn on a canvas by its own layout (`FamilyTree.downloadPng` in `tree-render.js`), not a DOM screenshot — no library.

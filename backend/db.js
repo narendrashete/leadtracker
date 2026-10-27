@@ -472,6 +472,12 @@ async function getDb() {
     } catch { /* column already exists */ }
   }
 
+  // Secret per-member key for the personal family-tree link the admin sends on
+  // WhatsApp (familytree.html?k=<key>); made on first send, see sheteAdmin.js.
+  try {
+    _db.run(`ALTER TABLE shete_members ADD COLUMN tree_token TEXT`);
+  } catch { /* column already exists */ }
+
   if (query(`SELECT id FROM shete_members`).length === 0) {
     for (const m of SHETE_MEMBERS_SEED) {
       _db.run(

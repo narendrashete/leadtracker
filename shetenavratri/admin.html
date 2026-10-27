@@ -36,6 +36,7 @@
     <button class="admin-tab" data-tab="history">इतिहास यादी</button>
     <button class="admin-tab" data-tab="trees">कुटुंब वृक्ष <span id="treesCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="wa">WhatsApp यादी</button>
+    <button class="admin-tab" data-tab="links">वृक्ष लिंक पाठवा</button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -127,6 +128,22 @@
     </div>
     <div id="waList" class="request-list"></div>
     <datalist id="waTreeNames"></datalist>
+  </section>
+
+  <section id="linksTab" class="admin-section" style="display:none;">
+    <p class="wa-summary">सभासद निवडा — त्यांच्या खास लिंकसह तयार मेसेज येईल. ती लिंक उघडताच ते थेट आपल्या वृक्षात पोहोचतील; अर्धवट वृक्ष नंतर याच लिंकने पूर्ण करता येईल.</p>
+    <div class="link-pick" id="linkPick" style="display:none;">
+      <div class="rtitle" id="linkName"></div>
+      <div class="rmeta" id="linkMeta"></div>
+      <textarea id="linkText" rows="13"></textarea>
+      <div class="link-btns">
+        <a class="btn-wa" id="linkWa" target="_blank" rel="noopener noreferrer">WhatsApp वर पाठवा</a>
+        <button class="btn-save" id="linkCopy">मेसेज कॉपी करा</button>
+      </div>
+      <div class="roster-msg" id="linkNote"></div>
+    </div>
+    <input type="text" id="linkSearch" class="roster-search" placeholder="नाव, गाव किंवा मोबाईल शोधा...">
+    <div id="linkList" class="copy-list link-list"></div>
   </section>
 </div>
 

@@ -1,4 +1,5 @@
-// Member-side family tree editor. Identify (full name + registered mobile) →
+// Member-side family tree editor. Identify (full name + registered mobile, or
+// the personal ?k= link the admin sends on WhatsApp) →
 // edit the working copy → save as draft or submit for approval. Every save
 // re-sends the identity; there is no session. Once approved the tree is locked
 // until an admin reopens it.
@@ -25,6 +26,37 @@
       .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, status: r.status, body: b }; }); });
   }
 
+  function openEditor(res) {
+    memberId = res.memberId;
+    tree = res.data;
+    status = res.status;
+    $('eOwner').textContent = res.ownerName;
+    $('loginView').style.display = 'none';
+    $('editView').style.display = 'block';
+    refresh();
+  }
+
+  // ---- Personal link (familytree.html?k=<key>) from the admin's WhatsApp
+  // message: no name/mobile to type, straight into the member's own tree.
+  const linkKey = new URLSearchParams(location.search).get('k');
+  if (linkKey) {
+    $('loginView').style.display = 'none';
+    fetch('/api/shete/tree/link/' + encodeURIComponent(linkKey))
+      .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          $('loginView').style.display = 'block';
+          return setMsg($('loginMsg'), res.body.error || 'ही लिंक वैध नाही.', 'error');
+        }
+        ident = { token: linkKey };
+        openEditor(res.body);
+      })
+      .catch(function () {
+        $('loginView').style.display = 'block';
+        setMsg($('loginMsg'), 'नेटवर्क समस्या. लिंक पुन्हा उघडा.', 'error');
+      });
+  }
+
   // ---- Step 1 ----
   $('loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -36,13 +68,7 @@
     post('POST', '/api/shete/tree/login', body).then(function (res) {
       if (!res.ok) return setMsg($('loginMsg'), res.body.error || 'काहीतरी चूक झाली.', 'error');
       ident = body;
-      memberId = res.body.memberId;
-      tree = res.body.data;
-      status = res.body.status;
-      $('eOwner').textContent = res.body.ownerName;
-      $('loginView').style.display = 'none';
-      $('editView').style.display = 'block';
-      refresh();
+      openEditor(res.body);
     }).catch(function () { setMsg($('loginMsg'), 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.', 'error'); });
   });
 
@@ -57,7 +83,8 @@
       ? 'हा वृक्ष मंजूर झाला आहे, त्यामुळे बदल करता येणार नाहीत. बदल हवे असल्यास Admin शी संपर्क करा.'
       : status === 'pending'
         ? 'Admin च्या मंजुरीपर्यंत तुम्ही याच वृक्षात बदल करू शकता. बदल केल्यावर पुन्हा "मंजुरीसाठी पाठवा" दाबा.'
-        : 'प्रत्येक व्यक्तीवरील ➕ ने अपत्य जोडा, ✏️ ने नाव बदला, 🗑 ने हटवा.';
+        : 'प्रत्येक व्यक्तीवरील ➕ ने अपत्य जोडा, ✏️ ने नाव बदला, 🗑 ने हटवा.' +
+          (ident && ident.token ? ' अर्धवट राहिल्यास "जतन करा" दाबा — नंतर याच लिंकने पुन्हा उघडून पुढे भरता येईल.' : '');
     $('eBar').style.display = locked() ? 'none' : 'flex';
     $('startBox').style.display = !tree && !locked() ? 'block' : 'none';
     const box = $('treeEdit');

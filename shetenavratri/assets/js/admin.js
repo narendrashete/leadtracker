@@ -77,6 +77,8 @@
       document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
       document.getElementById('treesTab').style.display = tab === 'trees' ? 'block' : 'none';
       document.getElementById('waTab').style.display = tab === 'wa' ? 'block' : 'none';
+      document.getElementById('linksTab').style.display = tab === 'links' ? 'block' : 'none';
+      if (tab === 'links') loadLinks();
       if (tab === 'approved') loadGalleryApproved();
       if (tab === 'roster') loadRoster();
       if (tab === 'history') loadHistoryAdmin();
@@ -571,6 +573,7 @@
             '<button class="btn-save" data-act="copy" data-id="' + r.memberId + '">कॉपी करा</button>' +
             (FamilyTree.siblingGroups(r.data).length
               ? '<button class="btn-save" data-act="order" data-id="' + r.memberId + '">भावंडांचा क्रम</button>' : '') +
+            '<button class="btn-reject" data-act="delete" data-id="' + r.memberId + '">हटवा</button>' +
           '</div></div>';
       }).join('');
     });
@@ -593,7 +596,127 @@
     } else if (btn.dataset.act === 'reopen') {
       if (!confirm('हा वृक्ष सभासदाला पुन्हा संपादनासाठी उघडायचा? (मंजुरीपर्यंत जुना वृक्ष प्रकाशित राहील.)')) return;
       api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
+    } else if (btn.dataset.act === 'delete') {
+      deleteTree(row);
     }
+  });
+
+  // Delete one member's tree. Trees copied from / to it (same मूळपुरुष) are
+  // kept unless the admin says OK to the second, explicit question about them.
+  function deleteTree(row) {
+    if (!confirm('"' + row.name + '" यांचा कुटुंब वृक्ष कायमचा हटवायचा?\n(मसुदा व प्रकाशित दोन्ही हटतील.)')) return;
+    api('/api/shete-admin/trees/' + row.memberId + '/linked').then(function (res) {
+      const linked = res.ok ? res.body : [];
+      let also = [];
+      if (linked.length && confirm(
+        'हाच वृक्ष (कॉपी) खालील ' + linked.length + ' सभासदांकडेही आहे:\n\n' +
+        linked.map(function (l) { return '• ' + l.name + ' (' + l.village + ')'; }).join('\n') +
+        '\n\nत्यांचे वृक्ष सुद्धा हटवायचे?\n\nOK = हे सुद्धा हटवा\nCancel = फक्त "' + row.name + '" यांचा हटवा, बाकीचे तसेच राहतील'
+      )) also = linked.map(function (l) { return l.memberId; });
+      return api('/api/shete-admin/trees/' + row.memberId + (also.length ? '?also=' + also.join(',') : ''), { method: 'DELETE' });
+    }).then(function (res) {
+      if (!res.ok) return alert(res.body.error || 'काहीतरी चूक झाली.');
+      alert(res.body.deleted + ' वृक्ष हटवला/हटवले.');
+      loadTrees();
+    });
+  }
+
+  // ---- Personal tree links, sent on WhatsApp (like the Musicbox invites) ----
+  const linkList = document.getElementById('linkList');
+  const linkSearch = document.getElementById('linkSearch');
+  const linkText = document.getElementById('linkText');
+  const linkWa = document.getElementById('linkWa');
+  const linkNote = document.getElementById('linkNote');
+  const LINK_SENT_KEY = 'shete_tree_links_sent'; // this browser's "already sent" ticks
+  const LINK_STATUS = { none: ['', 'वृक्ष नाही'], draft: ['draft', 'अर्धवट'], pending: ['pending', 'प्रलंबित'], approved: ['approved', 'मंजूर'] };
+  let linkMembers = [], linkStatus = {}, linkSel = null;
+
+  function linkSent() {
+    try { return JSON.parse(localStorage.getItem(LINK_SENT_KEY)) || {}; } catch (e) { return {}; }
+  }
+
+  function loadLinks() {
+    Promise.all([api('/api/shete-admin/members'), api('/api/shete-admin/trees')]).then(function (r) {
+      linkMembers = r[0].body || [];
+      linkStatus = {};
+      (r[1].body || []).forEach(function (t) { linkStatus[t.memberId] = t.status; });
+      renderLinks();
+    });
+  }
+
+  function renderLinks() {
+    const q = linkSearch.value.trim().toLowerCase();
+    const sent = linkSent();
+    linkList.innerHTML = linkMembers.filter(function (m) {
+      return !q || [m.name, m.nameEn, m.village, m.villageEn, m.mobile].some(function (v) { return (v || '').toLowerCase().includes(q); });
+    }).map(function (m) {
+      const st = LINK_STATUS[linkStatus[m.id] || 'none'];
+      return '<button data-id="' + m.id + '"' + (linkSel && linkSel.id === m.id ? ' class="sel"' : '') + '>' +
+        '<span>' + escapeHtml(m.name) + '<br><small style="color:var(--text-soft);">' + escapeHtml(m.village) + '</small></span>' +
+        (sent[m.id] ? '<span class="sent">✓ पाठवली</span>' : '') +
+        '<span class="ft-status ' + st[0] + '">' + st[1] + '</span></button>';
+    }).join('');
+  }
+
+  function linkMessage(m, url) {
+    const name = m.name.replace(/^श्री\.?\s*/, '');
+    return [
+      '🌳 *शेटे परिवार — कुटुंब वृक्ष*',
+      '',
+      'नमस्कार ' + name + ' (' + m.village + '),',
+      '',
+      'आपल्या कुटुंबाचा वृक्ष तयार करण्यासाठी ही आपली *खास लिंक* आहे. नाव किंवा मोबाईल टाकायची गरज नाही — लिंक उघडताच थेट आपला वृक्ष उघडेल:',
+      url,
+      '',
+      '• मूळपुरुषापासून सुरुवात करा, ➕ ने अपत्ये जोडा.',
+      '• अर्धवट राहिल्यास *जतन करा* दाबा — नंतर याच लिंकने पुन्हा उघडून पुढे भरता येईल.',
+      '• पूर्ण झाल्यावर *मंजुरीसाठी पाठवा* दाबा.',
+      '',
+      'ही लिंक फक्त आपल्यासाठी आहे, कृपया इतरांना पाठवू नका.',
+      '',
+      '— नरेंद्र रामचंद्र शेटे',
+    ].join('\n');
+  }
+
+  function updateWaHref() {
+    linkWa.href = 'https://wa.me/91' + linkSel.mobile + '?text=' + encodeURIComponent(linkText.value);
+  }
+
+  linkSearch.addEventListener('input', renderLinks);
+  linkList.addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-id]');
+    if (!b) return;
+    const m = linkMembers.find(function (x) { return x.id === Number(b.dataset.id); });
+    api('/api/shete-admin/members/' + m.id + '/tree-link', { method: 'POST' }).then(function (res) {
+      if (!res.ok) return alert(res.body.error || 'काहीतरी चूक झाली.');
+      linkSel = m;
+      const url = location.origin + '/shetenavratri/familytree.html?k=' + res.body.token;
+      document.getElementById('linkName').textContent = m.name;
+      document.getElementById('linkMeta').textContent = m.village + ' · ' + m.mobile + ' · ' + LINK_STATUS[res.body.treeStatus][1];
+      linkText.value = linkMessage(m, url);
+      linkNote.textContent = res.body.treeStatus === 'approved'
+        ? 'या सभासदाचा वृक्ष मंजूर (लॉक) आहे — बदल करू द्यायचे असल्यास आधी "कुटुंब वृक्ष" टॅबमध्ये "संपादनासाठी उघडा" दाबा.' : '';
+      linkNote.className = 'roster-msg';
+      updateWaHref();
+      document.getElementById('linkPick').style.display = 'block';
+      renderLinks();
+      document.getElementById('linkPick').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  linkText.addEventListener('input', updateWaHref);
+  linkWa.addEventListener('click', function () {
+    const sent = linkSent();
+    sent[linkSel.id] = Date.now();
+    try { localStorage.setItem(LINK_SENT_KEY, JSON.stringify(sent)); } catch (e) { /* tick is only a convenience */ }
+    renderLinks();
+  });
+  document.getElementById('linkCopy').addEventListener('click', function () {
+    const done = function (ok) {
+      linkNote.textContent = ok ? 'मेसेज कॉपी झाला.' : 'कॉपी झाला नाही — "WhatsApp वर पाठवा" वापरा.';
+      linkNote.className = 'roster-msg' + (ok ? ' success' : '');
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(linkText.value).then(function () { done(true); }, function () { linkText.select(); done(document.execCommand('copy')); });
+    else { linkText.select(); done(document.execCommand('copy')); }
   });
 
   // ---- Full-screen viewer: fits the whole tree on screen, zoom, PNG download ----

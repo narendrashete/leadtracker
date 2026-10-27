@@ -219,6 +219,8 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-10-27** — **Personal family-tree links + tree delete.** New admin tab **वृक्ष लिंक पाठवा**: pick a member (name + village, tree status shown), get a ready Marathi message with their personal link `familytree.html?k=<key>` and a **WhatsApp वर पाठवा** button that opens the chat with that member's number (`wa.me/91<mobile>?text=`), plus copy; sent members get a ✓ in this browser. The link skips the name/mobile form and opens the member's own tree; a partial draft resumes from the same link. Key is a random 16-hex `tree_token` on `shete_members`, made on first send and kept. Tree rows get **हटवा**: deletes that member's tree only; trees sharing its root id (copies) are listed in a second, explicit question and deleted only on OK. Routes: `GET /api/shete/tree/link/:token`, `PUT /api/shete/tree` accepts `token`; admin `POST /api/shete-admin/members/:id/tree-link`, `GET /api/shete-admin/trees/:memberId/linked`, `DELETE /api/shete-admin/trees/:memberId?also=<ids>`. Verified locally end-to-end (link → edit → save → reopen resumes; bad key falls back to the form; delete with Cancel kept both copies).
+
 - **2026-10-25** — Fixed "This app cannot be installed" on the new `/shetenavratri/app`:
   Chrome rejected the JPEG manifest icons (`manifest-missing-suitable-icon`). Icons regenerated
   from the source photo as 256-colour PNGs (~380 KB set), manifest/app.html/sw.js pointed at

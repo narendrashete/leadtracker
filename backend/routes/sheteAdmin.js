@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { query, run } = require('../db');
 const { requireAuth, requireAdmin } = require('../auth');
 
@@ -202,6 +203,56 @@ router.get('/trees', (req, res) => {
      ORDER BY CASE t.status WHEN 'pending' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END, t.updated_at DESC`
   );
   res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, data: JSON.parse(r.data) })));
+});
+
+// The member's personal tree-link key, made on first ask and then kept, so a
+// link already sent on WhatsApp keeps working when it is sent again.
+router.post('/members/:id/tree-link', (req, res) => {
+  const id = Number(req.params.id);
+  const m = query(`SELECT tree_token AS token FROM shete_members WHERE id = ?`, [id])[0];
+  if (!m) return res.status(404).json({ error: 'सभासद सापडला नाही.' });
+  let token = m.token;
+  if (!token) {
+    token = crypto.randomBytes(8).toString('hex');
+    run(`UPDATE shete_members SET tree_token = ? WHERE id = ?`, [token, id]);
+  }
+  const t = query(`SELECT status FROM shete_family_trees WHERE member_id = ?`, [id])[0];
+  res.json({ token, treeStatus: t ? t.status : 'none' });
+});
+
+// Trees "connected" to this one = every other tree with the same root person
+// id, i.e. copies made via /copy (a copy keeps the original node ids).
+function linkedTrees(memberId) {
+  const src = query(`SELECT data, published FROM shete_family_trees WHERE member_id = ?`, [memberId])[0];
+  if (!src) return null;
+  const rootIds = new Set();
+  for (const s of [src.data, src.published]) {
+    try { if (s) rootIds.add(JSON.parse(s).id); } catch { /* unreadable copy: nothing to match on */ }
+  }
+  return query(
+    `SELECT t.member_id AS memberId, t.data, t.published, m.name, m.village
+     FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id WHERE t.member_id != ?`, [memberId]
+  ).filter(r => [r.data, r.published].some(s => {
+    try { return s && rootIds.has(JSON.parse(s).id); } catch { return false; }
+  })).map(r => ({ memberId: r.memberId, name: r.name, village: r.village }));
+}
+
+router.get('/trees/:memberId/linked', (req, res) => {
+  const list = linkedTrees(Number(req.params.memberId));
+  if (!list) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  res.json(list);
+});
+
+// Delete one member's tree. Connected trees are separate rows and stay —
+// only the ones the admin explicitly ticked (?also=3,7) go with it.
+router.delete('/trees/:memberId', (req, res) => {
+  const id = Number(req.params.memberId);
+  const linked = linkedTrees(id);
+  if (!linked) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  const allowed = new Set(linked.map(l => l.memberId));
+  const also = (req.query.also || '').toString().split(',').map(Number).filter(n => allowed.has(n));
+  for (const m of [id, ...also]) run(`DELETE FROM shete_family_trees WHERE member_id = ?`, [m]);
+  res.json({ ok: true, deleted: 1 + also.length });
 });
 
 // Approve: the working copy becomes the published one and is locked.

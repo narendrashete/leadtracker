@@ -213,21 +213,53 @@ function ownerNameFrom(body) {
   return parts.every(Boolean) ? parts.join(' ') : null;
 }
 
+// Personal link (familytree.html?k=<token>) sent by the admin on WhatsApp —
+// the token alone identifies the member, so they never type name or mobile.
+function memberByToken(token) {
+  if (!/^[a-f0-9]{16}$/.test(token)) return null;
+  return query(`SELECT id, name, village FROM shete_members WHERE tree_token = ?`, [token])[0] || null;
+}
+
+function linkOwnerName(member) {
+  return member.name.replace(/^श्री\.?\s*/, '').trim();
+}
+
+// Who is saving: the link's token if sent, else full name + registered mobile.
+function identify(body) {
+  if (body.token) {
+    const member = memberByToken(body.token.toString());
+    if (!member) return { error: 'ही लिंक वैध नाही. कृपया Admin कडून नवीन लिंक मागवा.', code: 403 };
+    return { member, ownerName: linkOwnerName(member) };
+  }
+  const ownerName = ownerNameFrom(body);
+  if (!ownerName) return { error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.', code: 400 };
+  const member = memberByMobile((body.mobile || '').toString().trim());
+  if (!member) return { error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.', code: 403 };
+  return { member, ownerName };
+}
+
 // Identify the member (full name + registered mobile) and return their tree.
 router.post('/tree/login', (req, res) => {
-  const ownerName = ownerNameFrom(req.body);
-  if (!ownerName) return res.status(400).json({ error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.' });
-  const member = memberByMobile((req.body.mobile || '').toString().trim());
-  if (!member) return res.status(403).json({ error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.' });
-  res.json({ memberId: member.id, memberName: member.name, ownerName, ...treeState(member.id) });
+  const who = identify({ ...req.body, token: null });
+  if (who.error) return res.status(who.code).json({ error: who.error });
+  res.json({ memberId: who.member.id, memberName: who.member.name, ownerName: who.ownerName, ...treeState(who.member.id) });
+});
+
+// Open the editor straight from a personal link.
+router.get('/tree/link/:token', (req, res) => {
+  const member = memberByToken(req.params.token);
+  if (!member) return res.status(404).json({ error: 'ही लिंक वैध नाही. कृपया Admin कडून नवीन लिंक मागवा.' });
+  res.json({
+    memberId: member.id, memberName: member.name, village: member.village,
+    ...treeState(member.id), ownerName: linkOwnerName(member),
+  });
 });
 
 // Save (draft) or submit (pending) the working copy. Refused once approved.
 router.put('/tree', (req, res) => {
-  const ownerName = ownerNameFrom(req.body);
-  if (!ownerName) return res.status(400).json({ error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.' });
-  const member = memberByMobile((req.body.mobile || '').toString().trim());
-  if (!member) return res.status(403).json({ error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.' });
+  const who = identify(req.body);
+  if (who.error) return res.status(who.code).json({ error: who.error });
+  const { member, ownerName } = who;
 
   let tree;
   try { tree = sanitizeTree(req.body.data); } catch (e) { return res.status(400).json({ error: e.message }); }

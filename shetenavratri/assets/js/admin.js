@@ -628,7 +628,8 @@
   // same root id are one family (same rule as linkedTrees on the server). The
   // original is the row the member filled in themself — copies are owned by
   // "Admin (... यांच्या वृक्षावरून कॉपी)". If the original was deleted, the
-  // first remaining copy stands in for it.
+  // first remaining copy stands in for it. Only families whose original is
+  // मंजूर व प्रकाशित are listed.
   const uniqueList = document.getElementById('uniqueList');
   let uniqueGroups = [];
 
@@ -641,12 +642,12 @@
         const g = byRoot[k];
         const original = g.find(function (r) { return r.ownerName.indexOf('Admin (') !== 0; }) || g[0];
         return { original: original, copies: g.filter(function (r) { return r !== original; }) };
-      }).sort(function (a, b) { return a.original.name.localeCompare(b.original.name); });
+      }).filter(function (g) { return g.original.status === 'approved'; }).sort(function (a, b) { return a.original.name.localeCompare(b.original.name); });
 
       document.getElementById('uniqueCount').textContent = uniqueGroups.length || '';
       document.getElementById('uniqueEmpty').style.display = uniqueGroups.length ? 'none' : 'block';
       document.getElementById('uniqueSummary').textContent = rows.length
-        ? 'एकूण ' + rows.length + ' वृक्षांपैकी ' + uniqueGroups.length + ' अद्वितीय वंशावळी — कॉपी केलेले वृक्ष मूळ वृक्षाखाली दाखवले आहेत.' : '';
+        ? 'एकूण ' + rows.length + ' वृक्षांपैकी ' + uniqueGroups.length + ' मंजूर व प्रकाशित अद्वितीय वंशावळी — कॉपी केलेले वृक्ष मूळ वृक्षाखाली दाखवले आहेत.' : '';
       uniqueList.innerHTML = uniqueGroups.map(function (g, i) {
         const r = g.original;
         return '<div class="request-card">' +

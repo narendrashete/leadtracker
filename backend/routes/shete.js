@@ -202,6 +202,10 @@ function memberByMobile(mobile) {
   )[0] || null;
 }
 
+function countPersons(node) {
+  return 1 + (node.children || []).reduce((n, c) => n + countPersons(c), 0);
+}
+
 function treeState(memberId) {
   const t = query(`SELECT * FROM shete_family_trees WHERE member_id = ?`, [memberId])[0];
   if (!t) return { status: 'none', data: null, hasPublished: false };
@@ -229,13 +233,13 @@ function identify(body) {
   if (body.token) {
     const member = memberByToken(body.token.toString());
     if (!member) return { error: 'ही लिंक वैध नाही. कृपया Admin कडून नवीन लिंक मागवा.', code: 403 };
-    return { member, ownerName: linkOwnerName(member) };
+    return { member, ownerName: linkOwnerName(member), via: 'link' };
   }
   const ownerName = ownerNameFrom(body);
   if (!ownerName) return { error: 'नाव, वडिलांचे नाव आणि आडनाव आवश्यक आहे.', code: 400 };
   const member = memberByMobile((body.mobile || '').toString().trim());
   if (!member) return { error: 'हा मोबाईल क्रमांक सभासद यादीत नाही.', code: 403 };
-  return { member, ownerName };
+  return { member, ownerName, via: 'mobile' };
 }
 
 // Identify the member (full name + registered mobile) and return their tree.
@@ -259,7 +263,7 @@ router.get('/tree/link/:token', (req, res) => {
 router.put('/tree', (req, res) => {
   const who = identify(req.body);
   if (who.error) return res.status(who.code).json({ error: who.error });
-  const { member, ownerName } = who;
+  const { member, ownerName, via } = who;
 
   let tree;
   try { tree = sanitizeTree(req.body.data); } catch (e) { return res.status(400).json({ error: e.message }); }
@@ -276,10 +280,15 @@ router.put('/tree', (req, res) => {
     );
   } else {
     run(
-      `INSERT INTO shete_family_trees (member_id, owner_name, data, status) VALUES (?,?,?,?)`,
+      `INSERT INTO shete_family_trees (member_id, owner_name, data, status, created_at)
+       VALUES (?,?,?,?, datetime('now','localtime'))`,
       [member.id, ownerName, JSON.stringify(tree), status]
     );
   }
+  run(
+    `INSERT INTO shete_tree_log (member_id, action, by_name, via, persons) VALUES (?,?,?,?,?)`,
+    [member.id, status === 'pending' ? 'submitted' : existing ? 'saved' : 'created', ownerName, via, countPersons(tree)]
+  );
   res.json({
     ok: true, status, data: tree,
     message: status === 'pending' ? 'वृक्ष मंजुरीसाठी पाठवला. मंजुरीपर्यंत बदल करता येतील.' : 'वृक्ष जतन केला.',

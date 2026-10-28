@@ -65,6 +65,7 @@ export const api = {
 
   // Visitor stats (admin only)
   getStats: (days) => request(`/stats?days=${days}`),
+  getTreeStats: () => request('/stats/trees'),
 
   // Users (admin only)
   getUsers:      ()       => request('/users'),

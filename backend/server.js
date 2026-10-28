@@ -299,6 +299,8 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     '/gallery.html':     'shetenavratri-gallery',
     '/devbasavane.html': 'shetenavratri-devbasavane',
     '/upcoming.html':    'shetenavratri-upcoming',
+    '/familytree.html':  'shetenavratri-familytree',
+    '/tree.html':        'shetenavratri-tree',
   };
   app.use('/shetenavratri', (req, res, next) => {
     if (req.method === 'GET' && SHETE_COUNTED[req.path]) recordVisit(req, SHETE_COUNTED[req.path]);

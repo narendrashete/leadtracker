@@ -195,6 +195,12 @@ router.delete('/members/:id', (req, res) => {
 
 // ---- Family trees ----
 
+// One line in shete_tree_log (see db.js) for an admin action on a tree.
+function logTree(memberId, action, note) {
+  run(`INSERT INTO shete_tree_log (member_id, action, by_name, via, note) VALUES (?,?,'Admin','admin',?)`,
+    [memberId, action, note || null]);
+}
+
 router.get('/trees', (req, res) => {
   const rows = query(
     `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
@@ -251,7 +257,10 @@ router.delete('/trees/:memberId', (req, res) => {
   if (!linked) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
   const allowed = new Set(linked.map(l => l.memberId));
   const also = (req.query.also || '').toString().split(',').map(Number).filter(n => allowed.has(n));
-  for (const m of [id, ...also]) run(`DELETE FROM shete_family_trees WHERE member_id = ?`, [m]);
+  for (const m of [id, ...also]) {
+    run(`DELETE FROM shete_family_trees WHERE member_id = ?`, [m]);
+    logTree(m, 'deleted');
+  }
   res.json({ ok: true, deleted: 1 + also.length });
 });
 
@@ -264,6 +273,7 @@ router.post('/trees/:memberId/approve', (req, res) => {
     `UPDATE shete_family_trees SET published = data, status = 'approved', approved_at = datetime('now','localtime') WHERE id = ?`,
     [t.id]
   );
+  logTree(id, 'approved');
   res.json({ ok: true });
 });
 
@@ -274,6 +284,7 @@ router.post('/trees/:memberId/reopen', (req, res) => {
   const t = query(`SELECT id FROM shete_family_trees WHERE member_id = ? AND status = 'approved'`, [id])[0];
   if (!t) return res.status(404).json({ error: 'मंजूर वृक्ष सापडला नाही.' });
   run(`UPDATE shete_family_trees SET status = 'draft' WHERE id = ?`, [t.id]);
+  logTree(id, 'reopened');
   res.json({ ok: true });
 });
 
@@ -304,11 +315,12 @@ router.post('/trees/:memberId/copy', (req, res) => {
       );
     } else {
       run(
-        `INSERT INTO shete_family_trees (member_id, owner_name, data, published, status, approved_at)
-         VALUES (?,?,?,?, 'approved', datetime('now','localtime'))`,
+        `INSERT INTO shete_family_trees (member_id, owner_name, data, published, status, approved_at, created_at)
+         VALUES (?,?,?,?, 'approved', datetime('now','localtime'), datetime('now','localtime'))`,
         [id, ownerName, tree, tree]
       );
     }
+    logTree(id, 'copied', src.name);
     copied++;
   }
   res.json({ ok: true, copied });

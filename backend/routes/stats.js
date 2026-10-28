@@ -35,7 +35,9 @@ const NAVRATRI_PAGES = {
   'shetenavratri-history':     'Navratri History',
   'shetenavratri-gallery':     'gallery',
   'shetenavratri-devbasavane': 'devbasavane',
-  'shetenavratri-upcoming':    'Upcoming Event'
+  'shetenavratri-upcoming':    'Upcoming Event',
+  'shetenavratri-familytree':  'Family tree — editor',
+  'shetenavratri-tree':        'Family tree — viewer'
 };
 
 function daysBack(n) {
@@ -128,6 +130,48 @@ router.get('/', (req, res, next) => {
       pages,
       navratri
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Shete Navratri family trees: who has made one, how far along it is, and the
+// change log behind it (shete_tree_log, written by routes/shete.js and
+// routes/sheteAdmin.js). Not limited to the day range — trees are few.
+function countPersons(node) {
+  return 1 + (node.children || []).reduce((n, c) => n + countPersons(c), 0);
+}
+
+router.get('/trees', (req, res, next) => {
+  try {
+    const trees = query(
+      `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
+              t.created_at AS createdAt, t.updated_at AS updatedAt, t.approved_at AS approvedAt,
+              m.name, m.village, m.mobile
+       FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
+       ORDER BY t.updated_at DESC`
+    ).map(r => {
+      let data = null;
+      try { data = JSON.parse(r.data); } catch { /* unreadable tree: shown without counts */ }
+      // Admin copies are owned by "Admin (<source> यांच्या वृक्षावरून कॉपी)".
+      const copy = /^Admin \((.+) यांच्या वृक्षावरून कॉपी\)$/.exec(r.ownerName);
+      return {
+        memberId: r.memberId, name: r.name, village: r.village, mobile: r.mobile,
+        filledBy: copy ? null : r.ownerName, copiedFrom: copy ? copy[1] : null,
+        status: r.status, persons: data ? countPersons(data) : 0, root: data ? data.name : '',
+        // NULL for trees made before created_at existed (see db.js).
+        createdAt: r.createdAt, updatedAt: r.updatedAt, approvedAt: r.approvedAt
+      };
+    });
+
+    const log = query(
+      `SELECT l.member_id AS memberId, l.action, l.by_name AS byName, l.via, l.persons, l.note, l.at,
+              m.name
+       FROM shete_tree_log l LEFT JOIN shete_members m ON m.id = l.member_id
+       ORDER BY l.id DESC LIMIT 100`
+    );
+
+    res.json({ trees, log });
   } catch (err) {
     next(err);
   }

@@ -95,6 +95,8 @@ export default function Visitors() {
               pages={data.navratri} days={days}
             />
           )}
+
+          <TreeActivity />
         </>
       )}
     </div>
@@ -280,6 +282,150 @@ function PageBreakdown({ pages, days, title = 'Which page', note }) {
               <div style={{ height: 8, borderRadius: 4, background: '#EEF2F7', overflow: 'hidden' }}>
                 <div style={{ width: `${(p.views / peak) * 100}%`, height: '100%', borderRadius: 4, background: VIEWS }} />
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Shete Navratri family trees: who is making one, and every change ---- */
+
+const TREE_STATUS = {
+  draft:    { label: 'Draft',            fg: '#92400E', bg: '#FEF3C7' },
+  pending:  { label: 'Awaiting approval', fg: '#1D4ED8', bg: '#DBEAFE' },
+  approved: { label: 'Approved',         fg: '#047857', bg: '#D1FAE5' },
+};
+
+const TREE_ACTION = {
+  created:   'started a tree',
+  saved:     'saved changes',
+  submitted: 'sent for approval',
+  approved:  'approved',
+  reopened:  'reopened for editing',
+  copied:    'copied a tree in',
+  deleted:   'deleted the tree',
+};
+
+const VIA = { link: 'WhatsApp link', mobile: 'name + mobile', admin: 'admin' };
+
+// "2026-10-28 17:42:05" (server local time) → "28 Oct 2026, 17:42"
+const fmtAt = at => {
+  if (!at) return '—';
+  const [d, t = ''] = at.split(' ');
+  return `${fmtLong(d)}, ${t.slice(0, 5)}`;
+};
+
+const cell = { padding: '9px 10px', borderBottom: '1px solid var(--border)', verticalAlign: 'top' };
+
+function TreeActivity() {
+  const [data, setData]   = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.getTreeStats().then(setData).catch(e => setError(e.message));
+  }, []);
+
+  if (error) return <div className="card" style={{ padding: 16, marginTop: 20, color: '#B42318', fontSize: 14 }}>{error}</div>;
+  if (!data) return null;
+
+  const { trees, log } = data;
+  const count = st => trees.filter(t => t.status === st).length;
+  const tiles = [
+    ['Trees', trees.length],
+    ['Approved', count('approved')],
+    ['Awaiting approval', count('pending')],
+    ['Draft', count('draft')],
+    ['Admin copies', trees.filter(t => t.copiedFrom).length],
+  ];
+
+  return (
+    <div className="card" style={{ padding: 20, marginTop: 20 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1E293B', margin: '0 0 4px' }}>
+        Shete Parivar Navratri — family trees
+      </h2>
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
+        All time · who made each tree and how far along it is
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 18 }}>
+        {tiles.map(([label, value]) => (
+          <div key={label} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{label}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {trees.length === 0 ? (
+        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>No family trees yet.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 760 }}>
+            <thead>
+              <tr>
+                {['Member', 'Made by', 'Status', 'People', 'Started', 'Last saved', 'Approved'].map((h, i) => (
+                  <th key={h} style={{
+                    ...cell, textAlign: i === 3 ? 'right' : 'left', color: 'var(--text-muted)',
+                    fontWeight: 600, background: 'var(--bg)', whiteSpace: 'nowrap',
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {trees.map(t => {
+                const st = TREE_STATUS[t.status] || { label: t.status, fg: '#334155', bg: '#F1F5F9' };
+                return (
+                  <tr key={t.memberId}>
+                    <td style={cell}>
+                      <div style={{ color: '#1E293B', fontWeight: 500 }}>{t.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.village} · {t.mobile}</div>
+                    </td>
+                    <td style={cell}>
+                      {t.copiedFrom
+                        ? <span style={{ color: 'var(--text-muted)' }}>Admin copy of <span style={{ color: '#1E293B' }}>{t.copiedFrom}</span></span>
+                        : t.filledBy}
+                      {t.root && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>मूळपुरुष: {t.root}</div>}
+                    </td>
+                    <td style={cell}>
+                      <span style={{ background: st.bg, color: st.fg, borderRadius: 999, padding: '2px 9px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {st.label}
+                      </span>
+                    </td>
+                    <td style={{ ...cell, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{t.persons}</td>
+                    <td style={{ ...cell, whiteSpace: 'nowrap' }}>{fmtAt(t.createdAt)}</td>
+                    <td style={{ ...cell, whiteSpace: 'nowrap' }}>{fmtAt(t.updatedAt)}</td>
+                    <td style={{ ...cell, whiteSpace: 'nowrap' }}>{fmtAt(t.approvedAt)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1E293B', margin: '22px 0 4px' }}>Recent activity</h3>
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+        Latest 100 changes, newest first. Logging started with this screen, so earlier work is not listed.
+      </div>
+      {log.length === 0 ? (
+        <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Nothing logged yet.</div>
+      ) : (
+        <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+          {log.map((l, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+              <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', minWidth: 150 }}>{fmtAt(l.at)}</span>
+              <span style={{ color: '#1E293B' }}>
+                <b style={{ fontWeight: 600 }}>{l.byName || '—'}</b>{' '}
+                {TREE_ACTION[l.action] || l.action}
+                {l.action === 'copied' && l.note && <> from {l.note}</>}
+                {' '}— {l.name || `member #${l.memberId}`}
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {l.via && l.via !== 'admin' && ` · via ${VIA[l.via]}`}
+                  {l.persons ? ` · ${l.persons} people` : ''}
+                </span>
+              </span>
             </div>
           ))}
         </div>

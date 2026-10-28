@@ -39,6 +39,11 @@ address/city/state to leads.
   viewer, upload with optional note/date/year, originals kept untouched. See `CLAUDE.md` →
   Thigdam.
 
+- Kulgaon gat member list at `/kulgaon`: the Vaishya Samaj Sangh's 526-member Kulgaon
+  voter list (transcribed from the scanned PDF), searchable in Marathi or English, with a
+  हयात/मयत/डबल status per member. Members report further deaths (name + mobile, logged,
+  reversible) without logging in. See `CLAUDE.md` → Kulgaon gat member list.
+
 - Rishta Album: private marriage-profile album at `/rishta`. Imports the vadhu-var list PDFs
   in the browser, one card per profile with photo; filters by age, native place, job
   location, salary, education, height, weight; shortlist/hide/notes. React + Vite source in
@@ -218,6 +223,14 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-10-28** — **Kulgaon gat member list** at `/kulgaon`. Transcribed the scanned
+  "तहयात सभासद यादी (कुळगांव गट)" PDF (no text layer) into `kulgaon/members.json`: 526 members
+  with Marathi name, English transliteration, gender, age, receipt no. and date; the 43
+  struck-through names are marked मयत (42) / डबल (1), matching the cover page's totals.
+  One plain HTML page (search in Marathi or English, status filters, "मयत कळवा" /
+  "हयात आहे? दुरुस्त करा" sheet, recent-changes list), `routes/kulgaon.js`, new tables
+  `kulgaon_status` + `kulgaon_status_log`, Visitors key `kulgaon`.
 
 - **2026-10-27** — **Personal family-tree links + tree delete.** New admin tab **वृक्ष लिंक पाठवा**: pick a member (name + village, tree status shown), get a ready Marathi message with their personal link `familytree.html?k=<key>` and a **WhatsApp वर पाठवा** button that opens the chat with that member's number (`wa.me/91<mobile>?text=`), plus copy; sent members get a ✓ in this browser. The link skips the name/mobile form and opens the member's own tree; a partial draft resumes from the same link. Key is a random 16-hex `tree_token` on `shete_members`, made on first send and kept. Tree rows get **हटवा**: deletes that member's tree only; trees sharing its root id (copies) are listed in a second, explicit question and deleted only on OK. Routes: `GET /api/shete/tree/link/:token`, `PUT /api/shete/tree` accepts `token`; admin `POST /api/shete-admin/members/:id/tree-link`, `GET /api/shete-admin/trees/:memberId/linked`, `DELETE /api/shete-admin/trees/:memberId?also=<ids>`. Verified locally end-to-end (link → edit → save → reopen resumes; bad key falls back to the form; delete with Cancel kept both copies).
 

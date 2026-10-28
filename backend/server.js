@@ -26,6 +26,7 @@ const PRIMEXAI_PAGE  = path.resolve(__dirname, '..', 'PrimeXAI', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 const THIGDAM_PAGE  = path.resolve(__dirname, '..', 'thigdam', 'index.html');
+const KULGAON_PAGE  = path.resolve(__dirname, '..', 'kulgaon', 'index.html');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -41,6 +42,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const rishtaRouter     = require('./routes/rishta');
   const sheteAdminRouter = require('./routes/sheteAdmin');
   const thigdamRouter    = require('./routes/thigdam');
+  const kulgaonRouter    = require('./routes/kulgaon');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -72,6 +74,9 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/api/rishta', rishtaRouter);
   // Public by the owner's choice (see CLAUDE.md → Thigdam): the friends' photo album.
   app.use('/api/thigdam', thigdamRouter);
+  // Public by the owner's choice (see CLAUDE.md → Kulgaon member list): search,
+  // and report a member as मयत with your name + mobile. Every change is logged.
+  app.use('/api/kulgaon', kulgaonRouter);
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
   // surface can never approve its own requests.
@@ -378,6 +383,22 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // Kulgaon gat member list — searchable (Marathi or English) copy of the
+  // Vaishya Samaj Sangh voter list. One plain HTML file, no build step; the
+  // list is kulgaon/members.json, served through /api/kulgaon with any status
+  // changes members have reported.
+  app.get('/kulgaon', (req, res) => {
+    recordVisit(req, 'kulgaon');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(KULGAON_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Kulgaon page missing.');
+      }
+    });
+  });
+
   // Prime API Integration — the multi-courier shipping (courier aggregator) demo.
   // One self-contained HTML file BUILT from prime-api-src/ (React + Vite + Tailwind,
   // inlined by vite-plugin-singlefile) and committed, like Rishta. No API, no
@@ -439,6 +460,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
     console.log(`  Thigdam album:   http://localhost:${PORT}/thigdam`);
+    console.log(`  Kulgaon list:    http://localhost:${PORT}/kulgaon`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

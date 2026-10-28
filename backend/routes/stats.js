@@ -21,6 +21,7 @@ const PAGE_LABELS = {
   'prime-api':        'Prime API Integration demo',
   primexai:           'PrimeXAI savings dashboard',
   thigdam:            'Thigdam photo album',
+  kulgaon:            'Kulgaon member list',
   leadtracker:        'Lead Tracker app'
 };
 

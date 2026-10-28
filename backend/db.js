@@ -464,6 +464,33 @@ async function getDb() {
     )
   `);
 
+  // Kulgaon gat member list at /kulgaon. The list itself is kulgaon/members.json
+  // (committed, read-only); these hold only the status changes members report.
+  // kulgaon_status is the current override per member (sr = list number);
+  // kulgaon_status_log keeps every change with who made it.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS kulgaon_status (
+      sr INTEGER PRIMARY KEY,
+      status TEXT NOT NULL,
+      reported_by TEXT NOT NULL,
+      mobile TEXT NOT NULL,
+      note TEXT,
+      updated_at TEXT NOT NULL
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS kulgaon_status_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sr INTEGER NOT NULL,
+      old_status TEXT NOT NULL,
+      new_status TEXT NOT NULL,
+      reported_by TEXT NOT NULL,
+      mobile TEXT NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

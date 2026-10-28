@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>कुळगांव गट — सभासद यादी</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --maroon:#7a1024;
+  --maroon-dark:#520a19;
+  --gold:#e8b04b;
+  --cream:#fff8ec;
+  --text:#2a1810;
+  --text-soft:#6b5245;
+  --line:#eadfd0;
+  --green:#2e7d32;
+  --green-bg:#e8f5e9;
+  --dead:#5f5f5f;
+  --dead-bg:#f1f0ee;
+  --amber:#8a5a00;
+  --amber-bg:#fff3d6;
+  --shadow:0 3px 10px rgba(122,16,36,0.08);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Noto Sans Devanagari',system-ui,sans-serif;
+  background:var(--cream);
+  color:var(--text);
+  -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit;}
+
+.topbar{
+  background:linear-gradient(135deg,var(--maroon) 0%,var(--maroon-dark) 100%);
+  color:#fff;
+  padding:14px 16px 12px;
+}
+.topbar h1{font-size:19px;margin:0;font-weight:700;line-height:1.3;}
+.topbar .en{font-size:12.5px;opacity:.85;}
+.topbar .org{font-size:12px;opacity:.8;margin-top:6px;line-height:1.5;}
+
+.controls{
+  position:sticky;top:0;z-index:20;
+  background:var(--cream);
+  padding:12px 16px 8px;
+  border-bottom:1px solid var(--line);
+}
+.wrap{max-width:720px;margin:0 auto;}
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:#fff;border-radius:30px;
+  box-shadow:0 6px 18px rgba(122,16,36,0.12);
+  padding:10px 16px;
+}
+.search-box input{
+  border:none;outline:none;flex:1;min-width:0;
+  font-size:16px;font-family:inherit;background:transparent;color:var(--text);
+}
+.search-box .clear{
+  border:none;background:#f3e8e0;color:var(--text-soft);
+  width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;display:none;
+}
+.search-box.has-text .clear{display:block;}
+.chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--text);
+  border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;
+}
+.chip b{font-weight:700;margin-left:4px;}
+.chip.on{background:var(--maroon);border-color:var(--maroon);color:#fff;}
+.meta-row{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:12.5px;color:var(--text-soft);margin-top:8px;
+}
+.link-btn{
+  border:none;background:none;color:var(--maroon);font-size:13px;font-weight:600;
+  cursor:pointer;padding:4px 0;
+}
+
+.list{padding:12px 16px 40px;display:flex;flex-direction:column;gap:10px;}
+.card{
+  background:#fff;border-radius:14px;box-shadow:var(--shadow);
+  padding:12px 14px;display:flex;gap:12px;align-items:flex-start;
+}
+.sr{
+  min-width:34px;height:34px;padding:0 4px;border-radius:17px;
+  background:var(--maroon);color:#fff;font-size:12.5px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.info{flex:1;min-width:0;}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.mname{font-size:16px;font-weight:600;line-height:1.35;}
+.men{font-size:13px;color:var(--text-soft);margin-top:1px;}
+.pill{
+  flex-shrink:0;font-size:12px;font-weight:700;border-radius:12px;padding:3px 9px;white-space:nowrap;
+}
+.pill.alive{background:var(--green-bg);color:var(--green);}
+.pill.dead{background:#e4e2df;color:#444;}
+.pill.double{background:var(--amber-bg);color:var(--amber);}
+.details{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:12.5px;color:var(--text-soft);}
+.details span b{color:var(--text);font-weight:600;}
+.upd{
+  margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft);
+  background:#faf5ee;border-left:3px solid var(--gold);border-radius:6px;padding:5px 8px;
+}
+.act{margin-top:8px;}
+.act button{
+  border:1px solid var(--line);background:#fff;color:var(--maroon);
+  border-radius:16px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;
+}
+.card.dead{background:var(--dead-bg);}
+.card.dead .sr{background:var(--dead);}
+.card.dead .mname{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.45);color:#555;}
+.card.double{background:#fffaf0;}
+.card.double .sr{background:#b07a1a;}
+.card.double .mname{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.35);}
+.card.flash{animation:flash 1.4s ease-in-out 2;}
+@keyframes flash{50%{box-shadow:0 0 0 3px var(--gold);}}
+
+.empty,.loading{text-align:center;color:var(--text-soft);padding:40px 16px;font-size:14px;line-height:1.7;}
+.note-foot{font-size:12px;color:var(--text-soft);line-height:1.6;padding:0 16px 30px;}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(30,10,10,.5);z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.open{display:flex;}
+.sheet{
+  background:#fff;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;padding:20px 18px 26px;position:relative;
+}
+@media (min-width:600px){.overlay{align-items:center;}.sheet{border-radius:20px;}}
+.sheet h2{font-size:18px;margin:0 32px 4px 0;color:var(--maroon);}
+.sheet .who{font-size:15px;font-weight:600;margin:6px 0 2px;}
+.sheet .who-en{font-size:13px;color:var(--text-soft);}
+.sheet .hint{font-size:12.5px;color:var(--text-soft);line-height:1.6;margin:10px 0 4px;}
+.close{
+  position:absolute;top:14px;right:14px;border:none;background:#f3e8e0;
+  width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;color:var(--text-soft);
+}
+.sheet label{display:block;font-size:13.5px;font-weight:600;margin-top:12px;}
+.sheet input{
+  display:block;width:100%;margin-top:5px;padding:10px 12px;font-size:16px;font-family:inherit;
+  border:1px solid #dccfc2;border-radius:10px;color:var(--text);background:#fff;
+}
+.sheet input:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.msg{font-size:13px;margin-top:10px;min-height:18px;}
+.msg.error{color:#b3261e;}
+.msg.ok{color:var(--green);}
+.submit{
+  margin-top:12px;width:100%;border:none;border-radius:12px;padding:12px;
+  background:var(--maroon);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;
+}
+.submit.revive{background:var(--green);}
+.submit:disabled{opacity:.6;cursor:default;}
+.change{border-bottom:1px solid var(--line);padding:10px 0;font-size:13.5px;line-height:1.55;}
+.change:last-child{border-bottom:none;}
+.change .c-name{font-weight:600;}
+.change .c-meta{font-size:12.5px;color:var(--text-soft);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <h1>कुळगांव गट — सभासद यादी</h1>
+    <div class="en">Kulgaon Gat · Members List</div>
+    <div class="org">ठाणे जिल्हा महाराष्ट्रीय वैश्य समाज संघ · दि. ३०/९/२०२४ अखेरची अंतिम सभासद मतदार यादी (पुरवणी यादीसह)</div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="search-box" id="searchBox">
+      <span aria-hidden="true">🔍</span>
+      <input type="search" id="q" placeholder="नाव / क्रमांक शोधा · Search name" autocomplete="off" enterkeyhint="search">
+      <button class="clear" id="clearQ" aria-label="Clear">✕</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="meta-row">
+      <span id="count"></span>
+      <button class="link-btn" id="openChanges">🕘 अलीकडील बदल</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="loading" id="loading">यादी लोड होत आहे…</div>
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty" style="display:none">🔍 कोणताही सभासद सापडला नाही<br><small>No member found</small></div>
+  <p class="note-foot">
+    मूळ छापील यादीत खोडलेली नावे येथे <b>मयत</b> (किंवा <b>डबल</b>) म्हणून दाखवली आहेत.
+    आणखी कोणी सभासद मयत असल्यास त्याच्या नावाखालील <b>“मयत कळवा”</b> वापरा — आपले नाव व मोबाईल
+    क्रमांक नोंदवला जातो आणि सर्व बदल “अलीकडील बदल” मध्ये सर्वांना दिसतात. चुकीची नोंद “हयात आहे” ने दुरुस्त करता येते.
+  </p>
+</div>
+
+<div class="overlay" id="statusOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="statusTitle"></h2>
+    <div class="who" id="statusWho"></div>
+    <div class="who-en" id="statusWhoEn"></div>
+    <p class="hint" id="statusHint"></p>
+    <form id="statusForm" novalidate>
+      <label>आपले नाव (Your name) *<input id="fName" maxlength="60" autocomplete="name" required></label>
+      <label>आपला मोबाईल क्रमांक (Your mobile) *<input id="fMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकी मोबाईल क्रमांक" required></label>
+      <label>टीप (ऐच्छिक) — उदा. निधन दिनांक<input id="fNote" maxlength="200"></label>
+      <div class="msg" id="statusMsg"></div>
+      <button type="submit" class="submit" id="statusSubmit"></button>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="changesOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="changesTitle">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="changesTitle">अलीकडील बदल</h2>
+    <p class="hint">सभासदांनी कळवलेले स्थितीचे बदल, नवीन आधी.</p>
+    <div id="changesList"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STATUS = {
+    alive:  { mr: 'हयात', en: 'Alive' },
+    dead:   { mr: 'मयत', en: 'Deceased' },
+    double: { mr: 'डबल नाव', en: 'Duplicate' },
+  };
+  const GENDER = { M: 'पुरुष', F: 'स्त्री' };
+
+  const $ = (id) => document.getElementById(id);
+  const listEl = $('list'), qEl = $('q');
+  let MEMBERS = [];
+  let filter = 'all';
+  let editing = null;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // Small fetch wrapper: unwraps the server's { error } body like the other pages.
+  function api(url, opts) {
+    return fetch(url, opts).then((r) => r.json().catch(() => ({})).then((body) => {
+      if (!r.ok) throw new Error(body.error || 'काहीतरी चूक झाली.');
+      return body;
+    }));
+  }
+
+  // ---- Search ----
+  // Same idea as the Navratri members page (a Devanagari name + an English
+  // transliteration per member), made forgiving: Marathi matching ignores the
+  // short/long vowel difference (दिपक = दीपक), and English matching drops the
+  // spellings people vary on (Sandeep = Sandip, Khadakbaan = Khadakban,
+  // Ambawane = Ambavane, Khismatrao = Khismatrav). Every word typed must match.
+  const DEV_DIGITS = '०१२३४५६७८९';
+  const toAscii = (s) => s.replace(/[०-९]/g, (d) => DEV_DIGITS.indexOf(d));
+  function devKey(s) {
+    return s.replace(/[‌‍़.]/g, '')
+      .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/ई/g, 'इ').replace(/ऊ/g, 'उ')
+      .replace(/ँ/g, 'ं').replace(/ष/g, 'श').replace(/\s+/g, ' ');
+  }
+  function latKey(s) {
+    return s.toLowerCase().replace(/ao\b/g, 'av').replace(/[^a-z]/g, '')
+      .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/x/g, 'ks').replace(/w/g, 'v')
+      .replace(/ph/g, 'f').replace(/z/g, 'j').replace(/q/g, 'k')
+      .replace(/[ah]/g, '').replace(/(.)\1+/g, '$1');
+  }
+  const isDev = (s) => /[ऀ-ॿ]/.test(s);
+
+  function prepare(m) {
+    m._dev = devKey(m.name);
+    m._lat = m.nameEn.split(/\s+/).map(latKey);
+    return m;
+  }
+
+  function matches(m, tokens) {
+    return tokens.every((t) => {
+      const digits = toAscii(t);
+      if (/^\d+$/.test(digits)) return String(m.sr) === digits;
+      if (isDev(t)) return m._dev.includes(devKey(t));
+      // English matches from the start of a word, or "ambavane" would also
+      // find every Chambavane.
+      const k = latKey(t);
+      return k ? m._lat.some((w) => w.startsWith(k)) : m.nameEn.toLowerCase().includes(t.toLowerCase());
+    });
+  }
+
+  function counts() {
+    const c = { all: MEMBERS.length, alive: 0, dead: 0, double: 0 };
+    MEMBERS.forEach((m) => { c[m.status]++; });
+    return c;
+  }
+
+  function renderChips() {
+    const c = counts();
+    const defs = [['all', 'सर्व'], ['alive', 'हयात'], ['dead', 'मयत'], ['double', 'डबल']];
+    $('chips').innerHTML = defs.filter(([k]) => k !== 'double' || c.double)
+      .map(([k, label]) => '<button class="chip' + (filter === k ? ' on' : '') + '" data-f="' + k + '">' +
+        label + '<b>' + c[k] + '</b></button>').join('');
+  }
+
+  function cardHtml(m) {
+    const st = STATUS[m.status];
+    const d = [];
+    d.push('<span>' + GENDER[m.gender] + '</span>');
+    if (m.age) d.push('<span>वय <b>' + m.age + '</b></span>');
+    if (m.receipt) d.push('<span>पावती <b>' + esc(m.receipt) + '</b></span>');
+    if (m.date) d.push('<span>दि. <b>' + esc(m.date) + '</b></span>');
+    let upd = '';
+    if (m.update) {
+      upd = '<div class="upd">✎ ' + (m.status === 'dead' ? 'मयत असल्याचे' : 'हयात असल्याचे') +
+        ' कळवले: <b>' + esc(m.update.by) + '</b> · ' + esc(fmtDate(m.update.at)) +
+        (m.update.note ? '<br>टीप: ' + esc(m.update.note) : '') + '</div>';
+    } else if (m.status === 'dead') {
+      upd = '<div class="upd">मूळ छापील यादीत खोडलेले नाव</div>';
+    } else if (m.status === 'double') {
+      upd = '<div class="upd">मूळ यादीत डबल नाव म्हणून वगळलेले</div>';
+    }
+    let act = '';
+    if (m.status === 'alive') act = '<div class="act"><button data-act="dead" data-sr="' + m.sr + '">मयत कळवा</button></div>';
+    else if (m.status === 'dead') act = '<div class="act"><button data-act="alive" data-sr="' + m.sr + '">हयात आहे? दुरुस्त करा</button></div>';
+    return '<div class="card ' + m.status + '" data-sr="' + m.sr + '">' +
+      '<div class="sr">' + m.sr + '</div>' +
+      '<div class="info">' +
+        '<div class="top"><div><div class="mname">' + esc(m.name) + '</div>' +
+        '<div class="men">' + esc(m.nameEn) + '</div></div>' +
+        '<span class="pill ' + m.status + '">' + st.mr + '</span></div>' +
+        '<div class="details">' + d.join('') + '</div>' + upd + act +
+      '</div></div>';
+  }
+
+  function render() {
+    const tokens = qEl.value.trim().split(/\s+/).filter(Boolean);
+    $('searchBox').classList.toggle('has-text', !!qEl.value);
+    const list = MEMBERS.filter((m) => (filter === 'all' || m.status === filter) && matches(m, tokens));
+    listEl.innerHTML = list.map(cardHtml).join('');
+    $('empty').style.display = list.length ? 'none' : 'block';
+    $('count').textContent = list.length + ' सभासद';
+    renderChips();
+  }
+
+  function fmtDate(s) {
+    // "2026-10-28 14:05:00" → "28/10/2026"
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+    return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : (s || '');
+  }
+
+  function load() {
+    return api('/api/kulgaon/members').then((data) => {
+      MEMBERS = data.map(prepare);
+      $('loading').style.display = 'none';
+      render();
+    });
+  }
+
+  qEl.addEventListener('input', render);
+  $('clearQ').addEventListener('click', () => { qEl.value = ''; render(); qEl.focus(); });
+  $('chips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-f]');
+    if (!b) return;
+    filter = b.dataset.f;
+    render();
+  });
+
+  // ---- Status change sheet ----
+  const store = {
+    get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } },
+  };
+
+  function openSheet(id) { $(id).classList.add('open'); }
+  function closeSheet(id) { $(id).classList.remove('open'); }
+  document.querySelectorAll('.overlay').forEach((o) => {
+    o.addEventListener('click', (e) => {
+      if (e.target === o || e.target.closest('[data-close]')) closeSheet(o.id);
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach((o) => closeSheet(o.id));
+  });
+
+  listEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const m = MEMBERS.find((x) => x.sr === +b.dataset.sr);
+    if (!m) return;
+    editing = { sr: m.sr, status: b.dataset.act };
+    const toDead = editing.status === 'dead';
+    $('statusTitle').textContent = toDead ? 'मयत असल्याचे कळवा' : 'हयात असल्याची दुरुस्ती';
+    $('statusWho').textContent = 'क्र. ' + m.sr + ' — ' + m.name;
+    $('statusWhoEn').textContent = m.nameEn;
+    $('statusHint').textContent = toDead
+      ? 'हा सभासद मयत असल्याची खात्री असल्यासच नोंद करा. आपले नाव व मोबाईल क्रमांक या नोंदीसोबत ठेवला जातो.'
+      : 'हा सभासद हयात असल्यास ही चुकीची नोंद दुरुस्त करा. आपले नाव व मोबाईल क्रमांक या नोंदीसोबत ठेवला जातो.';
+    $('statusSubmit').textContent = toDead ? 'मयत म्हणून नोंदवा' : 'हयात म्हणून दुरुस्त करा';
+    $('statusSubmit').className = 'submit' + (toDead ? '' : ' revive');
+    $('fName').value = store.get('kulgaon.name');
+    $('fMobile').value = store.get('kulgaon.mobile');
+    $('fNote').value = '';
+    $('statusMsg').textContent = '';
+    $('statusMsg').className = 'msg';
+    openSheet('statusOverlay');
+  });
+
+  $('statusForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('fName').value.trim();
+    const mobile = $('fMobile').value.replace(/\D/g, '');
+    const msg = $('statusMsg');
+    msg.className = 'msg error';
+    if (name.length < 2) { msg.textContent = 'कृपया आपले नाव लिहा.'; return; }
+    if (!/^[6-9]\d{9}$/.test(mobile)) { msg.textContent = 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.'; return; }
+    const btn = $('statusSubmit');
+    btn.disabled = true;
+    const sr = editing.sr;
+    api('/api/kulgaon/members/' + sr + '/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: editing.status, name: name, mobile: mobile, note: $('fNote').value.trim() }),
+    }).then(() => {
+      store.set('kulgaon.name', name);
+      store.set('kulgaon.mobile', mobile);
+      msg.className = 'msg ok';
+      msg.textContent = 'नोंद झाली. धन्यवाद!';
+      return load().then(() => {
+        setTimeout(() => {
+          closeSheet('statusOverlay');
+          const card = listEl.querySelector('.card[data-sr="' + sr + '"]');
+          if (card) { card.scrollIntoView({ block: 'center' }); card.classList.add('flash'); }
+        }, 700);
+      });
+    }).catch((err) => {
+      msg.className = 'msg error';
+      msg.textContent = err.message;
+    }).then(() => { btn.disabled = false; });
+  });
+
+  // ---- Recent changes ----
+  $('openChanges').addEventListener('click', () => {
+    const box = $('changesList');
+    box.innerHTML = '<p class="hint">लोड होत आहे…</p>';
+    openSheet('changesOverlay');
+    api('/api/kulgaon/changes').then((rows) => {
+      if (!rows.length) { box.innerHTML = '<p class="hint">अजून कोणताही बदल कळवलेला नाही.</p>'; return; }
+      box.innerHTML = rows.map((r) =>
+        '<div class="change"><div class="c-name">क्र. ' + r.sr + ' — ' + esc(r.name) + '</div>' +
+        '<div>' + STATUS[r.from].mr + ' → <b>' + STATUS[r.to].mr + '</b></div>' +
+        '<div class="c-meta">कळवले: ' + esc(r.by) + ' (' + esc(r.mobile) + ') · ' + esc(fmtDate(r.at)) + '</div>' +
+        (r.note ? '<div class="c-meta">टीप: ' + esc(r.note) + '</div>' : '') + '</div>'
+      ).join('');
+    }).catch((err) => { box.innerHTML = '<p class="hint">' + esc(err.message) + '</p>'; });
+  });
+
+  load().catch(() => {
+    $('loading').textContent = 'यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';
+  });
+})();
+</script>
+</body>
+</html>

@@ -76,6 +76,7 @@
       document.getElementById('rosterTab').style.display = tab === 'roster' ? 'block' : 'none';
       document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
       document.getElementById('treesTab').style.display = tab === 'trees' ? 'block' : 'none';
+      document.getElementById('uniqueTab').style.display = tab === 'unique' ? 'block' : 'none';
       document.getElementById('waTab').style.display = tab === 'wa' ? 'block' : 'none';
       document.getElementById('linksTab').style.display = tab === 'links' ? 'block' : 'none';
       if (tab === 'links') loadLinks();
@@ -83,6 +84,7 @@
       if (tab === 'roster') loadRoster();
       if (tab === 'history') loadHistoryAdmin();
       if (tab === 'trees') loadTrees();
+      if (tab === 'unique') loadUnique();
       if (tab === 'wa') loadWa();
     });
   });
@@ -621,6 +623,52 @@
     });
   }
 
+  // ---- अद्वितीय वंशावळ: one entry per family, copies folded into their original ----
+  // A copy made via "कॉपी करा" keeps the original's node ids, so trees with the
+  // same root id are one family (same rule as linkedTrees on the server). The
+  // original is the row the member filled in themself — copies are owned by
+  // "Admin (... यांच्या वृक्षावरून कॉपी)". If the original was deleted, the
+  // first remaining copy stands in for it.
+  const uniqueList = document.getElementById('uniqueList');
+  let uniqueGroups = [];
+
+  function loadUnique() {
+    api('/api/shete-admin/trees').then(function (res) {
+      const rows = res.body || [];
+      const byRoot = {};
+      rows.forEach(function (r) { (byRoot[r.data.id] = byRoot[r.data.id] || []).push(r); });
+      uniqueGroups = Object.keys(byRoot).map(function (k) {
+        const g = byRoot[k];
+        const original = g.find(function (r) { return r.ownerName.indexOf('Admin (') !== 0; }) || g[0];
+        return { original: original, copies: g.filter(function (r) { return r !== original; }) };
+      }).sort(function (a, b) { return a.original.name.localeCompare(b.original.name); });
+
+      document.getElementById('uniqueCount').textContent = uniqueGroups.length || '';
+      document.getElementById('uniqueEmpty').style.display = uniqueGroups.length ? 'none' : 'block';
+      document.getElementById('uniqueSummary').textContent = rows.length
+        ? 'एकूण ' + rows.length + ' वृक्षांपैकी ' + uniqueGroups.length + ' अद्वितीय वंशावळी — कॉपी केलेले वृक्ष मूळ वृक्षाखाली दाखवले आहेत.' : '';
+      uniqueList.innerHTML = uniqueGroups.map(function (g, i) {
+        const r = g.original;
+        return '<div class="request-card">' +
+          '<div class="request-info">' +
+            '<div class="rtitle">' + escapeHtml(r.name) + '</div>' +
+            '<div class="rmeta">मूळपुरुष: ' + escapeHtml(r.data.name) + ' · ' + FamilyTree.count(r.data) + ' व्यक्ती · ' + r.mobile + '</div>' +
+            '<div class="rmeta"><span class="ft-status ' + r.status + '">' + TREE_STATUS[r.status] + '</span></div>' +
+            (g.copies.length
+              ? '<div class="rmeta">कॉपी यांच्याकडेही: ' + g.copies.map(function (c) { return escapeHtml(c.name); }).join(', ') + '</div>' : '') +
+          '</div>' +
+          '<div class="request-btns">' +
+            '<button class="btn-save" data-i="' + i + '">पहा</button>' +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  uniqueList.addEventListener('click', function (e) {
+    const btn = e.target.closest('button[data-i]');
+    if (btn) openViewer(uniqueGroups[Number(btn.dataset.i)].original, true);
+  });
+
   // ---- Personal tree links, sent on WhatsApp (like the Musicbox invites) ----
   const linkList = document.getElementById('linkList');
   const linkSearch = document.getElementById('linkSearch');
@@ -743,8 +791,12 @@
     tvZoom = Math.min(1, fw, fh);
     tvApply();
   }
-  function openViewer(row) {
+  // noTitle: the अद्वितीय वंशावळ tab downloads the tree without the member's
+  // name printed on top, since one family tree stands for all its copies.
+  let tvNoTitle = false;
+  function openViewer(row, noTitle) {
     tvRow = row;
+    tvNoTitle = !!noTitle;
     document.getElementById('tvTitle').textContent = row.name + ' — कुटुंब वृक्ष';
     treeViewer.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -760,7 +812,7 @@
     document.body.style.overflow = '';
   });
   document.getElementById('tvPng').addEventListener('click', function () {
-    FamilyTree.downloadPng(tvRow.data, tvRow.name + ' — कुटुंब वृक्ष', 'kutumb-vruksha-' + tvRow.memberId + '.png');
+    FamilyTree.downloadPng(tvRow.data, tvNoTitle ? '' : tvRow.name + ' — कुटुंब वृक्ष', 'kutumb-vruksha-' + tvRow.memberId + '.png');
   });
 
   // ---- Copy a tree to other members (brothers / cousins of the same family) ----

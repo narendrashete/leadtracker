@@ -29,3 +29,8 @@ rishta-data/
 # thigdam_photos rows in leads.db. Friends' personal photos — never committed
 # (this repo is public); survive deploys because git pull never touches them.
 thigdam-data/
+
+# Kulgaon gat member list transcribed from the voter-list PDF — private
+# individuals' names and ages, and this repo is public. Loaded into leads.db
+# through the admin page (/kulgaon/admin → upload), never committed.
+kulgaon/members.json

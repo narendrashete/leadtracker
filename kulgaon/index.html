@@ -110,7 +110,7 @@ button{font-family:inherit;}
   margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft);
   background:#faf5ee;border-left:3px solid var(--gold);border-radius:6px;padding:5px 8px;
 }
-.act{margin-top:8px;}
+.act{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;}
 .act button{
   border:1px solid var(--line);background:#fff;color:var(--maroon);
   border-radius:16px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;
@@ -121,11 +121,16 @@ button{font-family:inherit;}
 .card.double{background:#fffaf0;}
 .card.double .sr{background:#b07a1a;}
 .card.double .mname{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.35);}
-.card.flash{animation:flash 1.4s ease-in-out 2;}
-@keyframes flash{50%{box-shadow:0 0 0 3px var(--gold);}}
 
 .empty,.loading{text-align:center;color:var(--text-soft);padding:40px 16px;font-size:14px;line-height:1.7;}
-.note-foot{font-size:12px;color:var(--text-soft);line-height:1.6;padding:0 16px 30px;}
+.note-foot{font-size:12px;color:var(--text-soft);line-height:1.6;padding:0 16px 90px;}
+
+.fab{
+  position:fixed;right:16px;bottom:20px;z-index:30;
+  border:none;border-radius:28px;padding:13px 18px;
+  background:var(--maroon);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;
+  box-shadow:0 8px 22px rgba(82,10,25,.35);
+}
 
 .overlay{
   position:fixed;inset:0;background:rgba(30,10,10,.5);z-index:100;
@@ -133,7 +138,7 @@ button{font-family:inherit;}
 }
 .overlay.open{display:flex;}
 .sheet{
-  background:#fff;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+  background:#fff;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
   border-radius:20px 20px 0 0;padding:20px 18px 26px;position:relative;
 }
 @media (min-width:600px){.overlay{align-items:center;}.sheet{border-radius:20px;}}
@@ -146,11 +151,13 @@ button{font-family:inherit;}
   width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;color:var(--text-soft);
 }
 .sheet label{display:block;font-size:13.5px;font-weight:600;margin-top:12px;}
-.sheet input{
+.sheet input,.sheet select,.sheet textarea{
   display:block;width:100%;margin-top:5px;padding:10px 12px;font-size:16px;font-family:inherit;
   border:1px solid #dccfc2;border-radius:10px;color:var(--text);background:#fff;
 }
-.sheet input:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.sheet textarea{resize:vertical;min-height:70px;}
+.sheet input:focus,.sheet select:focus,.sheet textarea:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
 .msg{font-size:13px;margin-top:10px;min-height:18px;}
 .msg.error{color:#b3261e;}
 .msg.ok{color:var(--green);}
@@ -158,12 +165,7 @@ button{font-family:inherit;}
   margin-top:12px;width:100%;border:none;border-radius:12px;padding:12px;
   background:var(--maroon);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;
 }
-.submit.revive{background:var(--green);}
 .submit:disabled{opacity:.6;cursor:default;}
-.change{border-bottom:1px solid var(--line);padding:10px 0;font-size:13.5px;line-height:1.55;}
-.change:last-child{border-bottom:none;}
-.change .c-name{font-weight:600;}
-.change .c-meta{font-size:12.5px;color:var(--text-soft);}
 </style>
 </head>
 <body>
@@ -184,10 +186,7 @@ button{font-family:inherit;}
       <button class="clear" id="clearQ" aria-label="Clear">✕</button>
     </div>
     <div class="chips" id="chips"></div>
-    <div class="meta-row">
-      <span id="count"></span>
-      <button class="link-btn" id="openChanges">🕘 अलीकडील बदल</button>
-    </div>
+    <div class="meta-row"><span id="count"></span></div>
   </div>
 </div>
 
@@ -197,103 +196,50 @@ button{font-family:inherit;}
   <div class="empty" id="empty" style="display:none">🔍 कोणताही सभासद सापडला नाही<br><small>No member found</small></div>
   <p class="note-foot">
     मूळ छापील यादीत खोडलेली नावे येथे <b>मयत</b> (किंवा <b>डबल</b>) म्हणून दाखवली आहेत.
-    आणखी कोणी सभासद मयत असल्यास त्याच्या नावाखालील <b>“मयत कळवा”</b> वापरा — आपले नाव व मोबाईल
-    क्रमांक नोंदवला जातो आणि सर्व बदल “अलीकडील बदल” मध्ये सर्वांना दिसतात. चुकीची नोंद “हयात आहे” ने दुरुस्त करता येते.
+    एखादा सभासद मयत असल्यास, माहितीत चूक असल्यास किंवा नवीन सभासद जोडायचा असल्यास येथून
+    <b>विनंती पाठवा</b>. विनंती Admin कडे जाते — मंजुरीनंतरच यादीत बदल दिसतो.
+    विनंती पाठवणाऱ्याचे नाव किंवा मोबाईल विचारला जात नाही आणि कुठेही नोंदवला जात नाही.
   </p>
 </div>
 
-<div class="overlay" id="statusOverlay">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
+<button class="fab" id="addFab">＋ नवीन सभासद</button>
+
+<div class="overlay" id="reqOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="reqTitle">
     <button class="close" data-close aria-label="Close">✕</button>
-    <h2 id="statusTitle"></h2>
-    <div class="who" id="statusWho"></div>
-    <div class="who-en" id="statusWhoEn"></div>
-    <p class="hint" id="statusHint"></p>
-    <form id="statusForm" novalidate>
-      <label>आपले नाव (Your name) *<input id="fName" maxlength="60" autocomplete="name" required></label>
-      <label>आपला मोबाईल क्रमांक (Your mobile) *<input id="fMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकी मोबाईल क्रमांक" required></label>
-      <label>टीप (ऐच्छिक) — उदा. निधन दिनांक<input id="fNote" maxlength="200"></label>
-      <div class="msg" id="statusMsg"></div>
-      <button type="submit" class="submit" id="statusSubmit"></button>
+    <h2 id="reqTitle"></h2>
+    <div class="who" id="reqWho"></div>
+    <div class="who-en" id="reqWhoEn"></div>
+    <p class="hint" id="reqHint"></p>
+    <form id="reqForm" novalidate>
+      <div id="fields">
+        <label>सभासदाचे नाव (मराठी)<input id="fName" maxlength="80"></label>
+        <label>Name in English<input id="fNameEn" maxlength="80"></label>
+        <div class="row2">
+          <label>स्त्री / पुरुष<select id="fGender"><option value="">—</option><option value="M">पुरुष</option><option value="F">स्त्री</option></select></label>
+          <label>वय<input id="fAge" inputmode="numeric" maxlength="3"></label>
+        </div>
+        <div class="row2">
+          <label>पावती क्रमांक<input id="fReceipt" maxlength="30"></label>
+          <label>दिनांक<input id="fDate" maxlength="20" placeholder="उदा. १२/३/२०२४"></label>
+        </div>
+      </div>
+      <label>Admin साठी माहिती (ऐच्छिक)<textarea id="fMessage" maxlength="400" placeholder="उदा. निधन दिनांक, काय चुकले आहे…"></textarea></label>
+      <div class="msg" id="reqMsg"></div>
+      <button type="submit" class="submit" id="reqSubmit">विनंती पाठवा</button>
     </form>
   </div>
 </div>
 
-<div class="overlay" id="changesOverlay">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="changesTitle">
-    <button class="close" data-close aria-label="Close">✕</button>
-    <h2 id="changesTitle">अलीकडील बदल</h2>
-    <p class="hint">सभासदांनी कळवलेले स्थितीचे बदल, नवीन आधी.</p>
-    <div id="changesList"></div>
-  </div>
-</div>
-
+<script src="/kulgaon/common.js"></script>
 <script>
 (function () {
-  const STATUS = {
-    alive:  { mr: 'हयात', en: 'Alive' },
-    dead:   { mr: 'मयत', en: 'Deceased' },
-    double: { mr: 'डबल नाव', en: 'Duplicate' },
-  };
-  const GENDER = { M: 'पुरुष', F: 'स्त्री' };
-
+  const K = window.Kulgaon;
   const $ = (id) => document.getElementById(id);
   const listEl = $('list'), qEl = $('q');
   let MEMBERS = [];
   let filter = 'all';
-  let editing = null;
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  // Small fetch wrapper: unwraps the server's { error } body like the other pages.
-  function api(url, opts) {
-    return fetch(url, opts).then((r) => r.json().catch(() => ({})).then((body) => {
-      if (!r.ok) throw new Error(body.error || 'काहीतरी चूक झाली.');
-      return body;
-    }));
-  }
-
-  // ---- Search ----
-  // Same idea as the Navratri members page (a Devanagari name + an English
-  // transliteration per member), made forgiving: Marathi matching ignores the
-  // short/long vowel difference (दिपक = दीपक), and English matching drops the
-  // spellings people vary on (Sandeep = Sandip, Khadakbaan = Khadakban,
-  // Ambawane = Ambavane, Khismatrao = Khismatrav). Every word typed must match.
-  const DEV_DIGITS = '०१२३४५६७८९';
-  const toAscii = (s) => s.replace(/[०-९]/g, (d) => DEV_DIGITS.indexOf(d));
-  function devKey(s) {
-    return s.replace(/[‌‍़.]/g, '')
-      .replace(/ी/g, 'ि').replace(/ू/g, 'ु').replace(/ई/g, 'इ').replace(/ऊ/g, 'उ')
-      .replace(/ँ/g, 'ं').replace(/ष/g, 'श').replace(/\s+/g, ' ');
-  }
-  function latKey(s) {
-    return s.toLowerCase().replace(/ao\b/g, 'av').replace(/[^a-z]/g, '')
-      .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/x/g, 'ks').replace(/w/g, 'v')
-      .replace(/ph/g, 'f').replace(/z/g, 'j').replace(/q/g, 'k')
-      .replace(/[ah]/g, '').replace(/(.)\1+/g, '$1');
-  }
-  const isDev = (s) => /[ऀ-ॿ]/.test(s);
-
-  function prepare(m) {
-    m._dev = devKey(m.name);
-    m._lat = m.nameEn.split(/\s+/).map(latKey);
-    return m;
-  }
-
-  function matches(m, tokens) {
-    return tokens.every((t) => {
-      const digits = toAscii(t);
-      if (/^\d+$/.test(digits)) return String(m.sr) === digits;
-      if (isDev(t)) return m._dev.includes(devKey(t));
-      // English matches from the start of a word, or "ambavane" would also
-      // find every Chambavane.
-      const k = latKey(t);
-      return k ? m._lat.some((w) => w.startsWith(k)) : m.nameEn.toLowerCase().includes(t.toLowerCase());
-    });
-  }
+  let req = null; // { kind, sr?, status? } of the open sheet
 
   function counts() {
     const c = { all: MEMBERS.length, alive: 0, dead: 0, double: 0 };
@@ -310,57 +256,37 @@ button{font-family:inherit;}
   }
 
   function cardHtml(m) {
-    const st = STATUS[m.status];
     const d = [];
-    d.push('<span>' + GENDER[m.gender] + '</span>');
+    if (m.gender) d.push('<span>' + K.GENDER[m.gender] + '</span>');
     if (m.age) d.push('<span>वय <b>' + m.age + '</b></span>');
-    if (m.receipt) d.push('<span>पावती <b>' + esc(m.receipt) + '</b></span>');
-    if (m.date) d.push('<span>दि. <b>' + esc(m.date) + '</b></span>');
-    let upd = '';
-    if (m.update) {
-      upd = '<div class="upd">✎ ' + (m.status === 'dead' ? 'मयत असल्याचे' : 'हयात असल्याचे') +
-        ' कळवले: <b>' + esc(m.update.by) + '</b> · ' + esc(fmtDate(m.update.at)) +
-        (m.update.note ? '<br>टीप: ' + esc(m.update.note) : '') + '</div>';
-    } else if (m.status === 'dead') {
-      upd = '<div class="upd">मूळ छापील यादीत खोडलेले नाव</div>';
-    } else if (m.status === 'double') {
-      upd = '<div class="upd">मूळ यादीत डबल नाव म्हणून वगळलेले</div>';
-    }
+    if (m.receipt) d.push('<span>पावती <b>' + K.esc(m.receipt) + '</b></span>');
+    if (m.date) d.push('<span>दि. <b>' + K.esc(m.date) + '</b></span>');
     let act = '';
-    if (m.status === 'alive') act = '<div class="act"><button data-act="dead" data-sr="' + m.sr + '">मयत कळवा</button></div>';
-    else if (m.status === 'dead') act = '<div class="act"><button data-act="alive" data-sr="' + m.sr + '">हयात आहे? दुरुस्त करा</button></div>';
-    return '<div class="card ' + m.status + '" data-sr="' + m.sr + '">' +
+    if (m.status !== 'double') {
+      act = '<div class="act">' +
+        (m.status === 'alive'
+          ? '<button data-act="dead" data-sr="' + m.sr + '">मयत कळवा</button>'
+          : '<button data-act="alive" data-sr="' + m.sr + '">हयात आहे?</button>') +
+        '<button data-act="edit" data-sr="' + m.sr + '">✎ दुरुस्ती सुचवा</button></div>';
+    }
+    return '<div class="card ' + m.status + '">' +
       '<div class="sr">' + m.sr + '</div>' +
       '<div class="info">' +
-        '<div class="top"><div><div class="mname">' + esc(m.name) + '</div>' +
-        '<div class="men">' + esc(m.nameEn) + '</div></div>' +
-        '<span class="pill ' + m.status + '">' + st.mr + '</span></div>' +
-        '<div class="details">' + d.join('') + '</div>' + upd + act +
+        '<div class="top"><div><div class="mname">' + K.esc(m.name) + '</div>' +
+        (m.nameEn ? '<div class="men">' + K.esc(m.nameEn) + '</div>' : '') + '</div>' +
+        '<span class="pill ' + m.status + '">' + K.STATUS[m.status].mr + '</span></div>' +
+        (d.length ? '<div class="details">' + d.join('') + '</div>' : '') +
+        (m.note ? '<div class="upd">' + K.esc(m.note) + '</div>' : '') + act +
       '</div></div>';
   }
 
   function render() {
-    const tokens = qEl.value.trim().split(/\s+/).filter(Boolean);
     $('searchBox').classList.toggle('has-text', !!qEl.value);
-    const list = MEMBERS.filter((m) => (filter === 'all' || m.status === filter) && matches(m, tokens));
+    const list = MEMBERS.filter((m) => (filter === 'all' || m.status === filter) && K.matches(m, qEl.value));
     listEl.innerHTML = list.map(cardHtml).join('');
     $('empty').style.display = list.length ? 'none' : 'block';
     $('count').textContent = list.length + ' सभासद';
     renderChips();
-  }
-
-  function fmtDate(s) {
-    // "2026-10-28 14:05:00" → "28/10/2026"
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
-    return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : (s || '');
-  }
-
-  function load() {
-    return api('/api/kulgaon/members').then((data) => {
-      MEMBERS = data.map(prepare);
-      $('loading').style.display = 'none';
-      render();
-    });
   }
 
   qEl.addEventListener('input', render);
@@ -372,97 +298,77 @@ button{font-family:inherit;}
     render();
   });
 
-  // ---- Status change sheet ----
-  const store = {
-    get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } },
-  };
+  // ---- Suggestion sheet: status, correction or new member ----
+  const FIELDS = { name: 'fName', nameEn: 'fNameEn', gender: 'fGender', age: 'fAge', receipt: 'fReceipt', date: 'fDate' };
+  const overlay = $('reqOverlay');
+  const close = () => overlay.classList.remove('open');
+  overlay.addEventListener('click', (e) => { if (e.target === overlay || e.target.closest('[data-close]')) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 
-  function openSheet(id) { $(id).classList.add('open'); }
-  function closeSheet(id) { $(id).classList.remove('open'); }
-  document.querySelectorAll('.overlay').forEach((o) => {
-    o.addEventListener('click', (e) => {
-      if (e.target === o || e.target.closest('[data-close]')) closeSheet(o.id);
-    });
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach((o) => closeSheet(o.id));
-  });
+  function openSheet(kind, m, status) {
+    req = { kind: kind, sr: m ? m.sr : null, status: status };
+    const T = {
+      dead:  ['मयत असल्याचे कळवा', 'हा सभासद मयत असल्यास विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत “मयत” दिसेल.', 'मयत असल्याची विनंती पाठवा'],
+      alive: ['हयात असल्याचे कळवा', 'हा सभासद हयात असल्यास विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत दुरुस्ती दिसेल.', 'हयात असल्याची विनंती पाठवा'],
+      edit:  ['माहिती दुरुस्त करा', 'चुकीची माहिती बदला आणि विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत दुरुस्ती दिसेल.', 'दुरुस्तीची विनंती पाठवा'],
+      add:   ['नवीन सभासद सुचवा', 'यादीत नसलेल्या सभासदाची माहिती भरा. Admin च्या मंजुरीनंतर तो यादीत जोडला जाईल.', 'नवीन सभासदाची विनंती पाठवा'],
+    }[kind === 'status' ? status : kind];
+    $('reqTitle').textContent = T[0];
+    $('reqHint').textContent = T[1] + ' आपले नाव / मोबाईल विचारला जात नाही.';
+    $('reqSubmit').textContent = T[2];
+    $('reqWho').textContent = m ? 'क्र. ' + m.sr + ' — ' + m.name : '';
+    $('reqWhoEn').textContent = m ? (m.nameEn || '') : '';
+    $('fields').style.display = kind === 'status' ? 'none' : '';
+    for (const k in FIELDS) $(FIELDS[k]).value = m && kind === 'edit' ? (m[k] == null ? '' : m[k]) : '';
+    $('fMessage').value = '';
+    $('reqMsg').textContent = '';
+    $('reqMsg').className = 'msg';
+    $('reqSubmit').disabled = false;
+    overlay.classList.add('open');
+  }
 
   listEl.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const m = MEMBERS.find((x) => x.sr === +b.dataset.sr);
     if (!m) return;
-    editing = { sr: m.sr, status: b.dataset.act };
-    const toDead = editing.status === 'dead';
-    $('statusTitle').textContent = toDead ? 'मयत असल्याचे कळवा' : 'हयात असल्याची दुरुस्ती';
-    $('statusWho').textContent = 'क्र. ' + m.sr + ' — ' + m.name;
-    $('statusWhoEn').textContent = m.nameEn;
-    $('statusHint').textContent = toDead
-      ? 'हा सभासद मयत असल्याची खात्री असल्यासच नोंद करा. आपले नाव व मोबाईल क्रमांक या नोंदीसोबत ठेवला जातो.'
-      : 'हा सभासद हयात असल्यास ही चुकीची नोंद दुरुस्त करा. आपले नाव व मोबाईल क्रमांक या नोंदीसोबत ठेवला जातो.';
-    $('statusSubmit').textContent = toDead ? 'मयत म्हणून नोंदवा' : 'हयात म्हणून दुरुस्त करा';
-    $('statusSubmit').className = 'submit' + (toDead ? '' : ' revive');
-    $('fName').value = store.get('kulgaon.name');
-    $('fMobile').value = store.get('kulgaon.mobile');
-    $('fNote').value = '';
-    $('statusMsg').textContent = '';
-    $('statusMsg').className = 'msg';
-    openSheet('statusOverlay');
+    if (b.dataset.act === 'edit') openSheet('edit', m);
+    else openSheet('status', m, b.dataset.act);
   });
+  $('addFab').addEventListener('click', () => openSheet('add', null));
 
-  $('statusForm').addEventListener('submit', (e) => {
+  $('reqForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    const name = $('fName').value.trim();
-    const mobile = $('fMobile').value.replace(/\D/g, '');
-    const msg = $('statusMsg');
-    msg.className = 'msg error';
-    if (name.length < 2) { msg.textContent = 'कृपया आपले नाव लिहा.'; return; }
-    if (!/^[6-9]\d{9}$/.test(mobile)) { msg.textContent = 'कृपया वैध १० अंकी मोबाईल क्रमांक टाका.'; return; }
-    const btn = $('statusSubmit');
-    btn.disabled = true;
-    const sr = editing.sr;
-    api('/api/kulgaon/members/' + sr + '/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: editing.status, name: name, mobile: mobile, note: $('fNote').value.trim() }),
-    }).then(() => {
-      store.set('kulgaon.name', name);
-      store.set('kulgaon.mobile', mobile);
+    const msg = $('reqMsg');
+    const body = { kind: req.kind, sr: req.sr, message: $('fMessage').value.trim(), data: {} };
+    if (req.kind === 'status') {
+      body.data.status = req.status;
+    } else {
+      for (const k in FIELDS) body.data[k] = $(FIELDS[k]).value.trim();
+      if (req.kind === 'add' && !body.data.name && !body.data.nameEn) {
+        msg.className = 'msg error';
+        msg.textContent = 'कृपया सभासदाचे नाव लिहा.';
+        return;
+      }
+    }
+    $('reqSubmit').disabled = true;
+    K.api('/api/kulgaon/requests', { json: body }).then(() => {
       msg.className = 'msg ok';
-      msg.textContent = 'नोंद झाली. धन्यवाद!';
-      return load().then(() => {
-        setTimeout(() => {
-          closeSheet('statusOverlay');
-          const card = listEl.querySelector('.card[data-sr="' + sr + '"]');
-          if (card) { card.scrollIntoView({ block: 'center' }); card.classList.add('flash'); }
-        }, 700);
-      });
+      msg.textContent = '✓ विनंती Admin कडे पाठवली. मंजुरीनंतर यादीत बदल दिसेल. धन्यवाद!';
+      setTimeout(close, 2200);
     }).catch((err) => {
       msg.className = 'msg error';
       msg.textContent = err.message;
-    }).then(() => { btn.disabled = false; });
+      $('reqSubmit').disabled = false;
+    });
   });
 
-  // ---- Recent changes ----
-  $('openChanges').addEventListener('click', () => {
-    const box = $('changesList');
-    box.innerHTML = '<p class="hint">लोड होत आहे…</p>';
-    openSheet('changesOverlay');
-    api('/api/kulgaon/changes').then((rows) => {
-      if (!rows.length) { box.innerHTML = '<p class="hint">अजून कोणताही बदल कळवलेला नाही.</p>'; return; }
-      box.innerHTML = rows.map((r) =>
-        '<div class="change"><div class="c-name">क्र. ' + r.sr + ' — ' + esc(r.name) + '</div>' +
-        '<div>' + STATUS[r.from].mr + ' → <b>' + STATUS[r.to].mr + '</b></div>' +
-        '<div class="c-meta">कळवले: ' + esc(r.by) + ' (' + esc(r.mobile) + ') · ' + esc(fmtDate(r.at)) + '</div>' +
-        (r.note ? '<div class="c-meta">टीप: ' + esc(r.note) + '</div>' : '') + '</div>'
-      ).join('');
-    }).catch((err) => { box.innerHTML = '<p class="hint">' + esc(err.message) + '</p>'; });
-  });
-
-  load().catch(() => {
-    $('loading').textContent = 'यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';
+  K.api('/api/kulgaon/members').then((data) => {
+    MEMBERS = data.map(K.prepare);
+    $('loading').style.display = 'none';
+    render();
+  }).catch((err) => {
+    $('loading').textContent = err.status === 503 ? 'सभासद यादी अजून उपलब्ध नाही.' : 'यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';
   });
 })();
 </script>

@@ -41,8 +41,10 @@ address/city/state to leads.
 
 - Kulgaon gat member list at `/kulgaon`: the Vaishya Samaj Sangh's 526-member Kulgaon
   voter list (transcribed from the scanned PDF), searchable in Marathi or English, with a
-  हयात/मयत/डबल status per member. Members report further deaths (name + mobile, logged,
-  reversible) without logging in. See `CLAUDE.md` → Kulgaon gat member list.
+  हयात/मयत/डबल status per member. Anyone can send an anonymous suggestion (मयत/हयात,
+  correction, new member); it changes the list only after an admin approves it at
+  `/kulgaon/admin`. The list itself is git-ignored and uploaded once through that page.
+  See `CLAUDE.md` → Kulgaon gat member list.
 
 - Rishta Album: private marriage-profile album at `/rishta`. Imports the vadhu-var list PDFs
   in the browser, one card per profile with photo; filters by age, native place, job
@@ -223,6 +225,15 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-10-28** — **Kulgaon list: admin approval + anonymous suggestions.** Public page no
+  longer changes the list or asks for name/mobile: status, correction and new-member
+  suggestions go to `kulgaon_requests` (no sender columns, day only) and wait for an admin.
+  New admin page `/kulgaon/admin` (`routes/kulgaonAdmin.js`): login, approve (with
+  adjustments) / reject, decided list, direct edit/add, one-time list upload. The list moved
+  into `kulgaon_members` in leads.db; `kulgaon/members.json` is git-ignored (private data,
+  public repo). Replaces the `kulgaon_status`/`kulgaon_status_log` tables of the first
+  version (branch only; any leftover empty tables are harmless).
 
 - **2026-10-28** — **Kulgaon gat member list** at `/kulgaon`. Transcribed the scanned
   "तहयात सभासद यादी (कुळगांव गट)" PDF (no text layer) into `kulgaon/members.json`: 526 members

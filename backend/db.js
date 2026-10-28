@@ -464,30 +464,37 @@ async function getDb() {
     )
   `);
 
-  // Kulgaon gat member list at /kulgaon. The list itself is kulgaon/members.json
-  // (committed, read-only); these hold only the status changes members report.
-  // kulgaon_status is the current override per member (sr = list number);
-  // kulgaon_status_log keeps every change with who made it.
+  // Kulgaon gat member list at /kulgaon. kulgaon_members is the list itself
+  // (sr = list number), loaded once from the transcribed members.json and
+  // changed only by an admin. kulgaon_requests holds the public's anonymous
+  // suggestions (kind status/edit/add, proposed fields as JSON in data) until
+  // an admin approves or rejects them. Deliberately no column about the sender,
+  // and only the day it arrived.
   _db.run(`
-    CREATE TABLE IF NOT EXISTS kulgaon_status (
+    CREATE TABLE IF NOT EXISTS kulgaon_members (
       sr INTEGER PRIMARY KEY,
-      status TEXT NOT NULL,
-      reported_by TEXT NOT NULL,
-      mobile TEXT NOT NULL,
+      name TEXT NOT NULL,
+      name_en TEXT,
+      gender TEXT,
+      age INTEGER,
+      receipt TEXT,
+      reg_date TEXT,
+      status TEXT NOT NULL DEFAULT 'alive',
       note TEXT,
-      updated_at TEXT NOT NULL
+      updated_at TEXT
     )
   `);
   _db.run(`
-    CREATE TABLE IF NOT EXISTS kulgaon_status_log (
+    CREATE TABLE IF NOT EXISTS kulgaon_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sr INTEGER NOT NULL,
-      old_status TEXT NOT NULL,
-      new_status TEXT NOT NULL,
-      reported_by TEXT NOT NULL,
-      mobile TEXT NOT NULL,
-      note TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+      kind TEXT NOT NULL,
+      sr INTEGER,
+      data TEXT NOT NULL,
+      message TEXT,
+      state TEXT NOT NULL DEFAULT 'pending',
+      created_on TEXT NOT NULL,
+      decided_on TEXT,
+      result_sr INTEGER
     )
   `);
 

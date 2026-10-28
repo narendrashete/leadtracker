@@ -26,6 +26,8 @@ const PRIMEXAI_PAGE  = path.resolve(__dirname, '..', 'PrimeXAI', 'index.html');
 const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
 const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 const THIGDAM_PAGE  = path.resolve(__dirname, '..', 'thigdam', 'index.html');
+const KULGAON_PAGE  = path.resolve(__dirname, '..', 'kulgaon', 'index.html');
+const KULGAON_ADMIN = path.resolve(__dirname, '..', 'kulgaon', 'admin.html');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -41,6 +43,8 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const rishtaRouter     = require('./routes/rishta');
   const sheteAdminRouter = require('./routes/sheteAdmin');
   const thigdamRouter    = require('./routes/thigdam');
+  const kulgaonRouter    = require('./routes/kulgaon');
+  const kulgaonAdminRouter = require('./routes/kulgaonAdmin');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -72,6 +76,12 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/api/rishta', rishtaRouter);
   // Public by the owner's choice (see CLAUDE.md → Thigdam): the friends' photo album.
   app.use('/api/thigdam', thigdamRouter);
+  // Public and anonymous by the owner's choice (see CLAUDE.md → Kulgaon member
+  // list): read the list, and suggest changes that wait for an admin.
+  app.use('/api/kulgaon', kulgaonRouter);
+  // Protected: approving those suggestions and editing the list. Separate mount,
+  // same split as /api/shete-admin.
+  app.use('/api/kulgaon-admin', kulgaonAdminRouter); // applies requireAuth + requireAdmin itself
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
   // surface can never approve its own requests.
@@ -378,6 +388,38 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // Kulgaon gat member list — searchable (Marathi or English) copy of the
+  // Vaishya Samaj Sangh voter list. Plain HTML files, no build step; the list
+  // itself is in leads.db (kulgaon_members), served through /api/kulgaon.
+  app.get('/kulgaon', (req, res) => {
+    recordVisit(req, 'kulgaon');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(KULGAON_PAGE, (err) => {
+      // See the Aarti Sangrah route: a client that disconnects mid-transfer lands
+      // here with headers already sent, and answering again would crash the process.
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Kulgaon page missing.');
+      }
+    });
+  });
+  // Script shared by both pages. Its own route on purpose: a static mount of
+  // kulgaon/ would also serve the git-ignored members.json if it sits there.
+  app.get('/kulgaon/common.js', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '..', 'kulgaon', 'common.js'), (err) => {
+      if (err && !res.headersSent) res.status(404).type('text/plain').send('Not found.');
+    });
+  });
+  // The admin page: login, approve suggestions, edit the list. Not counted —
+  // it is the admin, not a visitor.
+  app.get('/kulgaon/admin', (req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(KULGAON_ADMIN, (err) => {
+      if (err && !res.headersSent) {
+        res.status(500).type('text/plain').send('Kulgaon admin page missing.');
+      }
+    });
+  });
+
   // Prime API Integration — the multi-courier shipping (courier aggregator) demo.
   // One self-contained HTML file BUILT from prime-api-src/ (React + Vite + Tailwind,
   // inlined by vite-plugin-singlefile) and committed, like Rishta. No API, no
@@ -439,6 +481,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
     console.log(`  Thigdam album:   http://localhost:${PORT}/thigdam`);
+    console.log(`  Kulgaon list:    http://localhost:${PORT}/kulgaon  (admin: /kulgaon/admin)`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

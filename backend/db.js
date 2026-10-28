@@ -464,6 +464,40 @@ async function getDb() {
     )
   `);
 
+  // Kulgaon gat member list at /kulgaon. kulgaon_members is the list itself
+  // (sr = list number), loaded once from the transcribed members.json and
+  // changed only by an admin. kulgaon_requests holds the public's anonymous
+  // suggestions (kind status/edit/add, proposed fields as JSON in data) until
+  // an admin approves or rejects them. Deliberately no column about the sender,
+  // and only the day it arrived.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS kulgaon_members (
+      sr INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      name_en TEXT,
+      gender TEXT,
+      age INTEGER,
+      receipt TEXT,
+      reg_date TEXT,
+      status TEXT NOT NULL DEFAULT 'alive',
+      note TEXT,
+      updated_at TEXT
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS kulgaon_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL,
+      sr INTEGER,
+      data TEXT NOT NULL,
+      message TEXT,
+      state TEXT NOT NULL DEFAULT 'pending',
+      created_on TEXT NOT NULL,
+      decided_on TEXT,
+      result_sr INTEGER
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

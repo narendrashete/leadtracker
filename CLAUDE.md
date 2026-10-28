@@ -48,6 +48,10 @@ Express (backend/server.js)
    ├── /api/thigdam   (public by owner's choice — Thigdam friends' photo album)
    ├── /thigdam       (public, noindex — serves thigdam/index.html verbatim, no build step)
    ├── /thigdam/photos/*  (public — uploaded originals + collage previews from thigdam-data/)
+   ├── /api/kulgaon   (public by owner's choice — read the member list, send anonymous suggestions)
+   ├── /api/kulgaon-admin (requireAuth + requireAdmin — approve suggestions, edit/load the list)
+   ├── /kulgaon       (public, noindex — serves kulgaon/index.html verbatim, no build step)
+   ├── /kulgaon/admin (admin login page — kulgaon/admin.html; /kulgaon/common.js shared by both)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -157,6 +161,11 @@ thigdam/
   index.html           Thigdam — the friends' group photo album (collage + zoom viewer +
                        upload). One plain file, no build step. API in routes/thigdam.js.
 thigdam-data/photos/   Thigdam uploads: original bytes + small -thumb.jpg previews (git-ignored)
+kulgaon/
+  index.html           Kulgaon gat member list — search (Marathi/English) + suggest changes.
+  admin.html           Its admin page — login, approve/reject suggestions, edit/add members.
+  common.js            Search + helpers shared by both pages. No build step for any of them.
+  members.json         The 526-member list transcribed from the PDF — GIT-IGNORED (see below).
 start.bat               local one-click launcher (runs the production build)
 ```
 
@@ -610,6 +619,51 @@ zooms (pinch, wheel, double-tap) and swipes.
   from JPEG EXIF when present (chat apps usually strip it).
 - Counted in Visitors as `thigdam`.
 
+## Kulgaon gat member list (/kulgaon)
+An eighth app sharing this process: the Thane Jilha Maharashtriya Vaishya Samaj Sangh's Kulgaon
+gat voter list ("दि. ३०/९/२०२४ अखेरची अंतिम सभासद मतदार यादी", 526 members), made searchable and
+shareable. Two interfaces: the public page `/kulgaon` (view, search, suggest) and the admin
+page `/kulgaon/admin` (the only place anything changes).
+- **The list is NOT in git.** `kulgaon/members.json` is a hand transcription of the scanned
+  PDF — private individuals' names and ages — and this repo is public, so it is git-ignored.
+  It reaches production through the admin page's one-time **upload** (`POST
+  /api/kulgaon-admin/import`), which loads it into `kulgaon_members` in leads.db; a copy
+  placed on disk at that path is also loaded at boot if the table is empty. Import refuses
+  once members exist, so it can never wipe approved changes. From then on leads.db is the
+  source of truth and the file is not read again.
+- **Transcription facts:** one object per line, `sr, name, nameEn, gender (M/F), age,
+  receipt, date, status`. Names, receipt numbers and dates as printed (Devanagari digits);
+  only obvious typos fixed (गोवदि → गोविंद, रति → रवि for a पुरुष row, सुभोग → सुयोग). Names
+  struck through in print are `dead`, except #255 whose margin says डबल → `double`. Totals
+  match the PDF's cover page (526 − 42 मयत − 1 डबल = 483 मतदार). `nameEn` came from a
+  transliterator + hand-checked overrides, honorifics dropped, like the Navratri seed. On
+  import, struck entries get a `note` saying so, which the public card shows.
+- **Anonymous suggestions, admin approval — the owner's explicit design.** The public page
+  has no login and never asks who you are. "मयत कळवा" / "हयात आहे?", "✎ दुरुस्ती सुचवा" and
+  "＋ नवीन सभासद" all `POST /api/kulgaon/requests` (`kind` status/edit/add, proposed fields in
+  `data`, optional free-text `message`) into `kulgaon_requests` as `pending`; the public list
+  does not change. `kulgaon_requests` deliberately has **no column about the sender** — no
+  name, mobile, IP or user-agent — and only the day (`created_on`), not the time, so the
+  admin sees what was asked, never who asked. Don't add one. Nobody is notified of a
+  decision; the list just changes. Edit requests store only the fields that differ from the
+  current record; identical pending duplicates are not stored twice; max 20 per IP per hour
+  (in memory only) and 500 pending in total.
+- **Admin** (`routes/kulgaonAdmin.js`, Lead Tracker admin accounts, token in `lt_token`
+  like the Navratri admin): pending requests with current → proposed values that can be
+  adjusted before **मंजूर** (applies them) or **नाकारा**; a decided list (last 100); direct
+  edit/add of any member, including `status` and the public `note`. New members get
+  `MAX(sr)+1` from the server on approval. `double` rows can't be suggested on publicly;
+  the admin can still change them.
+- **Search** (`common.js`, same idea as the Navratri members page, made forgiving):
+  Devanagari ignores ी/ि, ू/ु, ष/श; English drops the spellings people vary on (a, h, ee/i,
+  oo/u, w/v, x/ks, ph/f, doubled letters, trailing "rao" = "rav") and matches from the start
+  of a word, so "ambawane" finds Ambavane but not Chambavane. Every word must match; a
+  number (either digit set) is the list number.
+- **Never put a static mount on `/kulgaon`** — it would serve the git-ignored members.json
+  sitting in that folder. `common.js` has its own explicit route for that reason.
+- `X-Robots-Tag: noindex` on the pages and API. Public page counted in Visitors as
+  `kulgaon` (aggregate, hashed — see Visitor Counting); the admin page is not counted.
+
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small
 numbered badge (`.ft-seq`, purple, distinct from the blue सभासद-number badge and the green WA
@@ -841,7 +895,8 @@ committed — see Rishta Album), the Prime API Integration demo at
 at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`), and Shete Parivar Navratri at
 `https://leadtracker.primecomputers.co.in/shetenavratri` (installable copy at
-`/shetenavratri/app`). All three installable apps cache themselves on the devices that
+`/shetenavratri/app`), and the Kulgaon gat member list at
+`https://leadtracker.primecomputers.co.in/kulgaon`. All three installable apps cache themselves on the devices that
 installed them, so shipping a change to any of them means bumping its `CACHE_VERSION` in the
 matching `sw.js` — without that, installed phones keep serving the version they cached, however
 many times you redeploy. The **Calendar Links** admin

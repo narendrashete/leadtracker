@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>कुळगांव गट — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --maroon:#7a1024;
+  --maroon-dark:#520a19;
+  --gold:#e8b04b;
+  --cream:#fff8ec;
+  --text:#2a1810;
+  --text-soft:#6b5245;
+  --line:#eadfd0;
+  --green:#2e7d32;
+  --green-bg:#e8f5e9;
+  --red:#b3261e;
+  --amber:#8a5a00;
+  --amber-bg:#fff3d6;
+  --shadow:0 3px 10px rgba(122,16,36,0.08);
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Noto Sans Devanagari',system-ui,sans-serif;background:var(--cream);color:var(--text);-webkit-text-size-adjust:100%;}
+button{font-family:inherit;cursor:pointer;}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px;}
+.topbar{background:linear-gradient(135deg,var(--maroon) 0%,var(--maroon-dark) 100%);color:#fff;padding:14px 0 12px;}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.topbar h1{font-size:18px;margin:0;font-weight:700;}
+.topbar .en{font-size:12px;opacity:.85;}
+.topbar button{border:1px solid rgba(255,255,255,.4);background:none;color:#fff;border-radius:16px;padding:5px 12px;font-size:13px;}
+
+.panel{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:18px;margin:16px 0;}
+.panel h2{font-size:17px;margin:0 0 8px;color:var(--maroon);}
+.hint{font-size:13px;color:var(--text-soft);line-height:1.6;margin:6px 0;}
+label{display:block;font-size:13.5px;font-weight:600;margin-top:10px;}
+input,select,textarea{
+  display:block;width:100%;margin-top:4px;padding:9px 11px;font-size:16px;font-family:inherit;
+  border:1px solid #dccfc2;border-radius:10px;color:var(--text);background:#fff;
+}
+textarea{resize:vertical;min-height:60px;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:14.5px;font-weight:700;background:var(--maroon);color:#fff;}
+.btn.green{background:var(--green);}
+.btn.ghost{background:#fff;color:var(--red);border:1px solid #e6c9c5;}
+.btn:disabled{opacity:.6;cursor:default;}
+.msg{font-size:13px;margin-top:8px;min-height:18px;}
+.msg.error{color:var(--red);}
+.msg.ok{color:var(--green);}
+
+.tabs{display:flex;gap:8px;margin:16px 0 4px;overflow-x:auto;}
+.tab{flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:20px;padding:7px 14px;font-size:14px;}
+.tab.on{background:var(--maroon);border-color:var(--maroon);color:#fff;}
+.tab b{margin-left:4px;}
+
+.req{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:12px 0;}
+.req-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+.kind{font-size:12px;font-weight:700;border-radius:12px;padding:3px 9px;white-space:nowrap;}
+.kind.status{background:#e4e2df;color:#333;}
+.kind.edit{background:var(--amber-bg);color:var(--amber);}
+.kind.add{background:var(--green-bg);color:var(--green);}
+.kind.approved{background:var(--green-bg);color:var(--green);}
+.kind.rejected{background:#fbe4e2;color:var(--red);}
+.req-title{font-size:15.5px;font-weight:600;}
+.req-sub{font-size:12.5px;color:var(--text-soft);}
+.change{margin-top:10px;font-size:14.5px;}
+.message{margin-top:10px;font-size:13.5px;background:#faf5ee;border-left:3px solid var(--gold);border-radius:6px;padding:6px 9px;white-space:pre-wrap;}
+table.diff{width:100%;border-collapse:collapse;margin-top:10px;font-size:13.5px;}
+table.diff th{text-align:left;font-weight:600;color:var(--text-soft);font-size:12.5px;padding:4px 6px;}
+table.diff td{border-top:1px solid var(--line);padding:6px;vertical-align:middle;}
+table.diff td:first-child{white-space:nowrap;font-weight:600;}
+table.diff td.old{width:32%;font-size:12.5px;}
+table.diff td:last-child{width:52%;}
+table.diff input,table.diff select{margin:0;padding:6px 8px;font-size:15px;}
+.old{color:var(--text-soft);text-decoration:line-through;}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+
+.search{margin-top:12px;}
+.mrow{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:9px 12px;margin:8px 0;}
+.mrow .sr{min-width:34px;font-weight:700;color:var(--maroon);}
+.mrow .nm{flex:1;min-width:0;}
+.mrow .nm div:first-child{font-weight:600;}
+.mrow .nm div:last-child{font-size:12.5px;color:var(--text-soft);}
+.mrow.dead .nm div:first-child,.mrow.double .nm div:first-child{text-decoration:line-through;color:#666;}
+.mrow button{border:1px solid var(--line);background:#fff;color:var(--maroon);border-radius:14px;padding:4px 11px;font-size:13px;font-weight:600;}
+.pill{font-size:11.5px;font-weight:700;border-radius:10px;padding:2px 8px;}
+.pill.alive{background:var(--green-bg);color:var(--green);}
+.pill.dead{background:#e4e2df;color:#444;}
+.pill.double{background:var(--amber-bg);color:var(--amber);}
+.empty{text-align:center;color:var(--text-soft);padding:30px 0;font-size:14px;}
+
+.overlay{position:fixed;inset:0;background:rgba(30,10,10,.5);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{background:#fff;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 18px 26px;position:relative;}
+@media (min-width:600px){.overlay{align-items:center;}.sheet{border-radius:20px;}}
+.sheet h2{font-size:18px;margin:0 32px 4px 0;color:var(--maroon);}
+.close{position:absolute;top:14px;right:14px;border:none;background:#f3e8e0;width:32px;height:32px;border-radius:50%;font-size:15px;color:var(--text-soft);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div><h1>कुळगांव गट — Admin</h1><div class="en">सभासद यादी व विनंत्या</div></div>
+    <button id="logoutBtn" style="display:none">Logout</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel" id="loginView" style="display:none">
+    <h2>Admin Login</h2>
+    <p class="hint">Lead Tracker चे admin username व password वापरा.</p>
+    <form id="loginForm">
+      <label>Username<input id="loginUser" autocomplete="username"></label>
+      <label>Password<input id="loginPass" type="password" autocomplete="current-password"></label>
+      <div class="msg" id="loginMsg"></div>
+      <button class="btn" type="submit">Login</button>
+    </form>
+  </div>
+
+  <div id="appView" style="display:none">
+    <div class="panel" id="importView" style="display:none">
+      <h2>सभासद यादी लोड करा</h2>
+      <p class="hint">यादी अजून लोड झालेली नाही. <b>members.json</b> फाईल निवडा — ती एकदाच लोड होते. त्यानंतरचे सर्व बदल येथूनच होतात.</p>
+      <input type="file" id="importFile" accept=".json,application/json">
+      <div class="msg" id="importMsg"></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="pending">प्रलंबित विनंत्या<b id="pendingCount"></b></button>
+      <button class="tab" data-tab="members">सभासद यादी</button>
+      <button class="tab" data-tab="decided">निर्णय झालेल्या</button>
+    </div>
+    <div id="pane"></div>
+  </div>
+</div>
+
+<div class="overlay" id="editOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="editTitle"></h2>
+    <form id="editForm">
+      <div id="editFields"></div>
+      <div class="msg" id="editMsg"></div>
+      <button class="btn" type="submit" style="width:100%;margin-top:6px">जतन करा</button>
+    </form>
+  </div>
+</div>
+
+<script src="/kulgaon/common.js"></script>
+<script>
+(function () {
+  const K = window.Kulgaon;
+  const $ = (id) => document.getElementById(id);
+  const TOKEN_KEY = 'lt_token'; // shared with the Lead Tracker SPA and the Navratri admin
+  const store = {
+    get() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } },
+    set(v) { try { v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ } },
+  };
+  const LABELS = { name: 'नाव (मराठी)', nameEn: 'Name (English)', gender: 'स्त्री/पुरुष', age: 'वय', receipt: 'पावती क्र.', date: 'दिनांक', status: 'स्थिती', note: 'टीप (यादीत दिसते)' };
+  const KIND = { status: 'स्थिती', edit: 'दुरुस्ती', add: 'नवीन सभासद' };
+
+  let tab = 'pending';
+  let MEMBERS = [];
+  let memberQuery = '';
+  let editing = null; // { sr } for an existing member, {} for a new one
+
+  function api(url, opts) {
+    opts = Object.assign({}, opts);
+    opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + store.get() });
+    return K.api(url, opts).catch((err) => {
+      if (err.status === 401 || err.status === 403) showLogin(err.status === 403 ? 'हे खाते admin नाही.' : '');
+      throw err;
+    });
+  }
+
+  // ---- Login ----
+  function showLogin(msg) {
+    $('appView').style.display = 'none';
+    $('logoutBtn').style.display = 'none';
+    $('loginView').style.display = 'block';
+    $('loginMsg').textContent = msg || '';
+    $('loginMsg').className = 'msg error';
+  }
+  function showApp() {
+    $('loginView').style.display = 'none';
+    $('appView').style.display = 'block';
+    $('logoutBtn').style.display = 'inline-block';
+    refresh();
+  }
+  $('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    K.api('/api/auth/login', { json: { username: $('loginUser').value.trim(), password: $('loginPass').value } })
+      .then((res) => {
+        if (res.user.role !== 'admin') { showLogin('हे खाते admin नाही.'); return; }
+        store.set(res.token);
+        $('loginPass').value = '';
+        showApp();
+      })
+      .catch((err) => { $('loginMsg').textContent = err.message; $('loginMsg').className = 'msg error'; });
+  });
+  $('logoutBtn').addEventListener('click', () => {
+    api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    store.set('');
+    showLogin('');
+  });
+
+  // ---- Data ----
+  function refresh() {
+    return api('/api/kulgaon-admin/summary').then((s) => {
+      $('importView').style.display = s.members ? 'none' : 'block';
+      $('pendingCount').textContent = s.pending;
+      renderTab();
+    }).catch(() => {});
+  }
+
+  $('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const msg = $('importMsg');
+    if (!file) return;
+    file.text().then((text) => {
+      let members;
+      try { members = JSON.parse(text); } catch (err) { throw new Error('ही JSON फाईल नाही.'); }
+      return api('/api/kulgaon-admin/import', { json: { members: members } });
+    }).then((res) => {
+      msg.className = 'msg ok';
+      msg.textContent = '✓ ' + res.count + ' सभासद लोड झाले.';
+      setTimeout(refresh, 800);
+    }).catch((err) => { msg.className = 'msg error'; msg.textContent = err.message; });
+  });
+
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (!b) return;
+    tab = b.dataset.tab;
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t === b));
+    renderTab();
+  });
+
+  function renderTab() {
+    const pane = $('pane');
+    pane.innerHTML = '<p class="empty">लोड होत आहे…</p>';
+    if (tab === 'members') {
+      api('/api/kulgaon-admin/members').then((list) => { MEMBERS = list.map(K.prepare); renderMembers(); });
+    } else {
+      api('/api/kulgaon-admin/requests' + (tab === 'decided' ? '?state=decided' : '')).then((rows) => {
+        if (!rows.length) {
+          pane.innerHTML = '<p class="empty">' + (tab === 'pending' ? 'कोणतीही प्रलंबित विनंती नाही.' : 'अजून कोणताही निर्णय नाही.') + '</p>';
+          return;
+        }
+        pane.innerHTML = rows.map(tab === 'pending' ? requestHtml : decidedHtml).join('');
+      });
+    }
+  }
+
+  // ---- Form fields ----
+  function fieldInput(key, value, attrs) {
+    attrs = attrs || '';
+    const v = value == null ? '' : value;
+    if (key === 'gender') {
+      return '<select data-k="gender"' + attrs + '><option value="">—</option>' +
+        ['M', 'F'].map((g) => '<option value="' + g + '"' + (v === g ? ' selected' : '') + '>' + K.GENDER[g] + '</option>').join('') + '</select>';
+    }
+    if (key === 'status') {
+      return '<select data-k="status"' + attrs + '>' +
+        Object.keys(K.STATUS).map((s) => '<option value="' + s + '"' + (v === s ? ' selected' : '') + '>' + K.STATUS[s].mr + '</option>').join('') + '</select>';
+    }
+    return '<input data-k="' + key + '" value="' + K.esc(v) + '"' + (key === 'age' ? ' inputmode="numeric"' : '') + attrs + '>';
+  }
+  function readFields(root) {
+    const out = {};
+    root.querySelectorAll('[data-k]').forEach((el) => { out[el.dataset.k] = el.value.trim(); });
+    return out;
+  }
+  function show(key, v) {
+    if (v == null || v === '') return '—';
+    if (key === 'gender') return K.GENDER[v] || v;
+    if (key === 'status') return K.STATUS[v] ? K.STATUS[v].mr : v;
+    return K.esc(v);
+  }
+
+  // ---- Pending requests ----
+  function requestHtml(r) {
+    const m = r.member;
+    const title = r.kind === 'add'
+      ? K.esc(r.data.name || r.data.nameEn)
+      : (m ? 'क्र. ' + m.sr + ' — ' + K.esc(m.name) : 'क्र. ' + r.sr + ' (यादीत नाही)');
+    let body = '';
+    if (r.kind === 'status') {
+      body = '<div class="change">' + show('status', m && m.status) + ' → <b>' + show('status', r.data.status) + '</b></div>' +
+        '<table class="diff"><tr><td>' + LABELS.note + '</td><td>' + fieldInput('note', '') + '</td></tr></table>' +
+        '<input type="hidden" data-k="status" value="' + r.data.status + '">';
+    } else if (r.kind === 'edit') {
+      const keys = Object.keys(r.data);
+      body = keys.length
+        ? '<table class="diff"><tr><th></th><th>सध्याचे</th><th>सुचवलेले (बदलू शकता)</th></tr>' +
+          keys.map((k) => '<tr><td>' + LABELS[k] + '</td><td class="old">' + show(k, m && m[k]) + '</td><td>' + fieldInput(k, r.data[k]) + '</td></tr>').join('') +
+          '</table>'
+        : '<div class="change">फक्त खालील माहिती पाठवली आहे.</div>';
+    } else {
+      const d = Object.assign({ status: 'alive', note: '' }, r.data);
+      body = '<table class="diff">' +
+        ['name', 'nameEn', 'gender', 'age', 'receipt', 'date', 'status', 'note'].map((k) =>
+          '<tr><td>' + LABELS[k] + '</td><td>' + fieldInput(k, d[k]) + '</td></tr>').join('') + '</table>';
+    }
+    return '<div class="req" data-id="' + r.id + '">' +
+      '<div class="req-head"><div><div class="req-title">' + title + '</div>' +
+      '<div class="req-sub">मिळाली: ' + K.fmtDate(r.createdOn) + '</div></div>' +
+      '<span class="kind ' + r.kind + '">' + KIND[r.kind] + '</span></div>' +
+      body +
+      (r.message ? '<div class="message">' + K.esc(r.message) + '</div>' : '') +
+      '<div class="msg"></div>' +
+      '<div class="actions"><button class="btn green" data-do="approve">✓ मंजूर करा</button>' +
+      '<button class="btn ghost" data-do="reject">✕ नाकारा</button></div></div>';
+  }
+
+  function decidedHtml(r) {
+    const m = r.member;
+    const name = r.kind === 'add' ? (r.data.name || r.data.nameEn) : (m ? m.name : '');
+    const what = r.kind === 'status' ? '→ ' + show('status', r.data.status)
+      : Object.keys(r.data).map((k) => LABELS[k] + ': ' + show(k, r.data[k])).join(', ');
+    return '<div class="req"><div class="req-head"><div>' +
+      '<div class="req-title">' + (r.sr || r.resultSr ? 'क्र. ' + (r.sr || r.resultSr) + ' — ' : '') + K.esc(name) + '</div>' +
+      '<div class="req-sub">' + KIND[r.kind] + ' · ' + what + '</div>' +
+      '<div class="req-sub">मिळाली ' + K.fmtDate(r.createdOn) + ' · निर्णय ' + K.fmtDate(r.decidedOn) + '</div></div>' +
+      '<span class="kind ' + r.state + '">' + (r.state === 'approved' ? 'मंजूर' : 'नाकारली') + '</span></div>' +
+      (r.message ? '<div class="message">' + K.esc(r.message) + '</div>' : '') + '</div>';
+  }
+
+  $('pane').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-do]');
+    if (!b) return;
+    const card = b.closest('.req');
+    const msg = card.querySelector('.msg');
+    const id = card.dataset.id;
+    const approve = b.dataset.do === 'approve';
+    card.querySelectorAll('.btn').forEach((x) => { x.disabled = true; });
+    api('/api/kulgaon-admin/requests/' + id + '/' + b.dataset.do, { json: approve ? { data: readFields(card) } : {} })
+      .then((res) => {
+        msg.className = 'msg ok';
+        msg.textContent = approve ? '✓ मंजूर — यादीत बदल झाला' + (res.sr ? ' (क्र. ' + res.sr + ')' : '') + '.' : 'नाकारली.';
+        setTimeout(() => { card.remove(); refresh(); }, 900);
+      })
+      .catch((err) => {
+        msg.className = 'msg error';
+        msg.textContent = err.message;
+        card.querySelectorAll('.btn').forEach((x) => { x.disabled = false; });
+      });
+  });
+
+  // ---- Members: search, edit, add ----
+  function renderMembers() {
+    const pane = $('pane');
+    if (!pane.querySelector('#mq')) {
+      pane.innerHTML =
+        '<div class="actions"><button class="btn" id="addMember">＋ नवीन सभासद जोडा</button></div>' +
+        '<input id="mq" class="search" placeholder="नाव / क्रमांक शोधा · Search" value="' + K.esc(memberQuery) + '">' +
+        '<div id="mlist"></div>';
+      pane.querySelector('#mq').addEventListener('input', (e) => { memberQuery = e.target.value; renderMembers(); });
+      pane.querySelector('#addMember').addEventListener('click', () => openEdit(null));
+    }
+    const list = MEMBERS.filter((m) => K.matches(m, memberQuery));
+    const shown = list.slice(0, 200);
+    pane.querySelector('#mlist').innerHTML = shown.map((m) =>
+      '<div class="mrow ' + m.status + '"><div class="sr">' + m.sr + '</div>' +
+      '<div class="nm"><div>' + K.esc(m.name) + '</div><div>' + K.esc(m.nameEn) + '</div></div>' +
+      '<span class="pill ' + m.status + '">' + K.STATUS[m.status].mr + '</span>' +
+      '<button data-edit="' + m.sr + '">✎</button></div>').join('') +
+      (list.length > shown.length ? '<p class="empty">आणखी ' + (list.length - shown.length) + ' — शोधून पहा.</p>' : '') +
+      (list.length ? '' : '<p class="empty">कोणताही सभासद सापडला नाही.</p>');
+  }
+
+  $('pane').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-edit]');
+    if (b) openEdit(MEMBERS.find((m) => m.sr === +b.dataset.edit));
+  });
+
+  const overlay = $('editOverlay');
+  const closeEdit = () => overlay.classList.remove('open');
+  overlay.addEventListener('click', (e) => { if (e.target === overlay || e.target.closest('[data-close]')) closeEdit(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEdit(); });
+
+  function openEdit(m) {
+    editing = m ? { sr: m.sr } : {};
+    const v = m || { status: 'alive' };
+    $('editTitle').textContent = m ? 'क्र. ' + m.sr + ' — संपादन' : 'नवीन सभासद';
+    $('editFields').innerHTML = ['name', 'nameEn', 'gender', 'age', 'receipt', 'date', 'status', 'note']
+      .map((k) => '<label>' + LABELS[k] + fieldInput(k, v[k]) + '</label>').join('');
+    $('editMsg').textContent = '';
+    overlay.classList.add('open');
+  }
+
+  $('editForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = readFields($('editFields'));
+    const msg = $('editMsg');
+    const req = editing.sr
+      ? api('/api/kulgaon-admin/members/' + editing.sr, { method: 'PUT', json: data })
+      : api('/api/kulgaon-admin/members', { json: data });
+    req.then((m) => {
+      msg.className = 'msg ok';
+      msg.textContent = '✓ जतन झाले (क्र. ' + m.sr + ').';
+      const i = MEMBERS.findIndex((x) => x.sr === m.sr);
+      if (i >= 0) MEMBERS[i] = K.prepare(m); else MEMBERS.push(K.prepare(m));
+      renderMembers();
+      setTimeout(closeEdit, 700);
+    }).catch((err) => { msg.className = 'msg error'; msg.textContent = err.message; });
+  });
+
+  if (store.get()) {
+    api('/api/auth/me').then((u) => {
+      if (u.role === 'admin') showApp(); else showLogin('हे खाते admin नाही.');
+    }).catch(() => {});
+  } else {
+    showLogin('');
+  }
+})();
+</script>
+</body>
+</html>

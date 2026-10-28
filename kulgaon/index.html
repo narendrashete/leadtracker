@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>कुळगांव गट — सभासद यादी</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --maroon:#7a1024;
+  --maroon-dark:#520a19;
+  --gold:#e8b04b;
+  --cream:#fff8ec;
+  --text:#2a1810;
+  --text-soft:#6b5245;
+  --line:#eadfd0;
+  --green:#2e7d32;
+  --green-bg:#e8f5e9;
+  --dead:#5f5f5f;
+  --dead-bg:#f1f0ee;
+  --amber:#8a5a00;
+  --amber-bg:#fff3d6;
+  --shadow:0 3px 10px rgba(122,16,36,0.08);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Noto Sans Devanagari',system-ui,sans-serif;
+  background:var(--cream);
+  color:var(--text);
+  -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit;}
+
+.topbar{
+  background:linear-gradient(135deg,var(--maroon) 0%,var(--maroon-dark) 100%);
+  color:#fff;
+  padding:14px 16px 12px;
+}
+.topbar h1{font-size:19px;margin:0;font-weight:700;line-height:1.3;}
+.topbar .en{font-size:12.5px;opacity:.85;}
+.topbar .org{font-size:12px;opacity:.8;margin-top:6px;line-height:1.5;}
+
+.controls{
+  position:sticky;top:0;z-index:20;
+  background:var(--cream);
+  padding:12px 16px 8px;
+  border-bottom:1px solid var(--line);
+}
+.wrap{max-width:720px;margin:0 auto;}
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:#fff;border-radius:30px;
+  box-shadow:0 6px 18px rgba(122,16,36,0.12);
+  padding:10px 16px;
+}
+.search-box input{
+  border:none;outline:none;flex:1;min-width:0;
+  font-size:16px;font-family:inherit;background:transparent;color:var(--text);
+}
+.search-box .clear{
+  border:none;background:#f3e8e0;color:var(--text-soft);
+  width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px;display:none;
+}
+.search-box.has-text .clear{display:block;}
+.chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--text);
+  border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;
+}
+.chip b{font-weight:700;margin-left:4px;}
+.chip.on{background:var(--maroon);border-color:var(--maroon);color:#fff;}
+.meta-row{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:12.5px;color:var(--text-soft);margin-top:8px;
+}
+.link-btn{
+  border:none;background:none;color:var(--maroon);font-size:13px;font-weight:600;
+  cursor:pointer;padding:4px 0;
+}
+
+.list{padding:12px 16px 40px;display:flex;flex-direction:column;gap:10px;}
+.card{
+  background:#fff;border-radius:14px;box-shadow:var(--shadow);
+  padding:12px 14px;display:flex;gap:12px;align-items:flex-start;
+}
+.sr{
+  min-width:34px;height:34px;padding:0 4px;border-radius:17px;
+  background:var(--maroon);color:#fff;font-size:12.5px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.info{flex:1;min-width:0;}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.mname{font-size:16px;font-weight:600;line-height:1.35;}
+.men{font-size:13px;color:var(--text-soft);margin-top:1px;}
+.pill{
+  flex-shrink:0;font-size:12px;font-weight:700;border-radius:12px;padding:3px 9px;white-space:nowrap;
+}
+.pill.alive{background:var(--green-bg);color:var(--green);}
+.pill.dead{background:#e4e2df;color:#444;}
+.pill.double{background:var(--amber-bg);color:var(--amber);}
+.details{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font-size:12.5px;color:var(--text-soft);}
+.details span b{color:var(--text);font-weight:600;}
+.upd{
+  margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft);
+  background:#faf5ee;border-left:3px solid var(--gold);border-radius:6px;padding:5px 8px;
+}
+.act{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;}
+.act button{
+  border:1px solid var(--line);background:#fff;color:var(--maroon);
+  border-radius:16px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;
+}
+.card.dead{background:var(--dead-bg);}
+.card.dead .sr{background:var(--dead);}
+.card.dead .mname{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.45);color:#555;}
+.card.double{background:#fffaf0;}
+.card.double .sr{background:#b07a1a;}
+.card.double .mname{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.35);}
+
+.empty,.loading{text-align:center;color:var(--text-soft);padding:40px 16px;font-size:14px;line-height:1.7;}
+.note-foot{font-size:12px;color:var(--text-soft);line-height:1.6;padding:0 16px 90px;}
+
+.fab{
+  position:fixed;right:16px;bottom:20px;z-index:30;
+  border:none;border-radius:28px;padding:13px 18px;
+  background:var(--maroon);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;
+  box-shadow:0 8px 22px rgba(82,10,25,.35);
+}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(30,10,10,.5);z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.overlay.open{display:flex;}
+.sheet{
+  background:#fff;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;padding:20px 18px 26px;position:relative;
+}
+@media (min-width:600px){.overlay{align-items:center;}.sheet{border-radius:20px;}}
+.sheet h2{font-size:18px;margin:0 32px 4px 0;color:var(--maroon);}
+.sheet .who{font-size:15px;font-weight:600;margin:6px 0 2px;}
+.sheet .who-en{font-size:13px;color:var(--text-soft);}
+.sheet .hint{font-size:12.5px;color:var(--text-soft);line-height:1.6;margin:10px 0 4px;}
+.close{
+  position:absolute;top:14px;right:14px;border:none;background:#f3e8e0;
+  width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;color:var(--text-soft);
+}
+.sheet label{display:block;font-size:13.5px;font-weight:600;margin-top:12px;}
+.sheet input,.sheet select,.sheet textarea{
+  display:block;width:100%;margin-top:5px;padding:10px 12px;font-size:16px;font-family:inherit;
+  border:1px solid #dccfc2;border-radius:10px;color:var(--text);background:#fff;
+}
+.sheet textarea{resize:vertical;min-height:70px;}
+.sheet input:focus,.sheet select:focus,.sheet textarea:focus{outline:2px solid var(--gold);border-color:var(--gold);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+.msg{font-size:13px;margin-top:10px;min-height:18px;}
+.msg.error{color:#b3261e;}
+.msg.ok{color:var(--green);}
+.submit{
+  margin-top:12px;width:100%;border:none;border-radius:12px;padding:12px;
+  background:var(--maroon);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;
+}
+.submit:disabled{opacity:.6;cursor:default;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <h1>कुळगांव गट — सभासद यादी</h1>
+    <div class="en">Kulgaon Gat · Members List</div>
+    <div class="org">ठाणे जिल्हा महाराष्ट्रीय वैश्य समाज संघ · दि. ३०/९/२०२४ अखेरची अंतिम सभासद मतदार यादी (पुरवणी यादीसह)</div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="search-box" id="searchBox">
+      <span aria-hidden="true">🔍</span>
+      <input type="search" id="q" placeholder="नाव / क्रमांक शोधा · Search name" autocomplete="off" enterkeyhint="search">
+      <button class="clear" id="clearQ" aria-label="Clear">✕</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="meta-row"><span id="count"></span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="loading" id="loading">यादी लोड होत आहे…</div>
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty" style="display:none">🔍 कोणताही सभासद सापडला नाही<br><small>No member found</small></div>
+  <p class="note-foot">
+    मूळ छापील यादीत खोडलेली नावे येथे <b>मयत</b> (किंवा <b>डबल</b>) म्हणून दाखवली आहेत.
+    एखादा सभासद मयत असल्यास, माहितीत चूक असल्यास किंवा नवीन सभासद जोडायचा असल्यास येथून
+    <b>विनंती पाठवा</b>. विनंती Admin कडे जाते — मंजुरीनंतरच यादीत बदल दिसतो.
+    विनंती पाठवणाऱ्याचे नाव किंवा मोबाईल विचारला जात नाही आणि कुठेही नोंदवला जात नाही.
+  </p>
+</div>
+
+<button class="fab" id="addFab">＋ नवीन सभासद</button>
+
+<div class="overlay" id="reqOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="reqTitle">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="reqTitle"></h2>
+    <div class="who" id="reqWho"></div>
+    <div class="who-en" id="reqWhoEn"></div>
+    <p class="hint" id="reqHint"></p>
+    <form id="reqForm" novalidate>
+      <div id="fields">
+        <label>सभासदाचे नाव (मराठी)<input id="fName" maxlength="80"></label>
+        <label>Name in English<input id="fNameEn" maxlength="80"></label>
+        <div class="row2">
+          <label>स्त्री / पुरुष<select id="fGender"><option value="">—</option><option value="M">पुरुष</option><option value="F">स्त्री</option></select></label>
+          <label>वय<input id="fAge" inputmode="numeric" maxlength="3"></label>
+        </div>
+        <div class="row2">
+          <label>पावती क्रमांक<input id="fReceipt" maxlength="30"></label>
+          <label>दिनांक<input id="fDate" maxlength="20" placeholder="उदा. १२/३/२०२४"></label>
+        </div>
+      </div>
+      <label>Admin साठी माहिती (ऐच्छिक)<textarea id="fMessage" maxlength="400" placeholder="उदा. निधन दिनांक, काय चुकले आहे…"></textarea></label>
+      <div class="msg" id="reqMsg"></div>
+      <button type="submit" class="submit" id="reqSubmit">विनंती पाठवा</button>
+    </form>
+  </div>
+</div>
+
+<script src="/kulgaon/common.js"></script>
+<script>
+(function () {
+  const K = window.Kulgaon;
+  const $ = (id) => document.getElementById(id);
+  const listEl = $('list'), qEl = $('q');
+  let MEMBERS = [];
+  let filter = 'all';
+  let req = null; // { kind, sr?, status? } of the open sheet
+
+  function counts() {
+    const c = { all: MEMBERS.length, alive: 0, dead: 0, double: 0 };
+    MEMBERS.forEach((m) => { c[m.status]++; });
+    return c;
+  }
+
+  function renderChips() {
+    const c = counts();
+    const defs = [['all', 'सर्व'], ['alive', 'हयात'], ['dead', 'मयत'], ['double', 'डबल']];
+    $('chips').innerHTML = defs.filter(([k]) => k !== 'double' || c.double)
+      .map(([k, label]) => '<button class="chip' + (filter === k ? ' on' : '') + '" data-f="' + k + '">' +
+        label + '<b>' + c[k] + '</b></button>').join('');
+  }
+
+  function cardHtml(m) {
+    const d = [];
+    if (m.gender) d.push('<span>' + K.GENDER[m.gender] + '</span>');
+    if (m.age) d.push('<span>वय <b>' + m.age + '</b></span>');
+    if (m.receipt) d.push('<span>पावती <b>' + K.esc(m.receipt) + '</b></span>');
+    if (m.date) d.push('<span>दि. <b>' + K.esc(m.date) + '</b></span>');
+    let act = '';
+    if (m.status !== 'double') {
+      act = '<div class="act">' +
+        (m.status === 'alive'
+          ? '<button data-act="dead" data-sr="' + m.sr + '">मयत कळवा</button>'
+          : '<button data-act="alive" data-sr="' + m.sr + '">हयात आहे?</button>') +
+        '<button data-act="edit" data-sr="' + m.sr + '">✎ दुरुस्ती सुचवा</button></div>';
+    }
+    return '<div class="card ' + m.status + '">' +
+      '<div class="sr">' + m.sr + '</div>' +
+      '<div class="info">' +
+        '<div class="top"><div><div class="mname">' + K.esc(m.name) + '</div>' +
+        (m.nameEn ? '<div class="men">' + K.esc(m.nameEn) + '</div>' : '') + '</div>' +
+        '<span class="pill ' + m.status + '">' + K.STATUS[m.status].mr + '</span></div>' +
+        (d.length ? '<div class="details">' + d.join('') + '</div>' : '') +
+        (m.note ? '<div class="upd">' + K.esc(m.note) + '</div>' : '') + act +
+      '</div></div>';
+  }
+
+  function render() {
+    $('searchBox').classList.toggle('has-text', !!qEl.value);
+    const list = MEMBERS.filter((m) => (filter === 'all' || m.status === filter) && K.matches(m, qEl.value));
+    listEl.innerHTML = list.map(cardHtml).join('');
+    $('empty').style.display = list.length ? 'none' : 'block';
+    $('count').textContent = list.length + ' सभासद';
+    renderChips();
+  }
+
+  qEl.addEventListener('input', render);
+  $('clearQ').addEventListener('click', () => { qEl.value = ''; render(); qEl.focus(); });
+  $('chips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-f]');
+    if (!b) return;
+    filter = b.dataset.f;
+    render();
+  });
+
+  // ---- Suggestion sheet: status, correction or new member ----
+  const FIELDS = { name: 'fName', nameEn: 'fNameEn', gender: 'fGender', age: 'fAge', receipt: 'fReceipt', date: 'fDate' };
+  const overlay = $('reqOverlay');
+  const close = () => overlay.classList.remove('open');
+  overlay.addEventListener('click', (e) => { if (e.target === overlay || e.target.closest('[data-close]')) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  function openSheet(kind, m, status) {
+    req = { kind: kind, sr: m ? m.sr : null, status: status };
+    const T = {
+      dead:  ['मयत असल्याचे कळवा', 'हा सभासद मयत असल्यास विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत “मयत” दिसेल.', 'मयत असल्याची विनंती पाठवा'],
+      alive: ['हयात असल्याचे कळवा', 'हा सभासद हयात असल्यास विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत दुरुस्ती दिसेल.', 'हयात असल्याची विनंती पाठवा'],
+      edit:  ['माहिती दुरुस्त करा', 'चुकीची माहिती बदला आणि विनंती पाठवा. Admin च्या मंजुरीनंतर यादीत दुरुस्ती दिसेल.', 'दुरुस्तीची विनंती पाठवा'],
+      add:   ['नवीन सभासद सुचवा', 'यादीत नसलेल्या सभासदाची माहिती भरा. Admin च्या मंजुरीनंतर तो यादीत जोडला जाईल.', 'नवीन सभासदाची विनंती पाठवा'],
+    }[kind === 'status' ? status : kind];
+    $('reqTitle').textContent = T[0];
+    $('reqHint').textContent = T[1] + ' आपले नाव / मोबाईल विचारला जात नाही.';
+    $('reqSubmit').textContent = T[2];
+    $('reqWho').textContent = m ? 'क्र. ' + m.sr + ' — ' + m.name : '';
+    $('reqWhoEn').textContent = m ? (m.nameEn || '') : '';
+    $('fields').style.display = kind === 'status' ? 'none' : '';
+    for (const k in FIELDS) $(FIELDS[k]).value = m && kind === 'edit' ? (m[k] == null ? '' : m[k]) : '';
+    $('fMessage').value = '';
+    $('reqMsg').textContent = '';
+    $('reqMsg').className = 'msg';
+    $('reqSubmit').disabled = false;
+    overlay.classList.add('open');
+  }
+
+  listEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const m = MEMBERS.find((x) => x.sr === +b.dataset.sr);
+    if (!m) return;
+    if (b.dataset.act === 'edit') openSheet('edit', m);
+    else openSheet('status', m, b.dataset.act);
+  });
+  $('addFab').addEventListener('click', () => openSheet('add', null));
+
+  $('reqForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const msg = $('reqMsg');
+    const body = { kind: req.kind, sr: req.sr, message: $('fMessage').value.trim(), data: {} };
+    if (req.kind === 'status') {
+      body.data.status = req.status;
+    } else {
+      for (const k in FIELDS) body.data[k] = $(FIELDS[k]).value.trim();
+      if (req.kind === 'add' && !body.data.name && !body.data.nameEn) {
+        msg.className = 'msg error';
+        msg.textContent = 'कृपया सभासदाचे नाव लिहा.';
+        return;
+      }
+    }
+    $('reqSubmit').disabled = true;
+    K.api('/api/kulgaon/requests', { json: body }).then(() => {
+      msg.className = 'msg ok';
+      msg.textContent = '✓ विनंती Admin कडे पाठवली. मंजुरीनंतर यादीत बदल दिसेल. धन्यवाद!';
+      setTimeout(close, 2200);
+    }).catch((err) => {
+      msg.className = 'msg error';
+      msg.textContent = err.message;
+      $('reqSubmit').disabled = false;
+    });
+  });
+
+  K.api('/api/kulgaon/members').then((data) => {
+    MEMBERS = data.map(K.prepare);
+    $('loading').style.display = 'none';
+    render();
+  }).catch((err) => {
+    $('loading').textContent = err.status === 503 ? 'सभासद यादी अजून उपलब्ध नाही.' : 'यादी लोड करता आली नाही. कृपया पुन्हा प्रयत्न करा.';
+  });
+})();
+</script>
+</body>
+</html>

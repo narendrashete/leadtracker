@@ -512,6 +512,29 @@ async function getDb() {
     _db.run(`ALTER TABLE shete_members ADD COLUMN tree_token TEXT`);
   } catch { /* column already exists */ }
 
+  // When a member's tree row was first made. Added after launch, so trees made
+  // before it stay NULL (shown as — on the Visitors screen).
+  try {
+    _db.run(`ALTER TABLE shete_family_trees ADD COLUMN created_at TEXT`);
+  } catch { /* column already exists */ }
+
+  // Every change to a family tree, newest last — for the Visitors screen's
+  // "who is making trees" section. by_name = the name the member typed (or the
+  // admin); via = 'link' (personal WhatsApp link), 'mobile' (name + mobile
+  // login) or 'admin'. member_id has no foreign key: a deleted tree keeps its log.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_tree_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      by_name TEXT,
+      via TEXT,
+      persons INTEGER,
+      note TEXT,
+      at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+
   if (query(`SELECT id FROM shete_members`).length === 0) {
     for (const m of SHETE_MEMBERS_SEED) {
       _db.run(

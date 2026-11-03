@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Naka Family Yatra – February 2027</title>
+<meta property="og:title" content="Naka Family Yatra – February 2027">
+<meta property="og:description" content="Please tell us if you are joining — tap to answer Yes or No.">
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF6EE; --card:#FFFFFF; --ink:#2B2118; --muted:#7A6A5A; --line:#EADFCF;
+    --brand:#B4471E; --brand-dark:#8A3416; --brand-soft:#FBE7DA;
+    --yes:#1E7A4C; --yes-soft:#E1F3E8; --no:#B42318; --no-soft:#FDE6E3;
+    --pend:#8A6D1E; --pend-soft:#FBF1D6; --wa:#1FA855;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Mukta',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.45}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+  header.hero{background:linear-gradient(135deg,var(--brand) 0%,#D9762B 100%);color:#fff;border-radius:18px;padding:22px 20px 20px;position:relative;overflow:hidden}
+  header.hero:after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;font-weight:600}
+  .hero h1{margin:4px 0 2px;font-size:26px;line-height:1.15;font-weight:700}
+  .hero p{margin:0;opacity:.92}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+  .greet{font-size:15px;color:var(--muted);margin:0}
+  .name{font-size:24px;font-weight:700;margin:0 0 10px}
+  .q{font-size:18px;font-weight:600;margin:0 0 14px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .choice{border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 10px;font:inherit;font-size:19px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--ink)}
+  .choice small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+  .choice.yes:hover,.choice.yes.on{border-color:var(--yes);background:var(--yes-soft);color:var(--yes)}
+  .choice.no:hover,.choice.no.on{border-color:var(--no);background:var(--no-soft);color:var(--no)}
+  .choice:disabled{cursor:not-allowed;opacity:.6}
+  .choice.on{opacity:1!important}
+  .note{font-size:14px;color:var(--muted);margin:12px 0 0}
+  .banner{border-radius:12px;padding:10px 14px;font-weight:600;margin-top:16px;font-size:15px}
+  .banner.frozen{background:#EEF2F7;color:#344054;border:1px solid #D0D5DD}
+  .banner.ok{background:var(--yes-soft);color:var(--yes)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .stat{border-radius:12px;padding:10px 8px;text-align:center}
+  .stat b{display:block;font-size:26px;line-height:1.1}
+  .stat span{font-size:13px;font-weight:600}
+  .s-yes{background:var(--yes-soft);color:var(--yes)} .s-no{background:var(--no-soft);color:var(--no)}
+  .s-pend{background:var(--pend-soft);color:var(--pend)} .s-tot{background:var(--brand-soft);color:var(--brand-dark)}
+  .bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-top:12px;background:var(--line)}
+  .bar i{display:block;height:100%}
+  h2{font-size:18px;margin:0 0 12px}
+  .list{list-style:none;margin:0;padding:0}
+  .list li{display:flex;align-items:center;gap:10px;padding:10px 2px;border-top:1px solid var(--line)}
+  .list li:first-child{border-top:0}
+  .sr{width:26px;color:var(--muted);font-size:14px;text-align:right;flex:none}
+  .who{flex:1;min-width:0}
+  .who .n{font-weight:600}
+  .who .t{font-size:12.5px;color:var(--muted)}
+  .me-row{background:var(--brand-soft);border-radius:10px;padding-left:8px!important;padding-right:8px!important}
+  .pill{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;flex:none}
+  .p-yes{background:var(--yes-soft);color:var(--yes)} .p-no{background:var(--no-soft);color:var(--no)} .p-pend{background:var(--pend-soft);color:var(--pend)}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .btn-wa{background:var(--wa);color:#fff}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-lg{padding:12px 16px;font-size:16px}
+  .btn-freeze{background:#344054;color:#fff}
+  .btn-open{background:var(--brand);color:#fff}
+  .acts{display:flex;gap:6px;flex:none}
+  .row-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  .err{background:var(--no-soft);color:var(--no);border-radius:12px;padding:14px;font-weight:600}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  .demo{background:#FFF8D6;border:1px dashed #D9B84A;color:#6B5310;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+  @media (max-width:560px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .hero h1{font-size:22px}
+    .admin li{flex-wrap:wrap}
+    .admin .acts{width:100%;padding-left:36px}
+    .admin .acts .btn{flex:1}
+  }
+  input[type=text],input[type=password],textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:160px;resize:vertical}
+  label{display:block;font-weight:600;font-size:14px;margin:10px 0 4px}
+  .msg{font-size:14px;margin-top:8px;min-height:1em} .msg.error{color:var(--no)} .msg.ok{color:var(--yes)}
+  .btn-x{background:#fff;border:1px solid var(--line);color:var(--no)}
+  .topbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Loading…</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var TITLE = 'Naka Family Yatra', EVENT = 'February 2027';
+  var QUESTION = 'Will you be joining the Naka Family Yatra in February 2027?';
+  var code = (location.pathname.split('/')[2] || '').trim();
+  var app = document.getElementById('app');
+  var filter = 'all';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toast(m) { var t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2000); }
+  function pill(r) { return r === 'Yes' ? '<span class="pill p-yes">✓ Yes</span>' : r === 'No' ? '<span class="pill p-no">✕ No</span>' : '<span class="pill p-pend">Pending</span>'; }
+  function when(s) {
+    if (!s) return '';
+    var d = new Date(s.replace(' ', 'T'));
+    if (isNaN(d)) return s;
+    return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' });
+  }
+  function hero(sub) { return '<header class="hero"><div class="eyebrow">🙏 ' + EVENT + '</div><h1>' + TITLE + '</h1><p>' + esc(sub) + '</p></header>'; }
+  function stats(s) {
+    var t = s.total || 1;
+    return '<div class="stats"><div class="stat s-yes"><b>' + s.yes + '</b><span>Joining</span></div>' +
+      '<div class="stat s-no"><b>' + s.no + '</b><span>Not joining</span></div>' +
+      '<div class="stat s-pend"><b>' + s.pending + '</b><span>Pending</span></div>' +
+      '<div class="stat s-tot"><b>' + s.total + '</b><span>Members</span></div></div>' +
+      '<div class="bar"><i style="width:' + (s.yes / t * 100) + '%;background:var(--yes)"></i><i style="width:' + (s.no / t * 100) + '%;background:var(--no)"></i></div>';
+  }
+  function showError(m) { app.innerHTML = hero('Yatra consent') + '<div class="card err">' + esc(m) + '</div>'; }
+
+  function api(method, body) {
+    return fetch('/api/nakayatra/' + encodeURIComponent(code), {
+      method: method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'Something went wrong.'); return j; });
+    });
+  }
+
+  function render(st) {
+    var me = st.me, r = me.response, dis = st.frozen ? ' disabled' : '';
+    var h = hero('Please share your consent for the yatra');
+    h += '<section class="card"><p class="greet">Namaskar,</p><p class="name">' + esc(me.name) + ' 🙏</p>' +
+      '<p class="q">' + QUESTION + '</p><div class="choices">' +
+      '<button class="choice yes' + (r === 'Yes' ? ' on' : '') + '" data-r="Yes"' + dis + '>✓ Yes<small>I will join</small></button>' +
+      '<button class="choice no' + (r === 'No' ? ' on' : '') + '" data-r="No"' + dis + '>✕ No<small>I can\'t join</small></button></div>' +
+      (st.frozen ? '' : '<p class="note">' + (r ? 'Your answer is saved (' + esc(when(me.respondedAt)) + '). You can change it any time until the admin closes responses.' : 'Once you answer, you can see what everyone else has said.') + '</p>') +
+      '</section>';
+    if (st.frozen) h += '<div class="banner frozen">🔒 Responses are closed. Final list below.</div>';
+    if (st.members) {
+      h += '<section class="card"><h2>' + (st.frozen ? 'Final summary' : 'Responses so far') + '</h2>' + stats(st.summary) + '</section>';
+      h += '<section class="card"><div class="tabs">' + [['all', 'All'], ['Yes', 'Joining'], ['No', 'Not joining'], ['pending', 'Pending']].map(function (f) {
+        return '<button class="tab' + (filter === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>';
+      }).join('') + '</div><ul class="list">' + st.members.filter(function (m) {
+        return filter === 'all' || (filter === 'pending' ? !m.response : m.response === filter);
+      }).map(function (m, i) {
+        var mine = m.id === me.id;
+        return '<li' + (mine ? ' class="me-row"' : '') + '><span class="sr">' + (i + 1) + '</span><div class="who"><div class="n">' + esc(m.name) + (mine ? ' (You)' : '') + '</div>' +
+          (m.respondedAt ? '<div class="t">' + esc(when(m.respondedAt)) + '</div>' : '') + '</div>' + pill(m.response) + '</li>';
+      }).join('') + '</ul></section>';
+    }
+    h += '<footer>Naka Family · This link is personal to you — please don\'t forward it.</footer>';
+    app.innerHTML = h;
+
+    app.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        if (b.classList.contains('on')) return;
+        var ans = b.getAttribute('data-r');
+        app.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+        api('POST', { response: ans }).then(function (s) { render(s); toast('Saved: ' + ans); })
+          .catch(function (e) { toast(e.message); load(); });
+      };
+    });
+    app.querySelectorAll('.tab').forEach(function (t) { t.onclick = function () { filter = t.getAttribute('data-f'); render(st); }; });
+  }
+
+  function load() { api('GET').then(render).catch(function (e) { showError(e.message); }); }
+
+  if (!/^NF\d{7}$/.test(code)) showError('Please open the personal link that was sent to you on WhatsApp.');
+  else load();
+})();
+</script>
+</body>
+</html>

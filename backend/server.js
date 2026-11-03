@@ -28,6 +28,8 @@ const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 const THIGDAM_PAGE  = path.resolve(__dirname, '..', 'thigdam', 'index.html');
 const KULGAON_PAGE  = path.resolve(__dirname, '..', 'kulgaon', 'index.html');
 const KULGAON_ADMIN = path.resolve(__dirname, '..', 'kulgaon', 'admin.html');
+const NAKAYATRA_PAGE  = path.resolve(__dirname, '..', 'nakayatra', 'index.html');
+const NAKAYATRA_ADMIN = path.resolve(__dirname, '..', 'nakayatra', 'admin.html');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -45,6 +47,8 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const thigdamRouter    = require('./routes/thigdam');
   const kulgaonRouter    = require('./routes/kulgaon');
   const kulgaonAdminRouter = require('./routes/kulgaonAdmin');
+  const nakayatraRouter      = require('./routes/nakayatra');
+  const nakayatraAdminRouter = require('./routes/nakayatraAdmin');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -82,6 +86,11 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   // Protected: approving those suggestions and editing the list. Separate mount,
   // same split as /api/shete-admin.
   app.use('/api/kulgaon-admin', kulgaonAdminRouter); // applies requireAuth + requireAdmin itself
+  // Naka Family yatra consent poll (see CLAUDE.md → Naka Yatra): public answers
+  // gated by each member's personal code; the admin mount is the only place
+  // codes are listed and the poll can be frozen.
+  app.use('/api/nakayatra-admin', nakayatraAdminRouter); // applies requireAuth + requireAdmin itself
+  app.use('/api/nakayatra', nakayatraRouter);
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
   // surface can never approve its own requests.
@@ -422,6 +431,22 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
+  // Naka Family yatra consent poll. /nakayatra/admin must be registered before
+  // /nakayatra/:code. Plain HTML, no build step; data in leads.db (nakayatra_*).
+  app.get('/nakayatra/admin', (req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(NAKAYATRA_ADMIN, (err) => {
+      if (err && !res.headersSent) res.status(500).type('text/plain').send('Naka Yatra admin page missing.');
+    });
+  });
+  app.get(['/nakayatra', '/nakayatra/:code'], (req, res) => {
+    recordVisit(req, 'nakayatra');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(NAKAYATRA_PAGE, (err) => {
+      if (err && !res.headersSent) res.status(500).type('text/plain').send('Naka Yatra page missing.');
+    });
+  });
+
   // Prime API Integration — the multi-courier shipping (courier aggregator) demo.
   // One self-contained HTML file BUILT from prime-api-src/ (React + Vite + Tailwind,
   // inlined by vite-plugin-singlefile) and committed, like Rishta. No API, no
@@ -484,6 +509,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
     console.log(`  Thigdam album:   http://localhost:${PORT}/thigdam`);
     console.log(`  Kulgaon list:    http://localhost:${PORT}/kulgaon  (admin: /kulgaon/admin)`);
+    console.log(`  Naka Yatra poll: http://localhost:${PORT}/nakayatra/admin`);
     const groups = query(
       'SELECT name_en, share_code FROM calendar_groups ORDER BY sort_order, id'
     );

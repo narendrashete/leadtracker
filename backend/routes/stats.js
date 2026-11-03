@@ -22,6 +22,7 @@ const PAGE_LABELS = {
   primexai:           'PrimeXAI savings dashboard',
   thigdam:            'Thigdam photo album',
   kulgaon:            'Kulgaon member list',
+  nakayatra:          'Naka Family yatra poll',
   leadtracker:        'Lead Tracker app'
 };
 

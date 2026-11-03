@@ -498,6 +498,28 @@ async function getDb() {
     )
   `);
 
+  // Naka Family yatra consent poll at /nakayatra. One row per invited member;
+  // `code` is that member's personal link (/nakayatra/<code>) and is the only
+  // thing that lets anyone answer as them. Names are entered through the admin
+  // page, never committed (this repo is public). nakayatra_settings holds the
+  // freeze flag (key 'frozen', '1' = answers closed).
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT NOT NULL UNIQUE,
+      response TEXT,
+      responded_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

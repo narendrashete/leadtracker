@@ -226,6 +226,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-11-03** — **Naka Family yatra consent poll (`/nakayatra`).** Admin page
+  `/nakayatra/admin` (Lead Tracker admin login): paste member names, each gets a personal
+  link `/nakayatra/NF#######` with a WhatsApp share button; live Yes/No/Pending counts;
+  freeze/reopen. Member page shows their name and a Yes/No choice, then everyone's answers;
+  answers can change until frozen. Tables `nakayatra_members`, `nakayatra_settings`; routes
+  `routes/nakayatra.js` (public, code-gated) and `routes/nakayatraAdmin.js`.
 - **2026-10-28** — **Kulgaon list: admin approval + anonymous suggestions.** Public page no
   longer changes the list or asks for name/mobile: status, correction and new-member
   suggestions go to `kulgaon_requests` (no sender columns, day only) and wait for an admin.

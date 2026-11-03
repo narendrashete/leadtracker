@@ -52,6 +52,10 @@ Express (backend/server.js)
    ├── /api/kulgaon-admin (requireAuth + requireAdmin — approve suggestions, edit/load the list)
    ├── /kulgaon       (public, noindex — serves kulgaon/index.html verbatim, no build step)
    ├── /kulgaon/admin (admin login page — kulgaon/admin.html; /kulgaon/common.js shared by both)
+   ├── /api/nakayatra (public — one member's answer, gated by their personal code)
+   ├── /api/nakayatra-admin (requireAuth + requireAdmin — members, codes, freeze)
+   ├── /nakayatra/<code> (public, noindex — nakayatra/index.html, the member's Yes/No page)
+   ├── /nakayatra/admin (admin login page — nakayatra/admin.html)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -664,6 +668,23 @@ page `/kulgaon/admin` (the only place anything changes).
 - `X-Robots-Tag: noindex` on the pages and API. Public page counted in Visitors as
   `kulgaon` (aggregate, hashed — see Visitor Counting); the admin page is not counted.
 
+## Naka Family yatra poll (/nakayatra)
+A ninth app sharing this process: a Yes/No consent poll for the Naka Family WhatsApp group's
+February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts, token in
+`lt_token`) and one member page served at `/nakayatra/<code>`.
+- **Personal codes are the access control.** Each member row gets `NF` + 7 random digits
+  (`crypto.randomInt`, unique). Only `/api/nakayatra-admin` ever returns codes; the public
+  `/api/nakayatra/:code` answers only as that member and never lists codes. Wrong-code
+  lookups are capped at 30 per IP per hour (in memory).
+- **Others' answers are hidden until the member answers** (or the poll is frozen) — the
+  owner's design, so people answer for themselves first.
+- **Freeze** (`nakayatra_settings.frozen = '1'`) blocks every change (409) and shows the
+  final list. Reopen is allowed.
+- **Names are not in git** (public repo): the admin pastes them on the page; a pasted
+  "Sr. No. / Name" header and leading list numbers are stripped, duplicates skipped.
+- Route order matters: `/nakayatra/admin` is registered before `/nakayatra/:code`.
+- WhatsApp sharing is `https://wa.me/?text=…` — WhatsApp asks which chat to send it to.
+
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small
 numbered badge (`.ft-seq`, purple, distinct from the blue सभासद-number badge and the green WA
@@ -896,7 +917,8 @@ at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`), and Shete Parivar Navratri at
 `https://leadtracker.primecomputers.co.in/shetenavratri` (installable copy at
 `/shetenavratri/app`), and the Kulgaon gat member list at
-`https://leadtracker.primecomputers.co.in/kulgaon`. All three installable apps cache themselves on the devices that
+`https://leadtracker.primecomputers.co.in/kulgaon`, and the Naka Family yatra poll at
+`https://leadtracker.primecomputers.co.in/nakayatra/admin`. All three installable apps cache themselves on the devices that
 installed them, so shipping a change to any of them means bumping its `CACHE_VERSION` in the
 matching `sw.js` — without that, installed phones keep serving the version they cached, however
 many times you redeploy. The **Calendar Links** admin

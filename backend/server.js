@@ -30,6 +30,7 @@ const KULGAON_PAGE  = path.resolve(__dirname, '..', 'kulgaon', 'index.html');
 const KULGAON_ADMIN = path.resolve(__dirname, '..', 'kulgaon', 'admin.html');
 const NAKAYATRA_PAGE  = path.resolve(__dirname, '..', 'nakayatra', 'index.html');
 const NAKAYATRA_ADMIN = path.resolve(__dirname, '..', 'nakayatra', 'admin.html');
+const NAKAYATRA_LIST  = path.resolve(__dirname, '..', 'nakayatra', 'list.html');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -49,6 +50,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const kulgaonAdminRouter = require('./routes/kulgaonAdmin');
   const nakayatraRouter      = require('./routes/nakayatra');
   const nakayatraAdminRouter = require('./routes/nakayatraAdmin');
+  const nakayatraListRouter  = require('./routes/nakayatraList');
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -90,6 +92,9 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   // gated by each member's personal code; the admin mount is the only place
   // codes are listed and the poll can be frozen.
   app.use('/api/nakayatra-admin', nakayatraAdminRouter); // applies requireAuth + requireAdmin itself
+  // Final travellers list: one shared code, open corrections (see CLAUDE.md).
+  // Mounted before /api/nakayatra so /list/... never reaches the poll router.
+  app.use('/api/nakayatra/list', nakayatraListRouter);
   app.use('/api/nakayatra', nakayatraRouter);
   // Protected: reviewing/approving those submissions. Deliberately a separate
   // mount from /api/shete, same split as /api/calendar-admin, so the public
@@ -437,6 +442,13 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     res.set('X-Robots-Tag', 'noindex, nofollow');
     res.sendFile(NAKAYATRA_ADMIN, (err) => {
       if (err && !res.headersSent) res.status(500).type('text/plain').send('Naka Yatra admin page missing.');
+    });
+  });
+  app.get('/nakayatra/list/:code', (req, res) => {
+    recordVisit(req, 'nakayatra-list');
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(NAKAYATRA_LIST, (err) => {
+      if (err && !res.headersSent) res.status(500).type('text/plain').send('Naka Yatra list page missing.');
     });
   });
   app.get(['/nakayatra', '/nakayatra/:code'], (req, res) => {

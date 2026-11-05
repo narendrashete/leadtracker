@@ -23,6 +23,7 @@ const PAGE_LABELS = {
   thigdam:            'Thigdam photo album',
   kulgaon:            'Kulgaon member list',
   nakayatra:          'Naka Family yatra poll',
+  'nakayatra-list':   'Naka Family yatra — final list',
   leadtracker:        'Lead Tracker app'
 };
 

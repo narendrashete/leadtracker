@@ -104,6 +104,7 @@
     </form>
   </section>
 
+  <div id="finalView" style="display:none"></div>
   <div id="appView" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -140,8 +141,8 @@
       });
   }
 
-  function showLogin(msg) { view.style.display = 'none'; $('logoutBtn').style.display = 'none'; $('loginView').style.display = 'block'; $('loginMsg').textContent = msg || ''; }
-  function showApp() { $('loginView').style.display = 'none'; view.style.display = 'block'; $('logoutBtn').style.display = 'inline-flex'; load(); }
+  function showLogin(msg) { $('finalView').style.display = 'none'; view.style.display = 'none'; $('logoutBtn').style.display = 'none'; $('loginView').style.display = 'block'; $('loginMsg').textContent = msg || ''; }
+  function showApp() { $('loginView').style.display = 'none'; view.style.display = 'block'; $('finalView').style.display = 'block'; $('logoutBtn').style.display = 'inline-flex'; load(); loadFinal(); }
 
   $('loginForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -162,6 +163,97 @@
   function copy(text, done) {
     function fallback() { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(done); } catch (e) { prompt('Copy:', text); } ta.remove(); }
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { toast(done); }, fallback); else fallback();
+  }
+
+
+  // ---------------- Final travellers list ----------------
+  var fview = $('finalView'), fstate = null, parsed = null;
+  function istWhen(s) { if (!s) return ''; var d = new Date(s.replace(' ', 'T') + '+05:30'); return isNaN(d) ? s : d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function spaced(a) { return a ? a.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : ''; }
+  function listLink() { return location.origin + '/nakayatra/list/' + fstate.code; }
+  function loadFinal() { return api('/api/nakayatra-admin/final').then(renderFinal).catch(function () {}); }
+
+  // Rows copied from Excel (tabs) or typed (commas): finds the name, the
+  // 12-digit Aadhaar, a 10+ digit mobile and a 1-3 digit age in any order.
+  function parseRows(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (line) {
+      var cells = line.split(/\t|,|\s{2,}/).map(function (c) { return c.trim(); }).filter(Boolean);
+      var r = { name: '', aadhaar: '', age: '', mobile: '' }, small = [];
+      cells.forEach(function (c) {
+        var d = c.replace(/\D/g, '');
+        if (/[a-z]/i.test(c) && !r.name) r.name = c.replace(/^\d+[.)]\s*/, '');
+        else if (/^[\d\s]+$/.test(c) && d.length === 12 && !r.aadhaar) r.aadhaar = d;
+        else if (/^[+\d\s()-]+$/.test(c) && d.length >= 10 && !r.mobile) r.mobile = c;
+        else if (/^\d{1,3}$/.test(c)) small.push(c);
+      });
+      if (small.length) r.age = small[small.length - 1];
+      if (r.name && !/^(name|#|sr\.?)$/i.test(r.name) && (r.aadhaar || r.mobile)) out.push(r);
+    });
+    return out;
+  }
+
+  function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function downloadCsv() {
+    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
+    fstate.rows.forEach(function (r) {
+      var hist = r.history.map(function (h) { return h.at + ' ' + h.field + ': ' + (h.field === 'aadhaar' ? spaced(h.from) : h.from) + ' → ' + (h.field === 'aadhaar' ? spaced(h.to) : h.to); }).join(' | ');
+      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
+    });
+    var csv = '﻿' + lines.map(function (l) { return l.map(csvCell).join(','); }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'Naka_Yatra_Final_List_' + new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function renderFinal(st) {
+    fstate = st;
+    var h = '<section class="card"><h2>📋 Final list (members check &amp; correct)</h2>';
+    if (!st.rows.length) {
+      h += '<p class="note" style="margin-top:0">Open the final-list Excel file, select the members\' rows on the <b>Joining</b> tab (Name, Aadhaar, Age, Mobile) and paste them here.</p>' +
+        '<textarea id="fPaste" placeholder="Paste rows here"></textarea>' +
+        '<div id="fPreview"></div><div class="msg" id="fMsg"></div>' +
+        '<button class="btn btn-lg btn-open" id="fCheck" style="margin-top:10px;width:100%">Check pasted rows</button></section>';
+      fview.innerHTML = h;
+      $('fCheck').onclick = function () {
+        parsed = parseRows($('fPaste').value);
+        if (!parsed.length) { $('fMsg').className = 'msg error'; $('fMsg').textContent = 'No member rows found. Copy the rows with name and Aadhaar or mobile.'; return; }
+        $('fMsg').textContent = '';
+        $('fPreview').innerHTML = '<ul class="list" style="margin-top:10px">' + parsed.map(function (r, i) {
+          return '<li><span class="sr">' + (i + 1) + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' +
+            (r.aadhaar ? 'Aadhaar …' + r.aadhaar.slice(-4) : '<b style="color:var(--no)">no Aadhaar</b>') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + '</div></div></li>';
+        }).join('') + '</ul>';
+        var b = $('fCheck'); b.textContent = 'Load these ' + parsed.length + ' members';
+        b.onclick = function () {
+          b.disabled = true;
+          api('/api/nakayatra-admin/final/import', { json: { rows: parsed } }).then(function (x) { renderFinal(x); toast(x.rows.length + ' members loaded'); })
+            .catch(function (e) { b.disabled = false; $('fMsg').className = 'msg error'; $('fMsg').textContent = e.message; });
+        };
+      };
+      return;
+    }
+    var nCorr = st.rows.filter(function (r) { return r.correctedAt; }).length;
+    var wa = '🙏 *' + TITLE + ' – ' + EVENT + '*\n\n*Final list of members joining* (' + st.rows.length + ')\n\nPlease open the link, find your name and check your *Aadhaar number, name, age and mobile number*. If anything is wrong, tap "Correct my details" and save.\n\n' + listLink();
+    h += '<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat s-tot"><b>' + st.rows.length + '</b><span>Members</span></div><div class="stat s-pend"><b>' + nCorr + '</b><span>Corrected</span></div></div>' +
+      (st.locked ? '<div class="banner frozen">🔒 Locked — members can view but not correct.</div>' : '') +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+      '<a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(wa) + '">Share in WhatsApp group</a>' +
+      '<button class="btn btn-ghost" id="fCopy">Copy link</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(listLink()) + '">Open</a>' +
+      '<button class="btn btn-open" id="fDl">⬇ Download list (Excel)</button>' +
+      '<button class="btn btn-freeze" id="fLock">' + (st.locked ? '🔓 Unlock' : '🔒 Lock list') + '</button></div>' +
+      '<ul class="list" style="margin-top:12px">' + st.rows.map(function (r) {
+        return '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' + esc(spaced(r.aadhaar) || 'no Aadhaar') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + '</div>' +
+          (r.correctedAt ? '<div class="t" style="color:#8A6D1E;font-weight:700">✎ Corrected ' + esc(istWhen(r.correctedAt)) + ' (' + esc(r.correctedFields.replace(/,/g, ', ')) + ')</div>' : '') + '</div></li>';
+      }).join('') + '</ul></section>';
+    fview.innerHTML = h;
+    $('fCopy').onclick = function () { copy(listLink(), 'Link copied'); };
+    $('fDl').onclick = downloadCsv;
+    $('fLock').onclick = function () {
+      var l = !st.locked;
+      if (!confirm(l ? 'Lock the list? Members will no longer be able to correct their details.' : 'Unlock the list so members can correct their details again?')) return;
+      api('/api/nakayatra-admin/final/lock', { json: { locked: l } }).then(function (x) { renderFinal(x); toast(l ? 'List locked' : 'List unlocked'); });
+    };
   }
 
   function load() { return api('/api/nakayatra-admin').then(render).catch(function () {}); }

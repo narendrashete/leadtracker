@@ -56,6 +56,8 @@ Express (backend/server.js)
    ├── /api/nakayatra-admin (requireAuth + requireAdmin — members, codes, freeze)
    ├── /nakayatra/<code> (public, noindex — nakayatra/index.html, the member's Yes/No page)
    ├── /nakayatra/admin (admin login page — nakayatra/admin.html)
+   ├── /api/nakayatra/list (public — final travellers list, one shared code, open corrections)
+   ├── /nakayatra/list/<code> (public, noindex — nakayatra/list.html)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -684,6 +686,20 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   "Sr. No. / Name" header and leading list numbers are stripped, duplicates skipped.
 - Route order matters: `/nakayatra/admin` is registered before `/nakayatra/:code`.
 - WhatsApp sharing is `https://wa.me/?text=…` — WhatsApp asks which chat to send it to.
+- **Final travellers list** (`/nakayatra/list/<code>`, `routes/nakayatraList.js`, table
+  `nakayatra_final`): the joining members' name, Aadhaar, age (Feb 2027) and mobile, which
+  the members check and correct themselves. **No approval, by the owner's explicit choice**
+  ("members are trustworthy") — anyone with the group link can correct any row; don't add
+  an approval queue. Each change sets `corrected_at` (IST, `Asia/Kolkata`, not server time)
+  and `corrected_fields`, and appends old → new to `history`; the admin's CSV download
+  carries the flag, fields, time and history. One shared code per list (`list_code` in
+  `nakayatra_settings`, 12 hex chars), separate from the personal poll codes; the admin can
+  lock the list (`list_locked`). **Full Aadhaar numbers never reach the public page** — it
+  gets `XXXX XXXX 1234`, and a member re-types all 12 digits only to change it. Data is
+  loaded once by pasting rows on the admin page (import refuses if rows exist, so it can't
+  wipe corrections); it is never committed. Mobiles are stored in one canonical spelling
+  (`+91 98201 01355`) so re-saving the same number differently is not flagged.
+  `/api/nakayatra/list` is mounted before `/api/nakayatra`.
 
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small

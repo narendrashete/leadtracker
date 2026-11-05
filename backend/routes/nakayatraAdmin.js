@@ -80,8 +80,10 @@ function finalState() {
   return {
     code: nakayatraList.listCode(),
     locked: nakayatraList.frozen(),
+    booking: nakayatraList.BOOKING,
     rows: rows.map(r => ({
       id: r.id, sr: r.sr, name: r.name, aadhaar: r.aadhaar || '', age: r.age, mobile: r.mobile || '',
+      gothram: nakayatraList.currentValue(r, 'gothram'),
       correctedAt: r.corrected_at || '', correctedFields: r.corrected_fields || '',
       history: r.history ? JSON.parse(r.history) : [],
     })),

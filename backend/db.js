@@ -538,6 +538,12 @@ async function getDb() {
     )
   `);
 
+  // Gothram for the TTD darshan booking form, added after the list was loaded.
+  // NULL means the group default (Kashyap, set in routes/nakayatraList.js).
+  try {
+    _db.run(`ALTER TABLE nakayatra_final ADD COLUMN gothram TEXT`);
+  } catch { /* column already exists */ }
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

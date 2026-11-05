@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Naka Family Yatra – Final List</title>
 <meta property="og:title" content="Naka Family Yatra – Final List (Feb 2027)">
-<meta property="og:description" content="Please check your name, Aadhaar, age and mobile number — correct it if anything is wrong.">
+<meta property="og:description" content="Please check your name, Aadhaar, age, mobile number and gothram — correct it if anything is wrong.">
 <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -105,11 +105,22 @@
   form.edit .row2 .btn{flex:1}
   .legend{font-size:14px;color:var(--muted);margin:8px 0 0}
   @media (max-width:420px){ .m-grid,.flag,.m-acts,form.edit{margin-left:0} }
+  .sched{display:block;width:100%;height:auto;aspect-ratio:3/2;border-radius:16px;margin-top:16px;border:1px solid var(--line);background:#0E2A5C}
+  .kv{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+  .kv:first-of-type{border-top:0}
+  .kv .k{width:110px;flex:none;color:var(--muted);font-size:14px}
+  .kv .v{flex:1;min-width:0;font-weight:700;word-break:break-word}
+  .cp{flex:none;width:34px;height:34px;border:1px solid var(--line);background:var(--brand-soft);color:var(--brand-dark);border-radius:9px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+  .cp svg{width:16px;height:16px}
+  .cp.done{background:var(--yes-soft);color:var(--yes);border-color:var(--yes)}
+  .m-grid{grid-template-columns:auto 1fr auto;align-items:center}
+  .m-grid dd.c{text-align:right}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="hero"><div class="eyebrow">🙏 February 2027</div><h1>Naka Family Yatra</h1><p>Final list of members joining</p></header>
+  <img class="sched" src="/nakayatra/schedule.jpg" width="960" height="640" alt="Yatra schedule: depart Kalyan Wed 10 Feb 2027, reach Tirupati Thu 11 Feb, Tirumala darshan Fri 12 Feb, leave Tirupati Sat 13 Feb, reach home Sun 14 Feb">
   <div id="app"><div class="loading">Loading…</div></div>
   <footer>Naka Family · Please check only your own details. This page is for our group only — don't forward it.</footer>
 </div>
@@ -130,15 +141,38 @@
       method: opts.method || 'GET', headers: opts.body ? { 'Content-Type': 'application/json' } : {}, body: opts.body ? JSON.stringify(opts.body) : undefined
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'Something went wrong.'); return j; }); });
   }
+  // Copy buttons: every value can be tapped and pasted into the TTD booking form.
+  var CP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  var TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  function cpBtn(v, label) { return '<button type="button" class="cp" data-copy="' + esc(v) + '" aria-label="Copy ' + esc(label) + '">' + CP + '</button>'; }
+  function mob10(s) { var d = String(s || '').replace(/\D/g, ''); return d.length > 10 ? d.slice(-10) : d; }
+  function legacyCopy(v) { var a = document.createElement('textarea'); a.value = v; a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
+  function copyText(v, b) {
+    var done = function () { toast('Copied: ' + (v.length > 30 ? v.slice(0, 30) + '…' : v)); b.innerHTML = TICK; b.classList.add('done'); setTimeout(function () { b.innerHTML = CP; b.classList.remove('done'); }, 1400); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(v).then(done, function () { legacyCopy(v); done(); });
+    else { legacyCopy(v); done(); }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-copy]');
+    if (b) copyText(b.getAttribute('data-copy'), b);
+  });
+  function bookingHtml(bk) {
+    if (!bk) return '';
+    return '<section class="card"><h2>Common booking details</h2>' + [['Darshan date', bk.darshanDate], ['State', bk.state], ['City', bk.city], ['Pincode', bk.pincode]].map(function (r) {
+      return '<div class="kv"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + cpBtn(r[1], r[0]) + '</div>';
+    }).join('') + '</section>';
+  }
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
   function memberHtml(m) {
     var open = openId === m.id;
-    var h = '<div class="member' + (open ? ' open' : '') + '" id="m' + m.id + '"><div class="m-top"><span class="m-sr">' + m.sr + '</span><div class="m-name">' + esc(m.name) + '</div></div>';
+    var h = '<div class="member' + (open ? ' open' : '') + '" id="m' + m.id + '"><div class="m-top"><span class="m-sr">' + m.sr + '</span><div class="m-name">' + esc(m.name) + '</div>' + (open ? '' : cpBtn(m.name, 'name')) + '</div>';
     if (!open) {
-      h += '<dl class="m-grid"><dt>Aadhaar</dt><dd' + (m.hasAadhaar ? '>' + esc(m.aadhaar) : ' class="missing">Not given — please add') + '</dd>' +
-        '<dt>Age</dt><dd' + (m.age ? '>' + m.age + ' yrs' : ' class="missing">Not given') + '</dd>' +
-        '<dt>Mobile</dt><dd' + (m.mobile ? '>' + esc(m.mobile) : ' class="missing">Not given') + '</dd></dl>';
+      // Aadhaar is masked here (full numbers stay on the admin page), so it gets no copy button.
+      h += '<dl class="m-grid"><dt>Aadhaar</dt><dd' + (m.hasAadhaar ? '>' + esc(m.aadhaar) : ' class="missing">Not given — please add') + '</dd><dd class="c"></dd>' +
+        '<dt>Age</dt><dd' + (m.age ? '>' + m.age + ' yrs' : ' class="missing">Not given') + '</dd><dd class="c">' + (m.age ? cpBtn(String(m.age), 'age') : '') + '</dd>' +
+        '<dt>Mobile</dt><dd' + (m.mobile ? '>' + esc(m.mobile) : ' class="missing">Not given') + '</dd><dd class="c">' + (m.mobile ? cpBtn(mob10(m.mobile), 'mobile') : '') + '</dd>' +
+        '<dt>Gothram</dt><dd>' + esc(m.gothram) + '</dd><dd class="c">' + (m.gothram ? cpBtn(m.gothram, 'gothram') : '') + '</dd></dl>';
       if (m.corrected) h += '<div class="flag">✎ Corrected · ' + esc(when(m.correctedAt)) + ' · ' + esc(m.correctedFields.join(', ')) + '</div>';
       if (!state.locked) h += '<div class="m-acts"><button class="btn btn-ghost" data-edit="' + m.id + '">✎ Correct my details</button></div>';
     } else {
@@ -148,6 +182,8 @@
         (m.hasAadhaar ? '<p class="hint">Saved number ends with <b>' + esc(m.aadhaar.slice(-4)) + '</b>. Leave blank if that is correct.</p>' : '') +
         '<label>Age (in Feb 2027)</label><input type="text" name="age" inputmode="numeric" value="' + (m.age || '') + '" maxlength="3" autocomplete="off">' +
         '<label>Mobile number</label><input type="text" name="mobile" inputmode="tel" value="' + esc(m.mobile) + '" maxlength="20" autocomplete="off">' +
+        '<label>Gothram</label><input type="text" name="gothram" value="' + esc(m.gothram) + '" maxlength="40" autocomplete="off">' +
+        '<p class="hint">Kashyap is filled in for everyone. Change it only if yours is different.</p>' +
         '<div class="msg error"></div>' +
         '<div class="row2"><button class="btn btn-lg btn-open" type="submit">Save correction</button><button class="btn btn-lg btn-ghost" type="button" data-cancel>Cancel</button></div></form>';
     }
@@ -157,8 +193,8 @@
   function render() {
     var rows = state.rows.filter(function (m) { return !q || norm(m.name).indexOf(norm(q)) !== -1; });
     var nCorr = state.rows.filter(function (m) { return m.corrected; }).length;
-    var h = '<section class="card"><h2 style="margin:0">' + state.rows.length + ' members joining</h2>' +
-      '<p class="legend">Find your name and check your Aadhaar, age and mobile number. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
+    var h = bookingHtml(state.booking) + '<section class="card"><h2 style="margin:0">' + state.rows.length + ' members joining</h2>' +
+      '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
       (nCorr ? ' (' + nCorr + ' corrected so far)' : '') + '</p>' +
       (state.locked ? '<div class="banner frozen">🔒 The list is final and locked. Contact the admin for any change.</div>' : '') +
       '<div class="search"><input type="text" id="q" placeholder="Search your name…" value="' + esc(q) + '" autocomplete="off"></div></section>';
@@ -173,7 +209,7 @@
       f.onsubmit = function (e) {
         e.preventDefault();
         var id = Number(f.getAttribute('data-id')), msg = f.querySelector('.msg');
-        var body = { name: f.name.value, aadhaar: f.aadhaar.value, age: f.age.value, mobile: f.mobile.value };
+        var body = { name: f.name.value, aadhaar: f.aadhaar.value, age: f.age.value, mobile: f.mobile.value, gothram: f.gothram.value };
         var btn = f.querySelector('[type=submit]'); btn.disabled = true; msg.textContent = '';
         api('/' + id, { method: 'PATCH', body: body }).then(function (res) {
           state.rows = state.rows.map(function (m) { return m.id === id ? res.row : m; });

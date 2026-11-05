@@ -225,6 +225,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-05** — **Naka Yatra darshan booking details.** List page: yatra schedule image on
+  top, common booking details (darshan date 12-02-2027, Maharashtra, Badlapur, 421503), copy
+  buttons on every field, and a Gothram field (default Kashyap, members can correct it).
+  Admin page: "Darshan booking helper" with copy chips per member, including full Aadhaar;
+  Gothram added to the admin list and the Excel download. New column `nakayatra_final.gothram`
+  (added by `ALTER TABLE` on start-up); new route `/nakayatra/schedule.jpg`.
 
 - **2026-11-05** — **Naka Yatra final travellers list (`/nakayatra/list/<code>`).** Admin pastes
   the joining members (name, Aadhaar, age, mobile) on `/nakayatra/admin`, shares one group

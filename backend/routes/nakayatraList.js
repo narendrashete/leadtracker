@@ -11,8 +11,20 @@ const { query, run } = require('../db');
 const router = express.Router();
 router.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
 
-const FIELDS = ['name', 'aadhaar', 'age', 'mobile'];
-const LABELS = { name: 'Name', aadhaar: 'Aadhaar', age: 'Age', mobile: 'Mobile' };
+const FIELDS = ['name', 'aadhaar', 'age', 'mobile', 'gothram'];
+const LABELS = { name: 'Name', aadhaar: 'Aadhaar', age: 'Age', mobile: 'Mobile', gothram: 'Gothram' };
+
+// Group default gothram: a NULL gothram column means this, so members only
+// change it when theirs differs (and saving the default is not a correction).
+const DEFAULT_GOTHRAM = 'Kashyap';
+// Details common to the whole group's TTD darshan booking, shown with copy
+// buttons on the list and admin pages. Edit here; both pages read them from the API.
+const BOOKING = { darshanDate: '12-02-2027', state: 'Maharashtra', city: 'Badlapur', pincode: '421503' };
+
+function currentValue(row, f) {
+  if (f === 'gothram') return row.gothram || DEFAULT_GOTHRAM;
+  return row[f] == null ? '' : row[f];
+}
 
 function listCode() {
   const r = query(`SELECT value FROM nakayatra_settings WHERE key = 'list_code'`)[0];
@@ -31,7 +43,7 @@ function maskAadhaar(a) {
 function publicRow(r) {
   return {
     id: r.id, sr: r.sr, name: r.name, aadhaar: maskAadhaar(r.aadhaar), hasAadhaar: !!r.aadhaar,
-    age: r.age, mobile: r.mobile || '',
+    age: r.age, mobile: r.mobile || '', gothram: currentValue(r, 'gothram'),
     corrected: !!r.corrected_at, correctedAt: r.corrected_at || '',
     correctedFields: r.corrected_fields ? r.corrected_fields.split(',').map(f => LABELS[f] || f) : [],
   };
@@ -63,6 +75,12 @@ function cleanField(field, raw) {
     if (digits.length === 10) digits = '91' + digits;
     if (digits.length === 12 && digits.startsWith('91')) return { value: '+91 ' + digits.slice(2, 7) + ' ' + digits.slice(7) };
     return { value: '+' + digits };
+  }
+  if (field === 'gothram') {
+    const v = s.replace(/\s+/g, ' ');
+    if (!v) return { error: 'Gothram cannot be empty.' };
+    if (v.length > 40 || !/^[\p{L}\p{M} .'-]+$/u.test(v)) return { error: 'Gothram should be letters only, up to 40 characters.' };
+    return { value: v };
   }
   return { error: 'Unknown field.' };
 }
@@ -98,11 +116,11 @@ function frozen() {
 router.get('/:code', (req, res, next) => {
   try {
     if (!checkCode(req, res)) return;
-    res.json({ locked: frozen(), rows: allRows().map(publicRow) });
+    res.json({ locked: frozen(), booking: BOOKING, rows: allRows().map(publicRow) });
   } catch (err) { next(err); }
 });
 
-// { name?, aadhaar?, age?, mobile? } — only fields that differ are saved.
+// { name?, aadhaar?, age?, mobile?, gothram? } — only fields that differ are saved.
 router.patch('/:code/:id', (req, res, next) => {
   try {
     if (!checkCode(req, res)) return;
@@ -117,7 +135,7 @@ router.patch('/:code/:id', (req, res, next) => {
       if (body[f] === undefined || body[f] === null || String(body[f]).trim() === '') continue;
       const c = cleanField(f, body[f]);
       if (c.error) return res.status(400).json({ error: c.error });
-      if (String(c.value) !== String(row[f] == null ? '' : row[f])) changes[f] = c.value;
+      if (String(c.value) !== String(currentValue(row, f))) changes[f] = c.value;
     }
     const keys = Object.keys(changes);
     if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row) });
@@ -126,7 +144,7 @@ router.patch('/:code/:id', (req, res, next) => {
     const fields = new Set((row.corrected_fields || '').split(',').filter(Boolean));
     keys.forEach(k => fields.add(k));
     const history = row.history ? JSON.parse(row.history) : [];
-    keys.forEach(k => history.push({ at, field: k, from: row[k] == null ? '' : row[k], to: changes[k] }));
+    keys.forEach(k => history.push({ at, field: k, from: currentValue(row, k), to: changes[k] }));
 
     run(
       `UPDATE nakayatra_final SET ${keys.map(k => k + ' = ?').join(', ')},
@@ -143,3 +161,6 @@ module.exports.listCode = listCode;
 module.exports.allRows = allRows;
 module.exports.frozen = frozen;
 module.exports.cleanField = cleanField;
+module.exports.currentValue = currentValue;
+module.exports.BOOKING = BOOKING;
+module.exports.DEFAULT_GOTHRAM = DEFAULT_GOTHRAM;

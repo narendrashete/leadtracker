@@ -700,6 +700,15 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   wipe corrections); it is never committed. Mobiles are stored in one canonical spelling
   (`+91 98201 01355`) so re-saving the same number differently is not flagged.
   `/api/nakayatra/list` is mounted before `/api/nakayatra`.
+- **Darshan booking details** (added 2026-11-05): `nakayatra_final.gothram` (NULL = group
+  default `DEFAULT_GOTHRAM`, "Kashyap", in `routes/nakayatraList.js`; saving the default is not
+  a correction). The group-wide booking values (darshan date, state, city, pincode) live in
+  `BOOKING` in the same file and reach both pages through the API — edit them there, not in
+  the HTML. Both pages have copy buttons for the TTD booking form; mobile copies as 10 digits.
+  The **admin page's "Darshan booking helper"** is the only place full Aadhaar digits can be
+  copied — the members' list stays masked (no Aadhaar copy button there). The yatra schedule
+  image is `nakayatra/schedule.jpg`, served at `/nakayatra/schedule.jpg` (registered before
+  `/nakayatra/:code`); it holds no personal data, so it is committed.
 
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small

@@ -86,6 +86,13 @@
   .msg{font-size:14px;margin-top:8px;min-height:1em} .msg.error{color:var(--no)} .msg.ok{color:var(--yes)}
   .btn-x{background:#fff;border:1px solid var(--line);color:var(--no)}
   .topbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{border:1px solid var(--line);background:var(--brand-soft);color:var(--brand-dark);border-radius:999px;padding:5px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .chip.done{background:var(--yes-soft);color:var(--yes);border-color:var(--yes)}
+  .bk{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line)}
+  .bk:first-of-type{border-top:0}
+  .bk .k{width:110px;flex:none;color:var(--muted);font-size:14px}
+  .bk .v{flex:1;font-weight:700}
 </style>
 </head>
 <body>
@@ -195,10 +202,10 @@
 
   function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCsv() {
-    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
+    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Gothram', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
     fstate.rows.forEach(function (r) {
       var hist = r.history.map(function (h) { return h.at + ' ' + h.field + ': ' + (h.field === 'aadhaar' ? spaced(h.from) : h.from) + ' → ' + (h.field === 'aadhaar' ? spaced(h.to) : h.to); }).join(' | ');
-      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
+      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.gothram || '', r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
     });
     var csv = '﻿' + lines.map(function (l) { return l.map(csvCell).join(','); }).join('\r\n');
     var a = document.createElement('a');
@@ -207,6 +214,23 @@
     document.body.appendChild(a); a.click(); a.remove();
   }
 
+  // Booking helper: tap a chip to copy that value for the TTD booking form.
+  // Full Aadhaar digits are copied from here only — the members' page is masked.
+  function chip(label, v) { return v ? '<button type="button" class="chip" data-copy="' + esc(v) + '">' + esc(label) + ' ⧉</button>' : ''; }
+  function mob10(s) { var d = String(s || '').replace(/\D/g, ''); return d.length > 10 ? d.slice(-10) : d; }
+  fview.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    var v = b.getAttribute('data-copy');
+    copy(v, 'Copied: ' + (v.length > 30 ? v.slice(0, 30) + '…' : v));
+    b.classList.add('done'); setTimeout(function () { b.classList.remove('done'); }, 1400);
+  });
+  function bookingCard(bk) {
+    if (!bk) return '';
+    return '<section class="card"><h2>🎟️ Darshan booking helper</h2><p class="note" style="margin-top:0">Keep this open while booking on the TTD site. Tap a value to copy it; each member\'s values are in the list below.</p>' +
+      [['Darshan date', bk.darshanDate], ['State', bk.state], ['City', bk.city], ['Pincode', bk.pincode]].map(function (r) {
+        return '<div class="bk"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + chip('Copy', r[1]) + '</div>';
+      }).join('') + '</section>';
+  }
   function renderFinal(st) {
     fstate = st;
     var h = '<section class="card"><h2>📋 Final list (members check &amp; correct)</h2>';
@@ -243,10 +267,11 @@
       '<button class="btn btn-open" id="fDl">⬇ Download list (Excel)</button>' +
       '<button class="btn btn-freeze" id="fLock">' + (st.locked ? '🔓 Unlock' : '🔒 Lock list') + '</button></div>' +
       '<ul class="list" style="margin-top:12px">' + st.rows.map(function (r) {
-        return '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' + esc(spaced(r.aadhaar) || 'no Aadhaar') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + '</div>' +
+        return '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' + esc(spaced(r.aadhaar) || 'no Aadhaar') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + ' · ' + esc(r.gothram || '') + '</div>' +
+          '<div class="chips">' + chip('Name', r.name) + chip('Aadhaar', r.aadhaar) + chip('Age', r.age ? String(r.age) : '') + chip('Mobile', mob10(r.mobile)) + chip('Gothram', r.gothram) + '</div>' +
           (r.correctedAt ? '<div class="t" style="color:#8A6D1E;font-weight:700">✎ Corrected ' + esc(istWhen(r.correctedAt)) + ' (' + esc(r.correctedFields.replace(/,/g, ', ')) + ')</div>' : '') + '</div></li>';
       }).join('') + '</ul></section>';
-    fview.innerHTML = h;
+    fview.innerHTML = bookingCard(st.booking) + h;
     $('fCopy').onclick = function () { copy(listLink(), 'Link copied'); };
     $('fDl').onclick = downloadCsv;
     $('fLock').onclick = function () {

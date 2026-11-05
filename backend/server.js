@@ -31,6 +31,7 @@ const KULGAON_ADMIN = path.resolve(__dirname, '..', 'kulgaon', 'admin.html');
 const NAKAYATRA_PAGE  = path.resolve(__dirname, '..', 'nakayatra', 'index.html');
 const NAKAYATRA_ADMIN = path.resolve(__dirname, '..', 'nakayatra', 'admin.html');
 const NAKAYATRA_LIST  = path.resolve(__dirname, '..', 'nakayatra', 'list.html');
+const NAKAYATRA_SCHEDULE = path.resolve(__dirname, '..', 'nakayatra', 'schedule.jpg');
 
 Promise.all([getDb(), getContactsDb()]).then(() => {
   const leadsRouter    = require('./routes/leads');
@@ -449,6 +450,13 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     res.set('X-Robots-Tag', 'noindex, nofollow');
     res.sendFile(NAKAYATRA_LIST, (err) => {
       if (err && !res.headersSent) res.status(500).type('text/plain').send('Naka Yatra list page missing.');
+    });
+  });
+  // The yatra schedule image shown on the list page; registered before /nakayatra/:code.
+  app.get('/nakayatra/schedule.jpg', (req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(NAKAYATRA_SCHEDULE, { maxAge: '1d' }, (err) => {
+      if (err && !res.headersSent) res.status(404).type('text/plain').send('Not found.');
     });
   });
   app.get(['/nakayatra', '/nakayatra/:code'], (req, res) => {

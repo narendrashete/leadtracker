@@ -226,6 +226,12 @@ Unscoped, not committed to — do not build without an explicit ask:
 
 ## Change Log
 
+- **2026-11-05** — **Naka Yatra final travellers list (`/nakayatra/list/<code>`).** Admin pastes
+  the joining members (name, Aadhaar, age, mobile) on `/nakayatra/admin`, shares one group
+  link; members correct their own details with no approval, each change flagged with IST
+  time + fields, old → new kept in history. Admin: share/copy link, lock/unlock, CSV
+  download with the flags. Public page shows only the last 4 Aadhaar digits. Table
+  `nakayatra_final`; route `routes/nakayatraList.js`; page `nakayatra/list.html`.
 - **2026-11-03** — **Naka Family yatra consent poll (`/nakayatra`).** Admin page
   `/nakayatra/admin` (Lead Tracker admin login): paste member names, each gets a personal
   link `/nakayatra/NF#######` with a WhatsApp share button; live Yes/No/Pending counts;

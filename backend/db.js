@@ -513,6 +513,24 @@ async function getDb() {
       created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     )
   `);
+  // The yatra's final travellers list (/nakayatra/list/<code>): ID details the
+  // members check and correct themselves, no approval. Loaded by the admin
+  // (paste), never committed — Aadhaar numbers, public repo. corrected_at /
+  // corrected_fields flag a member's change; history keeps old → new values
+  // for the admin's download only.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_final (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sr INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      aadhaar TEXT,
+      age INTEGER,
+      mobile TEXT,
+      corrected_at TEXT,
+      corrected_fields TEXT,
+      history TEXT
+    )
+  `);
   _db.run(`
     CREATE TABLE IF NOT EXISTS nakayatra_settings (
       key TEXT PRIMARY KEY,

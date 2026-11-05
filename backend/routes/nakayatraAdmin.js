@@ -72,4 +72,71 @@ router.post('/freeze', (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ---- Final travellers list (/nakayatra/list/<code>) ----
+const nakayatraList = require('./nakayatraList');
+
+function finalState() {
+  const rows = nakayatraList.allRows();
+  return {
+    code: nakayatraList.listCode(),
+    locked: nakayatraList.frozen(),
+    rows: rows.map(r => ({
+      id: r.id, sr: r.sr, name: r.name, aadhaar: r.aadhaar || '', age: r.age, mobile: r.mobile || '',
+      correctedAt: r.corrected_at || '', correctedFields: r.corrected_fields || '',
+      history: r.history ? JSON.parse(r.history) : [],
+    })),
+  };
+}
+
+function setSetting(key, value) {
+  run(`INSERT INTO nakayatra_settings (key, value) VALUES (?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value`, [key, value]);
+}
+
+router.get('/final', (req, res, next) => {
+  try { res.json(finalState()); } catch (err) { next(err); }
+});
+
+// { rows: [{ name, aadhaar, age, mobile }] } — loads the list once. Refuses if
+// a list already exists, so it can never wipe members' corrections.
+router.post('/final/import', (req, res, next) => {
+  try {
+    if (nakayatraList.allRows().length) return res.status(409).json({ error: 'The final list is already loaded.' });
+    const raw = Array.isArray(req.body && req.body.rows) ? req.body.rows : [];
+    if (!raw.length || raw.length > 200) return res.status(400).json({ error: 'Paste between 1 and 200 rows.' });
+    const rows = [];
+    for (const [i, r] of raw.entries()) {
+      const name = nakayatraList.cleanField('name', r.name);
+      if (name.error) return res.status(400).json({ error: `Row ${i + 1}: ${name.error}` });
+      const out = [i + 1, name.value, null, null, null];
+      for (const [k, idx] of [['aadhaar', 2], ['age', 3], ['mobile', 4]]) {
+        if (r[k] === undefined || r[k] === null || String(r[k]).trim() === '') continue;
+        const c = nakayatraList.cleanField(k, r[k]);
+        if (c.error) return res.status(400).json({ error: `Row ${i + 1} (${name.value}): ${c.error}` });
+        out[idx] = c.value;
+      }
+      rows.push(out);
+    }
+    runMany(`INSERT INTO nakayatra_final (sr, name, aadhaar, age, mobile) VALUES (?, ?, ?, ?, ?)`, rows);
+    if (!nakayatraList.listCode()) setSetting('list_code', crypto.randomBytes(6).toString('hex'));
+    res.json(finalState());
+  } catch (err) { next(err); }
+});
+
+// { locked: true|false } — locked stops all corrections.
+router.post('/final/lock', (req, res, next) => {
+  try {
+    setSetting('list_locked', req.body && req.body.locked ? '1' : '0');
+    res.json(finalState());
+  } catch (err) { next(err); }
+});
+
+// New link; the old one stops working at once.
+router.post('/final/rotate', (req, res, next) => {
+  try {
+    setSetting('list_code', crypto.randomBytes(6).toString('hex'));
+    res.json(finalState());
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

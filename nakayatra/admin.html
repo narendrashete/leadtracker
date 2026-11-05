@@ -178,6 +178,7 @@
   function istWhen(s) { if (!s) return ''; var d = new Date(s.replace(' ', 'T') + '+05:30'); return isNaN(d) ? s : d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
   function spaced(a) { return a ? a.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : ''; }
   function listLink() { return location.origin + '/nakayatra/list/' + fstate.code; }
+  function bookingLink() { return fstate.bookingCode ? location.origin + '/nakayatra/list/' + fstate.bookingCode : ''; }
   function loadFinal() { return api('/api/nakayatra-admin/final').then(renderFinal).catch(function () {}); }
 
   // Rows copied from Excel (tabs) or typed (commas): finds the name, the
@@ -266,6 +267,13 @@
       '<button class="btn btn-ghost" id="fCopy">Copy link</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(listLink()) + '">Open</a>' +
       '<button class="btn btn-open" id="fDl">⬇ Download list (Excel)</button>' +
       '<button class="btn btn-freeze" id="fLock">' + (st.locked ? '🔓 Unlock' : '🔒 Lock list') + '</button></div>' +
+      '<div class="banner frozen" style="margin-top:12px">🔑 <b>Booking link</b> — same list with full Aadhaar numbers to copy. Send it only to the members doing the TTD booking, one to one (not to the group).' +
+      (st.bookingCode
+        ? '<div class="code" style="margin-top:6px;word-break:break-all">' + esc(bookingLink()) + '</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+          '<a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('🙏 *' + TITLE + ' – ' + EVENT + '*\n\n*Darshan booking link* (full Aadhaar numbers — please don\'t forward)\n\n' + bookingLink()) + '">Send on WhatsApp</a>' +
+          '<button class="btn btn-ghost" id="bCopy">Copy link</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(bookingLink()) + '">Open</a>' +
+          '<button class="btn btn-x" id="bNew">New link (old stops working)</button></div>'
+        : '<div style="margin-top:8px"><button class="btn btn-open" id="bNew">Create booking link</button></div>') + '</div>' +
       '<ul class="list" style="margin-top:12px">' + st.rows.map(function (r) {
         return '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' + esc(spaced(r.aadhaar) || 'no Aadhaar') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + ' · ' + esc(r.gothram || '') + '</div>' +
           '<div class="chips">' + chip('Name', r.name) + chip('Aadhaar', r.aadhaar) + chip('Age', r.age ? String(r.age) : '') + chip('Mobile', mob10(r.mobile)) + chip('Gothram', r.gothram) + '</div>' +
@@ -273,6 +281,12 @@
       }).join('') + '</ul></section>';
     fview.innerHTML = bookingCard(st.booking) + h;
     $('fCopy').onclick = function () { copy(listLink(), 'Link copied'); };
+    if ($('bCopy')) $('bCopy').onclick = function () { copy(bookingLink(), 'Booking link copied'); };
+    $('bNew').onclick = function () {
+      if (st.bookingCode && !confirm('Make a new booking link? The current one will stop working.')) return;
+      api('/api/nakayatra-admin/final/booking-link', { json: {} }).then(function (x) { renderFinal(x); toast('Booking link ready'); })
+        .catch(function (e) { toast(e.message); });
+    };
     $('fDl').onclick = downloadCsv;
     $('fLock').onclick = function () {
       var l = !st.locked;

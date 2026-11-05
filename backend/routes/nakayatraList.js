@@ -3,8 +3,11 @@
 // holding it can view the list and correct any row — no approval, by the
 // owner's explicit choice. Every correction is flagged with the IST time and
 // the fields changed, and the old → new values go to `history` (admin only).
-// Full Aadhaar numbers never leave the server here: the page sees the last 4
-// digits, and a member re-types the full number only to change it.
+// Full Aadhaar numbers stay on the server for the group link: the page sees the
+// last 4 digits, and a member re-types the full number only to change it.
+// A second, separate code — the booking link (`booking_code`), handed only to the
+// trusted members who do the TTD booking — opens the same page with full Aadhaar
+// numbers to copy. Rotating either code (admin) kills its old link at once.
 const express = require('express');
 const { query, run } = require('../db');
 
@@ -26,10 +29,12 @@ function currentValue(row, f) {
   return row[f] == null ? '' : row[f];
 }
 
-function listCode() {
-  const r = query(`SELECT value FROM nakayatra_settings WHERE key = 'list_code'`)[0];
+function setting(key) {
+  const r = query(`SELECT value FROM nakayatra_settings WHERE key = ?`, [key])[0];
   return r ? r.value : '';
 }
+function listCode() { return setting('list_code'); }
+function bookingCode() { return setting('booking_code'); }
 
 function nowIst() {
   // "YYYY-MM-DD HH:MM:SS" in India time, whatever the server's clock zone is.
@@ -40,8 +45,9 @@ function maskAadhaar(a) {
   return a ? 'XXXX XXXX ' + a.slice(-4) : '';
 }
 
-function publicRow(r) {
+function publicRow(r, booker) {
   return {
+    ...(booker && r.aadhaar ? { aadhaarFull: r.aadhaar } : {}),
     id: r.id, sr: r.sr, name: r.name, aadhaar: maskAadhaar(r.aadhaar), hasAadhaar: !!r.aadhaar,
     age: r.age, mobile: r.mobile || '', gothram: currentValue(r, 'gothram'),
     corrected: !!r.corrected_at, correctedAt: r.corrected_at || '',
@@ -95,13 +101,15 @@ function tooManyEdits(ip) {
   return list.length > 60;
 }
 
+// Sets req.booker when the code is the booking link's. Returns false (and has
+// answered 404) for any other code.
 function checkCode(req, res) {
-  const code = listCode();
-  if (!code || req.params.code !== code) {
-    res.status(404).json({ error: 'This link is not valid. Please ask the admin for the current link.' });
-    return false;
-  }
-  return true;
+  const c = String(req.params.code || '');
+  const list = listCode(), booking = bookingCode();
+  if (list && c === list) { req.booker = false; return true; }
+  if (booking && c === booking) { req.booker = true; return true; }
+  res.status(404).json({ error: 'This link is not valid. Please ask the admin for the current link.' });
+  return false;
 }
 
 function allRows() {
@@ -116,7 +124,7 @@ function frozen() {
 router.get('/:code', (req, res, next) => {
   try {
     if (!checkCode(req, res)) return;
-    res.json({ locked: frozen(), booking: BOOKING, rows: allRows().map(publicRow) });
+    res.json({ locked: frozen(), booker: req.booker, booking: BOOKING, rows: allRows().map(r => publicRow(r, req.booker)) });
   } catch (err) { next(err); }
 });
 
@@ -138,7 +146,7 @@ router.patch('/:code/:id', (req, res, next) => {
       if (String(c.value) !== String(currentValue(row, f))) changes[f] = c.value;
     }
     const keys = Object.keys(changes);
-    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row) });
+    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row, req.booker) });
 
     const at = nowIst();
     const fields = new Set((row.corrected_fields || '').split(',').filter(Boolean));
@@ -152,12 +160,13 @@ router.patch('/:code/:id', (req, res, next) => {
       [...keys.map(k => changes[k]), at, [...fields].join(','), JSON.stringify(history), row.id]
     );
     const updated = query(`SELECT * FROM nakayatra_final WHERE id = ?`, [row.id])[0];
-    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated) });
+    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated, req.booker) });
   } catch (err) { next(err); }
 });
 
 module.exports = router;
 module.exports.listCode = listCode;
+module.exports.bookingCode = bookingCode;
 module.exports.allRows = allRows;
 module.exports.frozen = frozen;
 module.exports.cleanField = cleanField;

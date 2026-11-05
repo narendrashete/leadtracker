@@ -694,8 +694,9 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   and `corrected_fields`, and appends old → new to `history`; the admin's CSV download
   carries the flag, fields, time and history. One shared code per list (`list_code` in
   `nakayatra_settings`, 12 hex chars), separate from the personal poll codes; the admin can
-  lock the list (`list_locked`). **Full Aadhaar numbers never reach the public page** — it
-  gets `XXXX XXXX 1234`, and a member re-types all 12 digits only to change it. Data is
+  lock the list (`list_locked`). **Full Aadhaar numbers never reach the group link** — it
+  gets `XXXX XXXX 1234`, and a member re-types all 12 digits only to change it. The one
+  exception is the **booking link** (below). Data is
   loaded once by pasting rows on the admin page (import refuses if rows exist, so it can't
   wipe corrections); it is never committed. Mobiles are stored in one canonical spelling
   (`+91 98201 01355`) so re-saving the same number differently is not flagged.
@@ -705,8 +706,14 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   a correction). The group-wide booking values (darshan date, state, city, pincode) live in
   `BOOKING` in the same file and reach both pages through the API — edit them there, not in
   the HTML. Both pages have copy buttons for the TTD booking form; mobile copies as 10 digits.
-  The **admin page's "Darshan booking helper"** is the only place full Aadhaar digits can be
-  copied — the members' list stays masked (no Aadhaar copy button there). The yatra schedule
+  Full Aadhaar digits can be copied in two places only: the **admin page's "Darshan booking
+  helper"**, and the **booking link** — the same `list.html` opened with a second code,
+  `booking_code` in `nakayatra_settings` (12 hex), which the admin creates/replaces on the
+  admin page (`POST /api/nakayatra-admin/final/booking-link`) and sends one-to-one to the
+  trusted members doing the booking. `checkCode()` sets `req.booker` for that code, and only
+  then does `publicRow()` add `aadhaarFull`. The owner asked for this so the bookers can copy
+  Aadhaar; keep it off the group link (`list_code`), which the whole WhatsApp group has.
+  Replacing the booking code kills the old booking link at once. The yatra schedule
   image is `nakayatra/schedule.jpg`, served at `/nakayatra/schedule.jpg` (registered before
   `/nakayatra/:code`); it holds no personal data, so it is committed.
 

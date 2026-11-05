@@ -168,8 +168,10 @@
     var open = openId === m.id;
     var h = '<div class="member' + (open ? ' open' : '') + '" id="m' + m.id + '"><div class="m-top"><span class="m-sr">' + m.sr + '</span><div class="m-name">' + esc(m.name) + '</div>' + (open ? '' : cpBtn(m.name, 'name')) + '</div>';
     if (!open) {
-      // Aadhaar is masked here (full numbers stay on the admin page), so it gets no copy button.
-      h += '<dl class="m-grid"><dt>Aadhaar</dt><dd' + (m.hasAadhaar ? '>' + esc(m.aadhaar) : ' class="missing">Not given — please add') + '</dd><dd class="c"></dd>' +
+      // The group link gets a masked Aadhaar (no copy button); the booking link gets the
+      // full 12 digits as aadhaarFull, shown spaced and copied as plain digits.
+      var fullA = m.aadhaarFull || '';
+      h += '<dl class="m-grid"><dt>Aadhaar</dt><dd' + (m.hasAadhaar ? '>' + esc(fullA ? fullA.replace(/(\d{4})(?=\d)/g, '$1 ') : m.aadhaar) : ' class="missing">Not given — please add') + '</dd><dd class="c">' + (fullA ? cpBtn(fullA, 'Aadhaar') : '') + '</dd>' +
         '<dt>Age</dt><dd' + (m.age ? '>' + m.age + ' yrs' : ' class="missing">Not given') + '</dd><dd class="c">' + (m.age ? cpBtn(String(m.age), 'age') : '') + '</dd>' +
         '<dt>Mobile</dt><dd' + (m.mobile ? '>' + esc(m.mobile) : ' class="missing">Not given') + '</dd><dd class="c">' + (m.mobile ? cpBtn(mob10(m.mobile), 'mobile') : '') + '</dd>' +
         '<dt>Gothram</dt><dd>' + esc(m.gothram) + '</dd><dd class="c">' + (m.gothram ? cpBtn(m.gothram, 'gothram') : '') + '</dd></dl>';
@@ -196,6 +198,7 @@
     var h = bookingHtml(state.booking) + '<section class="card"><h2 style="margin:0">' + state.rows.length + ' members joining</h2>' +
       '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
       (nCorr ? ' (' + nCorr + ' corrected so far)' : '') + '</p>' +
+      (state.booker ? '<div class="banner frozen">🔑 Booking link — full Aadhaar numbers are shown for the TTD booking. Please don\'t forward this link.</div>' : '') +
       (state.locked ? '<div class="banner frozen">🔒 The list is final and locked. Contact the admin for any change.</div>' : '') +
       '<div class="search"><input type="text" id="q" placeholder="Search your name…" value="' + esc(q) + '" autocomplete="off"></div></section>';
     h += '<section class="card" style="padding-top:8px">' + (rows.length ? rows.map(memberHtml).join('') : '<p class="note">No name matches “' + esc(q) + '”.</p>') + '</section>';

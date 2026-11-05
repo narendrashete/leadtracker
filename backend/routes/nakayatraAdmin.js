@@ -79,6 +79,7 @@ function finalState() {
   const rows = nakayatraList.allRows();
   return {
     code: nakayatraList.listCode(),
+    bookingCode: nakayatraList.bookingCode(),
     locked: nakayatraList.frozen(),
     booking: nakayatraList.BOOKING,
     rows: rows.map(r => ({
@@ -134,6 +135,16 @@ router.post('/final/lock', (req, res, next) => {
 });
 
 // New link; the old one stops working at once.
+// Creates the booking link (full Aadhaar, for the trusted bookers), or replaces
+// it with a new one so the old link stops working.
+router.post('/final/booking-link', (req, res, next) => {
+  try {
+    if (!nakayatraList.allRows().length) return res.status(409).json({ error: 'Load the final list first.' });
+    setSetting('booking_code', crypto.randomBytes(6).toString('hex'));
+    res.json(finalState());
+  } catch (err) { next(err); }
+});
+
 router.post('/final/rotate', (req, res, next) => {
   try {
     setSetting('list_code', crypto.randomBytes(6).toString('hex'));

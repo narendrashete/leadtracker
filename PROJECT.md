@@ -225,6 +225,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-05** — **Naka Yatra booking link.** A second list code (`booking_code`) opens the
+  same list page with full Aadhaar numbers and a copy button, for the trusted members doing
+  the TTD booking; the group link stays masked. Admin page: create / copy / WhatsApp / replace
+  the booking link (`POST /api/nakayatra-admin/final/booking-link`).
 - **2026-11-05** — **Naka Yatra darshan booking details.** List page: yatra schedule image on
   top, common booking details (darshan date 12-02-2027, Maharashtra, Badlapur, 421503), copy
   buttons on every field, and a Gothram field (default Kashyap, members can correct it).

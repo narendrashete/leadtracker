@@ -38,6 +38,7 @@
     <button class="admin-tab" data-tab="unique">अद्वितीय वंशावळ <span id="uniqueCount" class="badge"></span></button>
     <button class="admin-tab" data-tab="wa">WhatsApp यादी</button>
     <button class="admin-tab" data-tab="links">वृक्ष लिंक पाठवा</button>
+    <button class="admin-tab" data-tab="donations">देणगी यादी</button>
   </div>
 
   <section id="galleryTab" class="admin-section">
@@ -151,6 +152,42 @@
     </div>
     <input type="text" id="linkSearch" class="roster-search" placeholder="नाव, गाव किंवा मोबाईल शोधा...">
     <div id="linkList" class="copy-list link-list"></div>
+  </section>
+
+  <section id="donationsTab" class="admin-section" style="display:none;">
+    <div class="roster-card">
+      <div class="roster-row">
+        <div class="roster-fields">
+          <label>देणगी यादी CSV (शीर्षक, भाग १ / भाग २, अंतिम एकूण)<input type="file" id="donFile" accept=".csv,text/csv"></label>
+        </div>
+      </div>
+      <div class="roster-msg" id="donImportMsg"></div>
+      <div class="roster-actions"><button class="btn-save" id="donImportBtn">नवीन यादी म्हणून आयात करा</button></div>
+    </div>
+    <div class="wa-filter don-pick">
+      <select id="donSelect"></select>
+      <button class="btn-delete don-del" id="donDelete">यादी हटवा</button>
+    </div>
+    <div class="no-results" id="donEmpty" style="display:none;">अजून कोणतीही देणगी यादी नाही — वर CSV आयात करा.</div>
+    <div id="donView" style="display:none;">
+      <div class="roster-card">
+        <div class="roster-fields">
+          <label>शीर्षक<input type="text" id="donTitle"></label>
+        </div>
+        <div class="roster-row">
+          <div class="roster-fields"><label>अंतिम एकूण (राउंड ऑफ — रिकामे = बेरीज)<input type="number" id="donRounded"></label></div>
+        </div>
+        <div class="roster-msg" id="donMetaMsg"></div>
+        <div class="roster-actions"><button class="btn-save" id="donMetaSave">जतन करा</button></div>
+      </div>
+      <p class="wa-summary" id="donSummary"></p>
+      <div class="don-dl">
+        <button class="btn-save" id="donCsv">⬇ CSV डाउनलोड</button>
+        <button class="btn-gold" id="donPng">⬇ फोटो डाउनलोड</button>
+        <label class="select-all"><input type="checkbox" id="donPngMobile"> फोटोमध्ये मोबाईल नंबर दाखवा</label>
+      </div>
+      <div id="donTables"></div>
+    </div>
   </section>
 </div>
 

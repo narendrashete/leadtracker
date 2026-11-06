@@ -225,6 +225,13 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-06** — **Shete Navratri donor list (देणगी यादी) admin tab.** Admin uploads the
+  donor-list CSV (title, भाग १ members / भाग २ not-yet-members, final rounded total); it is
+  stored in leads.db (`shete_donation_lists`, `shete_donations`), never in git. The tab shows
+  both sections with sub-totals, total, round-off and final total; edits the title and final
+  figure; moves a donor between भाग १ and भाग २; downloads the CSV (re-importable) and a PNG
+  image (mobiles optional, off by default). Routes: `GET/POST /api/shete-admin/donations`,
+  `GET/PATCH/DELETE /donations/:id`, `PATCH /donation-rows/:id`.
 - **2026-11-05** — **Naka Yatra booking link.** A second list code (`booking_code`) opens the
   same list page with full Aadhaar numbers and a copy button, for the trusted members doing
   the TTD booking; the group link stays masked. Admin page: create / copy / WhatsApp / replace

@@ -440,6 +440,35 @@ async function getDb() {
     )
   `);
 
+  // Shete Navratri donor lists (देणगी यादी), admin-only. Private people's
+  // names, mobiles and amounts, so never in git: the admin uploads a CSV and
+  // it lives here. One list per upload (a year/collector); section 1 = on the
+  // सभासद यादी, 2 = not (yet). rounded_total is the final figure as written
+  // on the sheet (round-off at the total), NULL = plain sum.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_donation_lists (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL DEFAULT '',
+      rounded_total INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_donations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      list_id INTEGER NOT NULL,
+      section INTEGER NOT NULL DEFAULT 1,
+      sort INTEGER NOT NULL DEFAULT 0,
+      receipt TEXT NOT NULL DEFAULT '',
+      book TEXT NOT NULL DEFAULT '',
+      name TEXT NOT NULL DEFAULT '',
+      amount INTEGER NOT NULL DEFAULT 0,
+      village TEXT NOT NULL DEFAULT '',
+      mobile TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT ''
+    )
+  `);
+
   // Thigdam — the friends' group photo album at /thigdam. One row per photo;
   // the photo itself (original bytes, never re-encoded) and its small preview
   // are files in thigdam-data/photos, not blobs here, because run() rewrites

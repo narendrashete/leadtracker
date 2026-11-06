@@ -219,3 +219,24 @@
   box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
 .order-name{font-size:13.5px;color:var(--text);}
+
+/* देणगी यादी */
+.don-pick{margin:12px 0 8px;}
+.don-pick select{flex:1;min-width:0;}
+.don-del{padding:9px 12px;border:none;border-radius:10px;font:inherit;font-size:12px;font-weight:700;}
+.don-dl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;}
+.don-dl button{padding:9px 14px;border:none;border-radius:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-gold{background:var(--gold);color:var(--maroon-dark);}
+.don-sec{background:#fff;border-radius:12px;box-shadow:0 3px 10px rgba(122,16,36,0.08);margin-bottom:12px;overflow:hidden;}
+.don-sec h3{margin:0;padding:10px 12px;font-size:14px;background:var(--maroon);color:#fff;}
+.don-scroll{overflow-x:auto;}
+.don-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.don-table th,.don-table td{padding:6px 8px;border-bottom:1px solid #f1e6d4;text-align:left;white-space:nowrap;}
+.don-table th{background:#fdf1df;color:var(--maroon-dark);font-size:11.5px;}
+.don-table td.amt,.don-table th.amt{text-align:right;}
+.don-table tr.sub td{font-weight:700;background:#fff8ec;}
+.don-table td.note{white-space:normal;font-size:11px;color:#7a5a50;min-width:120px;}
+.don-move{border:1px solid #e2d3c0;background:#fff;border-radius:6px;padding:3px 7px;font:inherit;font-size:11px;cursor:pointer;color:var(--maroon-dark);}
+.don-total{background:#fff;border-radius:12px;padding:10px 12px;font-size:13.5px;box-shadow:0 3px 10px rgba(122,16,36,0.08);}
+.don-total div{display:flex;justify-content:space-between;padding:3px 0;}
+.don-total .final{font-weight:800;color:var(--maroon);font-size:15px;border-top:1px solid #f1e6d4;margin-top:4px;padding-top:6px;}

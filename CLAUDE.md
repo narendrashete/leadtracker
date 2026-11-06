@@ -739,6 +739,23 @@ admin types the wanted order, save computes the new id order and posts it.
   `/copy` route's own convention — since this is an admin action, not a member's own edit that
   should wait for approval.
 
+## Shete Navratri donor lists (admin "देणगी यादी" tab)
+Admin-only lists of who paid the yearly सभासद वर्गणी, transcribed from the handwritten receipt
+sheets. Names, mobiles and amounts of private people, so — like Kulgaon — **never in git**:
+the admin uploads the CSV on the tab and it lives in leads.db (`shete_donation_lists` for title
++ `rounded_total`, `shete_donations` for rows with `section` 1 = on the सभासद यादी, 2 = not yet).
+- The CSV is parsed in the browser (`parseDonationCsv` in `admin.js`): "भाग १"/"भाग २" heading
+  lines switch the section, a row with a numeric पावती क्र. is a donor, the "अंतिम एकूण" row
+  gives `rounded_total`; sub-totals in the file are ignored and always recomputed. Each upload
+  is a new list (one per year/collector); the CSV download writes the same layout back, so it
+  re-imports.
+- `rounded_total` is the figure as written on the sheet (round-off at the total, by the
+  owner's choice); NULL means the plain sum. Round-off = final − sum, shown only when non-zero.
+- The PNG is drawn on a canvas at 2x (same approach as the family-tree PNG). Mobiles are left
+  out unless the admin ticks the box — the image is made to be forwarded. Download names are
+  ASCII (`devangi-yadi-<year>.csv/png`): Chrome silently renames a Devanagari download name
+  to "download".
+
 ## Shete Parivar Navratri — installable app (/shetenavratri/app)
 Installable (Add to Home Screen) and offline-shell-capable, the same distribution model as
 Aarti Sangrah's app: no APK/IPA, no app store, a link people install from their browser. It is

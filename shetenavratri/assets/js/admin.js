@@ -1149,7 +1149,9 @@
   const donView = document.getElementById('donView');
   const donEmpty = document.getElementById('donEmpty');
   let donCurrent = null;
-  const DON_SEC = { 1: 'भाग १ — सभासद यादीतील देणगीदार', 2: 'भाग २ — सभासद यादीत नसलेले देणगीदार' };
+  const DON_SEC = { 1: 'भाग १ — सभासद यादीतील देणगीदार', 2: 'भाग २ — सभासद यादीत नसलेले देणगीदार',
+    3: 'भाग ३ — GPay द्वारे थेट खात्यात जमा (ऑनलाइन)' };
+  const DON_NUM = { 1: '१', 2: '२', 3: '३' };
 
   function inr(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
   function donSum(rows) { return rows.reduce(function (t, r) { return t + (Number(r.amount) || 0); }, 0); }
@@ -1162,11 +1164,12 @@
       const cells = c.map(function (x) { return (x || '').trim(); });
       const first = cells[0] || '';
       if (!cells.some(Boolean)) return;
+      if (/^भाग\s*(३|3)/.test(first)) { section = 3; return; }
       if (/^भाग\s*(२|2)/.test(first)) { section = 2; return; }
       if (/^भाग\s*(१|1)/.test(first)) { section = 1; return; }
       const label = cells.slice(0, 4).join(' ');
       if (/अंतिम\s*एकूण/.test(label)) { const v = parseInt((cells[4] || '').replace(/[^\d-]/g, ''), 10); if (!isNaN(v)) rounded = v; return; }
-      if (/^\d+$/.test(cells[1] || '') && cells[3]) {
+      if ((/^\d+$/.test(cells[1] || '') || (section === 3 && /^\d+$/.test(first))) && cells[3]) {
         rows.push({ section: section, receipt: cells[1], book: cells[2], name: cells[3],
           amount: parseInt((cells[4] || '').replace(/[^\d]/g, ''), 10) || 0,
           village: cells[5] || '', mobile: cells[6] || '', note: cells[7] || '' });
@@ -1247,9 +1250,10 @@
   function donTotals(d) {
     const s1 = d.rows.filter(function (r) { return r.section === 1; });
     const s2 = d.rows.filter(function (r) { return r.section === 2; });
+    const s3 = d.rows.filter(function (r) { return r.section === 3; });
     const total = donSum(d.rows);
     const final = d.roundedTotal == null ? total : d.roundedTotal;
-    return { s1: s1, s2: s2, total: total, final: final, round: final - total };
+    return { s1: s1, s2: s2, s3: s3, total: total, final: final, round: final - total };
   }
 
   function renderDonation() {
@@ -1260,7 +1264,7 @@
     document.getElementById('donRounded').value = d.roundedTotal == null ? '' : d.roundedTotal;
     document.getElementById('donMetaMsg').textContent = '';
     document.getElementById('donSummary').textContent =
-      d.rows.length + ' देणगीदार · भाग १: ' + t.s1.length + ' · भाग २: ' + t.s2.length + ' · अंतिम एकूण ' + inr(t.final);
+      d.rows.length + ' देणगीदार · भाग १: ' + t.s1.length + ' · भाग २: ' + t.s2.length + ' · भाग ३ (GPay): ' + t.s3.length + ' · अंतिम एकूण ' + inr(t.final);
     function table(sec, rows) {
       if (!rows.length) return '';
       return '<div class="don-sec"><h3>' + DON_SEC[sec] + '</h3><div class="don-scroll"><table class="don-table">' +
@@ -1269,26 +1273,54 @@
           return '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(r.receipt) + '</td><td>' + escapeHtml(r.name) + '</td>' +
             '<td class="amt">' + inr(r.amount) + '</td><td>' + escapeHtml(r.village) + '</td><td>' + escapeHtml(r.mobile) + '</td>' +
             '<td class="note">' + escapeHtml(r.note) + '</td>' +
-            '<td><button class="don-move" data-id="' + r.id + '" data-to="' + (sec === 1 ? 2 : 1) + '">' +
-              (sec === 2 ? '↑ भाग १ मध्ये (सभासद)' : '↓ भाग २ मध्ये') + '</button></td></tr>';
+            '<td><select class="don-move" data-id="' + r.id + '" title="भाग बदला">' +
+              [1, 2, 3].map(function (k) {
+                return '<option value="' + k + '"' + (k === sec ? ' selected' : '') + '>भाग ' + DON_NUM[k] + '</option>';
+              }).join('') + '</select> ' +
+              '<button class="don-del-row" data-id="' + r.id + '" title="नोंद हटवा">✕</button></td></tr>';
         }).join('') +
         '<tr class="sub"><td></td><td></td><td>उप-एकूण</td><td class="amt">' + inr(donSum(rows)) + '</td><td colspan="4"></td></tr>' +
         '</table></div></div>';
     }
-    document.getElementById('donTables').innerHTML = table(1, t.s1) + table(2, t.s2) +
+    document.getElementById('donTables').innerHTML = table(1, t.s1) + table(2, t.s2) + table(3, t.s3) +
       '<div class="don-total"><div><span>एकूण</span><span>' + inr(t.total) + '</span></div>' +
       (t.round ? '<div><span>राउंड ऑफ</span><span>' + (t.round > 0 ? '+' : '−') + inr(Math.abs(t.round)) + '</span></div>' : '') +
       '<div class="final"><span>अंतिम एकूण</span><span>' + inr(t.final) + '</span></div></div>';
   }
 
-  document.getElementById('donTables').addEventListener('click', function (e) {
-    const b = e.target.closest('.don-move');
-    if (!b) return;
-    b.disabled = true;
-    api('/api/shete-admin/donation-rows/' + b.dataset.id, {
+  document.getElementById('donTables').addEventListener('change', function (e) {
+    const sel = e.target.closest('.don-move');
+    if (!sel) return;
+    sel.disabled = true;
+    api('/api/shete-admin/donation-rows/' + sel.dataset.id, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section: Number(b.dataset.to) })
+      body: JSON.stringify({ section: Number(sel.value) })
     }).then(function () { loadDonation(donCurrent.id); }).catch(function () {});
+  });
+
+  document.getElementById('donTables').addEventListener('click', function (e) {
+    const b = e.target.closest('.don-del-row');
+    if (!b || !confirm('ही नोंद हटवायची?')) return;
+    api('/api/shete-admin/donation-rows/' + b.dataset.id, { method: 'DELETE' })
+      .then(function () { loadDonation(donCurrent.id); }).catch(function () {});
+  });
+
+  // Add one donor to the open list — e.g. a GPay payment straight into the
+  // account, which has no paper receipt (भाग ३).
+  document.getElementById('donAddBtn').addEventListener('click', function () {
+    const msg = document.getElementById('donAddMsg');
+    const v = function (id) { return document.getElementById(id).value.trim(); };
+    api('/api/shete-admin/donations/' + donCurrent.id + '/rows', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: Number(v('donAddSection')), name: v('donAddName'), village: v('donAddVillage'),
+        mobile: v('donAddMobile'), amount: v('donAddAmount'), receipt: v('donAddReceipt'), note: v('donAddNote') })
+    }).then(function (res) {
+      msg.textContent = res.ok ? '✓ नोंद जोडली.' : (res.body.error || 'जोडता आली नाही.');
+      msg.className = 'roster-msg ' + (res.ok ? 'success' : 'error');
+      if (!res.ok) return;
+      ['donAddName', 'donAddVillage', 'donAddMobile', 'donAddAmount', 'donAddReceipt'].forEach(function (id) { document.getElementById(id).value = ''; });
+      loadDonationLists(donCurrent.id);
+    }).catch(function () {});
   });
 
   function donFileName(ext) {
@@ -1314,13 +1346,13 @@
     const q = function (v) { v = (v == null ? '' : String(v)); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     const head = 'अ.क्र.,पावती क्र.,बुक नं.,सदस्याचे नाव,देणगी (₹),गाव,मोबाईल नंबर,टीप';
     const out = [q(d.title), ''];
-    [[1, t.s1], [2, t.s2]].forEach(function (p) {
+    [[1, t.s1], [2, t.s2], [3, t.s3]].forEach(function (p) {
       if (!p[1].length) return;
       out.push(q(DON_SEC[p[0]]), head);
       p[1].forEach(function (r, i) {
         out.push([i + 1, r.receipt, r.book, r.name, r.amount, r.village, r.mobile, r.note].map(q).join(','));
       });
-      out.push(',,,' + q('उप-एकूण (भाग ' + (p[0] === 1 ? '१' : '२') + ')') + ',' + donSum(p[1]) + ',,,', '');
+      out.push(',,,' + q('उप-एकूण (भाग ' + DON_NUM[p[0]] + ')') + ',' + donSum(p[1]) + ',,,', '');
     });
     out.push(',,,एकूण,' + t.total + ',,,');
     if (t.round) out.push(',,,राउंड ऑफ,' + t.round + ',,,');
@@ -1342,7 +1374,7 @@
     cols.push({ k: 'amount', h: 'रक्कम', w: 0, right: true });
     const used = cols.reduce(function (s, c) { return s + c.w; }, 0);
     cols[cols.length - 1].w = W - 2 * PAD - used;
-    const secs = [[1, t.s1], [2, t.s2]].filter(function (p) { return p[1].length; });
+    const secs = [[1, t.s1], [2, t.s2], [3, t.s3]].filter(function (p) { return p[1].length; });
     const totalLines = 2 + (t.round ? 1 : 0);
     const H = 120 + secs.reduce(function (h, p) { return h + 44 + ROW + p[1].length * ROW + ROW + 16; }, 0) + totalLines * 32 + 60;
 

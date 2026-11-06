@@ -187,6 +187,28 @@
         <label class="select-all"><input type="checkbox" id="donPngMobile"> फोटोमध्ये मोबाईल नंबर दाखवा</label>
       </div>
       <div id="donTables"></div>
+      <div class="roster-card don-add">
+        <b class="don-add-h">नवीन नोंद जोडा</b>
+        <div class="roster-row">
+          <div class="roster-fields">
+            <label>भाग<select id="donAddSection">
+              <option value="3">भाग ३ — GPay ऑनलाइन</option>
+              <option value="1">भाग १ — सभासद</option>
+              <option value="2">भाग २ — सभासद नसलेले</option>
+            </select></label>
+            <label>नाव<input type="text" id="donAddName" placeholder="उदा. योगेश बाबू शेटे"></label>
+            <label>गाव<input type="text" id="donAddVillage"></label>
+          </div>
+          <div class="roster-fields">
+            <label>रक्कम (₹)<input type="number" id="donAddAmount" min="1"></label>
+            <label>मोबाईल<input type="text" id="donAddMobile"></label>
+            <label>पावती क्र. (असल्यास)<input type="text" id="donAddReceipt"></label>
+          </div>
+        </div>
+        <div class="roster-fields"><label>टीप<input type="text" id="donAddNote" value="GPay द्वारे थेट खात्यात जमा"></label></div>
+        <div class="roster-msg" id="donAddMsg"></div>
+        <div class="roster-actions"><button class="btn-save" id="donAddBtn">नोंद जोडा</button></div>
+      </div>
     </div>
   </section>
 </div>

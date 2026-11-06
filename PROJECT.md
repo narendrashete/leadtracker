@@ -225,6 +225,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-06** — **Donor list: भाग ३ (GPay online) + add/delete rows.** A third section for
+  payments made by GPay straight into the account. The tab gets an "नवीन नोंद जोडा" form, a
+  per-row भाग selector and delete; adding/removing a row moves the final total by the same
+  amount, so the round-off is kept.
 - **2026-11-06** — **Shete Navratri donor list (देणगी यादी) admin tab.** Admin uploads the
   donor-list CSV (title, भाग १ members / भाग २ not-yet-members, final rounded total); it is
   stored in leads.db (`shete_donation_lists`, `shete_donations`), never in git. The tab shows

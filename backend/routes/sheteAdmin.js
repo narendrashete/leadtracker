@@ -542,6 +542,14 @@ router.get('/donations/:id', (req, res) => {
 });
 
 const str = (v, n) => (v == null ? '' : String(v)).trim().slice(0, n);
+// 1 = on the सभासद यादी, 2 = not yet, 3 = paid online by GPay straight into the account.
+const donSection = v => ([1, 2, 3].includes(Number(v)) ? Number(v) : 1);
+
+// The list's written final total keeps the same round-off when a row's amount
+// comes or goes, so adding a ₹500 GPay payment moves the final by ₹500.
+function shiftRounded(listId, delta) {
+  if (delta) run(`UPDATE shete_donation_lists SET rounded_total = rounded_total + ? WHERE id = ? AND rounded_total IS NOT NULL`, [delta, listId]);
+}
 
 router.post('/donations', (req, res, next) => {
   try {
@@ -556,7 +564,7 @@ router.post('/donations', (req, res, next) => {
       if (!name || !Number.isFinite(amount) || amount < 0 || amount > 10000000) {
         return res.status(400).json({ error: 'अवैध नोंद: ' + (name || '(नाव नाही)') });
       }
-      clean.push({ section: Number(r.section) === 2 ? 2 : 1, receipt: str(r.receipt, 20), book: str(r.book, 20),
+      clean.push({ section: donSection(r.section), receipt: str(r.receipt, 20), book: str(r.book, 20),
         name, amount, village: str(r.village, 80), mobile: str(r.mobile, 60), note: str(r.note, 200) });
     }
     let rounded = req.body.roundedTotal;
@@ -603,7 +611,7 @@ router.patch('/donation-rows/:id', (req, res) => {
   if (!row) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
   const b = req.body || {};
   const next = {
-    section: b.section !== undefined ? (Number(b.section) === 2 ? 2 : 1) : row.section,
+    section: b.section !== undefined ? donSection(b.section) : row.section,
     receipt: b.receipt !== undefined ? str(b.receipt, 20) : row.receipt,
     name: b.name !== undefined ? str(b.name, 120) : row.name,
     amount: b.amount !== undefined ? Math.round(Number(b.amount)) : row.amount,
@@ -613,8 +621,37 @@ router.patch('/donation-rows/:id', (req, res) => {
   };
   if (!next.name) return res.status(400).json({ error: 'नाव आवश्यक आहे.' });
   if (!Number.isFinite(next.amount) || next.amount < 0) return res.status(400).json({ error: 'रक्कम अवैध आहे.' });
+  shiftRounded(row.list_id, next.amount - row.amount);
   run(`UPDATE shete_donations SET section = ?, receipt = ?, name = ?, amount = ?, village = ?, mobile = ?, note = ? WHERE id = ?`,
     [next.section, next.receipt, next.name, next.amount, next.village, next.mobile, next.note, id]);
+  res.json({ ok: true });
+});
+
+router.post('/donations/:id/rows', (req, res) => {
+  const listId = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_donation_lists WHERE id = ?`, [listId]).length) {
+    return res.status(404).json({ error: 'यादी सापडली नाही.' });
+  }
+  const b = req.body || {};
+  const name = str(b.name, 120);
+  const amount = Math.round(Number(b.amount));
+  if (!name) return res.status(400).json({ error: 'नाव आवश्यक आहे.' });
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 10000000) return res.status(400).json({ error: 'रक्कम अवैध आहे.' });
+  const section = donSection(b.section);
+  const sort = (query(`SELECT MAX(sort) AS m FROM shete_donations WHERE list_id = ?`, [listId])[0].m || 0) + 1;
+  shiftRounded(listId, amount);
+  run(`INSERT INTO shete_donations (list_id, section, sort, receipt, book, name, amount, village, mobile, note)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [listId, section, sort, str(b.receipt, 20), str(b.book, 20), name, amount, str(b.village, 80), str(b.mobile, 60), str(b.note, 200)]);
+  res.json({ ok: true });
+});
+
+router.delete('/donation-rows/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const row = query(`SELECT list_id, amount FROM shete_donations WHERE id = ?`, [id])[0];
+  if (!row) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+  shiftRounded(row.list_id, -row.amount);
+  run(`DELETE FROM shete_donations WHERE id = ?`, [id]);
   res.json({ ok: true });
 });
 

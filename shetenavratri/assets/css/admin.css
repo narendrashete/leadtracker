@@ -236,7 +236,11 @@
 .don-table td.amt,.don-table th.amt{text-align:right;}
 .don-table tr.sub td{font-weight:700;background:#fff8ec;}
 .don-table td.note{white-space:normal;font-size:11px;color:#7a5a50;min-width:120px;}
-.don-move{border:1px solid #e2d3c0;background:#fff;border-radius:6px;padding:3px 7px;font:inherit;font-size:11px;cursor:pointer;color:var(--maroon-dark);}
+.don-move{border:1px solid #e2d3c0;background:#fff;border-radius:6px;padding:3px 4px;font:inherit;font-size:11px;color:var(--maroon-dark);}
+.don-del-row{border:0;background:none;color:#c0293f;font-size:13px;cursor:pointer;padding:2px 4px;}
+.don-add{margin-top:12px;}
+.don-add-h{color:var(--maroon-dark);font-size:13.5px;}
+.don-add select{display:block;width:100%;margin-top:3px;padding:9px 8px;border-radius:8px;border:1px solid #e2d3c0;font:inherit;font-size:13.5px;}
 .don-total{background:#fff;border-radius:12px;padding:10px 12px;font-size:13.5px;box-shadow:0 3px 10px rgba(122,16,36,0.08);}
 .don-total div{display:flex;justify-content:space-between;padding:3px 0;}
 .don-total .final{font-weight:800;color:var(--maroon);font-size:15px;border-top:1px solid #f1e6d4;margin-top:4px;padding-top:6px;}

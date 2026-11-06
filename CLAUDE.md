@@ -743,7 +743,8 @@ admin types the wanted order, save computes the new id order and posts it.
 Admin-only lists of who paid the yearly सभासद वर्गणी, transcribed from the handwritten receipt
 sheets. Names, mobiles and amounts of private people, so — like Kulgaon — **never in git**:
 the admin uploads the CSV on the tab and it lives in leads.db (`shete_donation_lists` for title
-+ `rounded_total`, `shete_donations` for rows with `section` 1 = on the सभासद यादी, 2 = not yet).
++ `rounded_total`, `shete_donations` for rows with `section` 1 = on the सभासद यादी, 2 = not yet,
+3 = paid by GPay straight into the account, no paper receipt).
 - The CSV is parsed in the browser (`parseDonationCsv` in `admin.js`): "भाग १"/"भाग २" heading
   lines switch the section, a row with a numeric पावती क्र. is a donor, the "अंतिम एकूण" row
   gives `rounded_total`; sub-totals in the file are ignored and always recomputed. Each upload
@@ -751,6 +752,9 @@ the admin uploads the CSV on the tab and it lives in leads.db (`shete_donation_l
   re-imports.
 - `rounded_total` is the figure as written on the sheet (round-off at the total, by the
   owner's choice); NULL means the plain sum. Round-off = final − sum, shown only when non-zero.
+  Adding, deleting or re-pricing a row on the tab (`POST /donations/:id/rows`, `DELETE`/`PATCH
+  /donation-rows/:id`) shifts `rounded_total` by the same amount (`shiftRounded`), so the
+  round-off stays what it was and is never silently absorbed by a new payment.
 - The PNG is drawn on a canvas at 2x (same approach as the family-tree PNG). Mobiles are left
   out unless the admin ticks the box — the image is made to be forwarded. Download names are
   ASCII (`devangi-yadi-<year>.csv/png`): Chrome silently renames a Devanagari download name

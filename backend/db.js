@@ -573,6 +573,24 @@ async function getDb() {
     _db.run(`ALTER TABLE nakayatra_final ADD COLUMN gothram TEXT`);
   } catch { /* column already exists */ }
 
+  // Yatra contribution payments, entered by the admin per final-list member
+  // (amount, payment date, mode, note, screenshot). The screenshot itself is a
+  // JPEG file in nakayatra-data/payments/ (git-ignored); `screenshot` holds its
+  // file name. The per-member target (₹10,000) is PER_MEMBER_AMOUNT in
+  // routes/nakayatraList.js — balance is derived, never stored.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      final_id INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      paid_on TEXT NOT NULL,
+      mode TEXT,
+      note TEXT,
+      screenshot TEXT,
+      created_at TEXT NOT NULL
+    )
+  `);
+
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.
   for (const table of ['shete_members', 'shete_member_requests']) {

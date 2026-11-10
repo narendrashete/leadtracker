@@ -115,6 +115,16 @@
   .cp.done{background:var(--yes-soft);color:var(--yes);border-color:var(--yes)}
   .m-grid{grid-template-columns:auto 1fr auto;align-items:center}
   .m-grid dd.c{text-align:right}
+  .pay{margin:12px 0 0 38px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#FFFBF5}
+  .pay .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-weight:600}
+  .pay .nums{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .amt{font-size:13.5px;font-weight:700;padding:2px 10px;border-radius:999px}
+  .amt.paid{background:var(--yes-soft);color:var(--yes)} .amt.due{background:var(--no-soft);color:var(--no)} .amt.extra{background:var(--pend-soft);color:var(--pend)}
+  .mini{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px}
+  .mini i{display:block;height:100%;background:var(--yes)}
+  .pay ul{list-style:none;margin:8px 0 0;padding:0;font-size:13.5px}
+  .pay li{padding:3px 0;border-top:1px dashed var(--line)}
+  @media (max-width:420px){ .pay{margin-left:0} }
 </style>
 </head>
 <body>
@@ -162,6 +172,19 @@
       return '<div class="kv"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + cpBtn(r[1], r[0]) + '</div>';
     }).join('') + '</section>';
   }
+  function rs(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+  function dmy(d) { var x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  // Contribution entered by the admin: paid / balance against the per-member figure.
+  function payHtml(m) {
+    var per = state.perMember || 0; if (!per) return '';
+    return '<div class="pay"><div class="ph"><span>Yatra contribution</span><span>' + rs(per) + ' per member</span></div>' +
+      '<div class="nums"><span class="amt paid">Received ' + rs(m.paid) + '</span>' +
+      (m.balance ? '<span class="amt due">Balance ' + rs(m.balance) + '</span>' : '<span class="amt paid">✓ Fully paid</span>') +
+      (m.extra ? '<span class="amt extra">Extra ' + rs(m.extra) + '</span>' : '') + '</div>' +
+      '<div class="mini"><i style="width:' + Math.min(100, m.paid / per * 100) + '%"></i></div>' +
+      (m.payments && m.payments.length ? '<ul>' + m.payments.map(function (p) { return '<li>' + esc(dmy(p.date)) + ' · <b>' + rs(p.amount) + '</b>' + (p.mode ? ' · ' + esc(p.mode) : '') + '</li>'; }).join('') + '</ul>' : '') +
+      '</div>';
+  }
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
   function memberHtml(m) {
@@ -175,6 +198,7 @@
         '<dt>Age</dt><dd' + (m.age ? '>' + m.age + ' yrs' : ' class="missing">Not given') + '</dd><dd class="c">' + (m.age ? cpBtn(String(m.age), 'age') : '') + '</dd>' +
         '<dt>Mobile</dt><dd' + (m.mobile ? '>' + esc(m.mobile) : ' class="missing">Not given') + '</dd><dd class="c">' + (m.mobile ? cpBtn(mob10(m.mobile), 'mobile') : '') + '</dd>' +
         '<dt>Gothram</dt><dd>' + esc(m.gothram) + '</dd><dd class="c">' + (m.gothram ? cpBtn(m.gothram, 'gothram') : '') + '</dd></dl>';
+      h += payHtml(m);
       if (m.corrected) h += '<div class="flag">✎ Corrected · ' + esc(when(m.correctedAt)) + ' · ' + esc(m.correctedFields.join(', ')) + '</div>';
       if (!state.locked) h += '<div class="m-acts"><button class="btn btn-ghost" data-edit="' + m.id + '">✎ Correct my details</button></div>';
     } else {
@@ -196,7 +220,7 @@
     var rows = state.rows.filter(function (m) { return !q || norm(m.name).indexOf(norm(q)) !== -1; });
     var nCorr = state.rows.filter(function (m) { return m.corrected; }).length;
     var h = bookingHtml(state.booking) + '<section class="card"><h2 style="margin:0">' + state.rows.length + ' members joining</h2>' +
-      '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
+      '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram, and your yatra contribution received so far. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
       (nCorr ? ' (' + nCorr + ' corrected so far)' : '') + '</p>' +
       (state.booker ? '<div class="banner frozen">🔑 Booking link — full Aadhaar numbers are shown for the TTD booking. Please don\'t forward this link.</div>' : '') +
       (state.locked ? '<div class="banner frozen">🔒 The list is final and locked. Contact the admin for any change.</div>' : '') +

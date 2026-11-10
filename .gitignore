@@ -34,3 +34,8 @@ thigdam-data/
 # individuals' names and ages, and this repo is public. Loaded into leads.db
 # through the admin page (/kulgaon/admin → upload), never committed.
 kulgaon/members.json
+
+# Naka Yatra contribution payment screenshots (bank/UPI receipts), referenced by
+# nakayatra_payments rows in leads.db. Private — never committed (public repo);
+# survive deploys because git pull never touches untracked files.
+nakayatra-data/

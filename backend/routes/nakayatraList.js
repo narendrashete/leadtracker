@@ -23,6 +23,28 @@ const DEFAULT_GOTHRAM = 'Kashyap';
 // Details common to the whole group's TTD darshan booking, shown with copy
 // buttons on the list and admin pages. Edit here; both pages read them from the API.
 const BOOKING = { darshanDate: '12-02-2027', state: 'Maharashtra', city: 'Badlapur', pincode: '421503' };
+// Each member's full yatra contribution. Paid / balance are derived from the
+// payments the admin enters (nakayatra_payments); edit the figure here.
+const PER_MEMBER_AMOUNT = 10000;
+
+// { final_id: [payment rows, oldest first] }
+function paymentsByMember() {
+  const out = {};
+  query(`SELECT * FROM nakayatra_payments ORDER BY paid_on, id`).forEach(p => {
+    (out[p.final_id] = out[p.final_id] || []).push(p);
+  });
+  return out;
+}
+
+// What the members' page may see: date, amount, mode — never the note or the
+// screenshot, which stay on the admin page.
+function paymentSummary(list) {
+  const paid = (list || []).reduce((t, p) => t + p.amount, 0);
+  return {
+    paid, balance: Math.max(0, PER_MEMBER_AMOUNT - paid), extra: Math.max(0, paid - PER_MEMBER_AMOUNT),
+    payments: (list || []).map(p => ({ date: p.paid_on, amount: p.amount, mode: p.mode || '' })),
+  };
+}
 
 function currentValue(row, f) {
   if (f === 'gothram') return row.gothram || DEFAULT_GOTHRAM;
@@ -45,8 +67,9 @@ function maskAadhaar(a) {
   return a ? 'XXXX XXXX ' + a.slice(-4) : '';
 }
 
-function publicRow(r, booker) {
+function publicRow(r, booker, payments) {
   return {
+    ...paymentSummary(payments),
     ...(booker && r.aadhaar ? { aadhaarFull: r.aadhaar } : {}),
     id: r.id, sr: r.sr, name: r.name, aadhaar: maskAadhaar(r.aadhaar), hasAadhaar: !!r.aadhaar,
     age: r.age, mobile: r.mobile || '', gothram: currentValue(r, 'gothram'),
@@ -124,7 +147,11 @@ function frozen() {
 router.get('/:code', (req, res, next) => {
   try {
     if (!checkCode(req, res)) return;
-    res.json({ locked: frozen(), booker: req.booker, booking: BOOKING, rows: allRows().map(r => publicRow(r, req.booker)) });
+    const pays = paymentsByMember();
+    res.json({
+      locked: frozen(), booker: req.booker, booking: BOOKING, perMember: PER_MEMBER_AMOUNT,
+      rows: allRows().map(r => publicRow(r, req.booker, pays[r.id])),
+    });
   } catch (err) { next(err); }
 });
 
@@ -146,7 +173,8 @@ router.patch('/:code/:id', (req, res, next) => {
       if (String(c.value) !== String(currentValue(row, f))) changes[f] = c.value;
     }
     const keys = Object.keys(changes);
-    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row, req.booker) });
+    const pays = () => paymentsByMember()[row.id];
+    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row, req.booker, pays()) });
 
     const at = nowIst();
     const fields = new Set((row.corrected_fields || '').split(',').filter(Boolean));
@@ -160,7 +188,7 @@ router.patch('/:code/:id', (req, res, next) => {
       [...keys.map(k => changes[k]), at, [...fields].join(','), JSON.stringify(history), row.id]
     );
     const updated = query(`SELECT * FROM nakayatra_final WHERE id = ?`, [row.id])[0];
-    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated, req.booker) });
+    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated, req.booker, pays()) });
   } catch (err) { next(err); }
 });
 
@@ -173,3 +201,6 @@ module.exports.cleanField = cleanField;
 module.exports.currentValue = currentValue;
 module.exports.BOOKING = BOOKING;
 module.exports.DEFAULT_GOTHRAM = DEFAULT_GOTHRAM;
+module.exports.PER_MEMBER_AMOUNT = PER_MEMBER_AMOUNT;
+module.exports.paymentsByMember = paymentsByMember;
+module.exports.nowIst = nowIst;

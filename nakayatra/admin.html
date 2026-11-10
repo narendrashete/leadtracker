@@ -93,6 +93,31 @@
   .bk:first-of-type{border-top:0}
   .bk .k{width:110px;flex:none;color:var(--muted);font-size:14px}
   .bk .v{flex:1;font-weight:700}
+  /* Yatra contribution */
+  select,input[type=date],input[type=file]{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  .pay-amts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .amt{font-size:13px;font-weight:700;padding:2px 9px;border-radius:999px}
+  .amt.paid{background:var(--yes-soft);color:var(--yes)} .amt.due{background:var(--no-soft);color:var(--no)} .amt.extra{background:var(--pend-soft);color:var(--pend)}
+  .mini{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
+  .mini i{display:block;height:100%;background:var(--yes)}
+  .plist{margin:8px 0 0;padding:0;list-style:none}
+  .plist li{display:flex!important;align-items:center;gap:6px;padding:6px 0!important;border-top:1px dashed var(--line)!important;font-size:14px;flex-wrap:wrap}
+  .plist .pd{flex:1;min-width:150px}
+  .plist .pd b{font-size:15px}
+  .plist .pn{font-size:12.5px;color:var(--muted)}
+  .plist .pa{display:flex;gap:6px;align-items:center;margin-left:auto}
+  .ib{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .ib.x{color:var(--no)}
+  .payform{background:#FFFBF5;border:1px solid var(--line);border-radius:12px;padding:4px 12px 12px;margin-top:10px}
+  .payform .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .payform .shot{max-width:120px;max-height:200px;border-radius:8px;border:1px solid var(--line);margin-top:8px;display:block}
+  .payform .row2{display:flex;gap:8px;margin-top:12px} .payform .row2 .btn{flex:1}
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20;padding:16px;cursor:zoom-out}
+  .viewer.show{display:flex}
+  .viewer img{max-width:100%;max-height:calc(100vh - 70px);border-radius:8px;background:#fff}
+  .viewer .vc{color:#fff;font-size:14px;margin-top:10px;text-align:center}
+  #payView .list li{align-items:flex-start}
+  @media (max-width:560px){ .payform .g2{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -115,6 +140,7 @@
   <div id="appView" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="viewer" id="viewer"><img id="viewerImg" alt="Payment screenshot"><div class="vc" id="viewerCap"></div></div>
 
 <script>
 (function () {
@@ -203,10 +229,11 @@
 
   function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function downloadCsv() {
-    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Gothram', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
+    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Gothram', 'Contribution paid', 'Balance', 'Payments', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
     fstate.rows.forEach(function (r) {
       var hist = r.history.map(function (h) { return h.at + ' ' + h.field + ': ' + (h.field === 'aadhaar' ? spaced(h.from) : h.from) + ' → ' + (h.field === 'aadhaar' ? spaced(h.to) : h.to); }).join(' | ');
-      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.gothram || '', r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
+      var pays = r.payments.map(function (p) { return dmy(p.date) + ' ' + p.amount + (p.mode ? ' ' + p.mode : '') + (p.note ? ' (' + p.note + ')' : ''); }).join(' | ');
+      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.gothram || '', r.paid, r.balance, pays, r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
     });
     var csv = '﻿' + lines.map(function (l) { return l.map(csvCell).join(','); }).join('\r\n');
     var a = document.createElement('a');
@@ -232,6 +259,152 @@
         return '<div class="bk"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + chip('Copy', r[1]) + '</div>';
       }).join('') + '</section>';
   }
+  // ---------------- Yatra contribution (payments) ----------------
+  // One card listing every final-list member with paid / balance against the
+  // per-member figure. Payments are added here only; the members' list link
+  // shows each member's paid / balance (no screenshots, no notes).
+  var payFilter = 'all', payOpen = null, payEdit = null, payShot = null;
+  var MODES = ['UPI', 'NEFT / Bank transfer', 'Cash', 'Cheque', 'Other'];
+  function rs(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+  function todayIst() { return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); }
+  function dmy(d) { if (!d) return ''; var x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+
+  function payForm(memberId, p) {
+    p = p || {};
+    return '<form class="payform" data-payform="' + memberId + '"' + (p.id ? ' data-pid="' + p.id + '"' : '') + '>' +
+      '<div class="g2"><div><label>Amount (₹)</label><input type="text" name="amount" inputmode="numeric" value="' + (p.amount || '') + '" placeholder="e.g. 5000" autocomplete="off"></div>' +
+      '<div><label>Payment date</label><input type="date" name="date" value="' + esc(p.date || todayIst()) + '" max="' + todayIst() + '"></div></div>' +
+      '<div class="g2"><div><label>Paid by</label><select name="mode"><option value="">—</option>' + MODES.map(function (m) { return '<option' + (p.mode === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>' +
+      '<div><label>Note (admin only)</label><input type="text" name="note" value="' + esc(p.note || '') + '" maxlength="200" placeholder="e.g. paid by Nitin, ref no." autocomplete="off"></div></div>' +
+      '<label>' + (p.hasScreenshot ? 'Replace screenshot (optional)' : 'Payment screenshot') + '</label><input type="file" name="shot" accept="image/*">' +
+      (p.hasScreenshot ? '<label style="font-weight:500"><input type="checkbox" name="noshot"> Remove the saved screenshot</label>' : '') +
+      '<div class="shotprev"></div><div class="msg error"></div>' +
+      '<div class="row2"><button class="btn btn-open" type="submit">' + (p.id ? 'Save changes' : 'Save payment') + '</button><button class="btn btn-ghost" type="button" data-pay-cancel>Cancel</button></div></form>';
+  }
+
+  function payCard(st) {
+    if (!st.rows.length) return '';
+    var target = st.perMember * st.rows.length, got = 0, due = 0, full = 0;
+    st.rows.forEach(function (r) { got += r.paid; due += r.balance; if (!r.balance) full++; });
+    var rows = st.rows.filter(function (r) { return payFilter === 'all' || (payFilter === 'due' ? r.balance > 0 : !r.balance); });
+    var h = '<section class="card" id="payView"><div class="row-top"><h2 style="margin:0">💰 Yatra contribution</h2><span class="note" style="margin:0">' + rs(st.perMember) + ' per member</span></div>' +
+      '<div class="stats" style="margin-top:12px"><div class="stat s-yes"><b>' + rs(got) + '</b><span>Received</span></div><div class="stat s-no"><b>' + rs(due) + '</b><span>Balance</span></div>' +
+      '<div class="stat s-tot"><b>' + rs(target) + '</b><span>Total (' + st.rows.length + ' × ' + rs(st.perMember) + ')</span></div><div class="stat s-pend"><b>' + full + ' / ' + st.rows.length + '</b><span>Fully paid</span></div></div>' +
+      '<div class="bar"><i style="width:' + Math.min(100, got / (target || 1) * 100) + '%;background:var(--yes)"></i></div>' +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost" id="payCopy">Copy status for WhatsApp</button></div>' +
+      '<div class="tabs" style="margin-top:12px">' + [['all', 'All', st.rows.length], ['due', 'Balance due', st.rows.length - full], ['full', 'Fully paid', full]].map(function (f) {
+        return '<button class="tab' + (payFilter === f[0] ? ' on' : '') + '" data-payf="' + f[0] + '">' + f[1] + ' (' + f[2] + ')</button>';
+      }).join('') + '</div><ul class="list">';
+    h += rows.map(function (r) {
+      var pct = Math.min(100, r.paid / (st.perMember || 1) * 100);
+      var x = '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="row-top" style="gap:6px"><div class="n">' + esc(r.name) + '</div>' +
+        (payOpen === r.id ? '' : '<button class="ib" data-pay-add="' + r.id + '">＋ Add payment</button>') + '</div>' +
+        '<div class="pay-amts"><span class="amt paid">Paid ' + rs(r.paid) + '</span>' +
+        (r.balance ? '<span class="amt due">Balance ' + rs(r.balance) + '</span>' : '<span class="amt paid">✓ Fully paid</span>') +
+        (r.extra ? '<span class="amt extra">Extra ' + rs(r.extra) + '</span>' : '') + '</div>' +
+        '<div class="mini"><i style="width:' + pct + '%"></i></div>';
+      if (r.payments.length) {
+        x += '<ul class="plist">' + r.payments.map(function (p) {
+          if (payEdit === p.id) return '<li style="display:block!important">' + payForm(r.id, p) + '</li>';
+          return '<li><div class="pd"><b>' + rs(p.amount) + '</b> · ' + esc(dmy(p.date)) + (p.mode ? ' · ' + esc(p.mode) : '') +
+            (p.note ? '<div class="pn">' + esc(p.note) + '</div>' : '') + '</div>' +
+            '<span class="pa">' + (p.hasScreenshot ? '<button class="ib" data-pay-shot="' + p.id + '">🖼 Screenshot</button>' : '<span class="pn">no screenshot</span>') +
+            '<button class="ib" data-pay-edit="' + p.id + '" title="Edit">✎</button><button class="ib x" data-pay-del="' + p.id + '" title="Delete">✕</button></span></li>';
+        }).join('') + '</ul>';
+      }
+      if (payOpen === r.id) x += payForm(r.id);
+      return x + '</div></li>';
+    }).join('') + '</ul></section>';
+    return h;
+  }
+
+  // Re-encode the picked image to a JPEG of at most 1800px on its long side, so
+  // a phone screenshot stays readable and the upload stays under nginx's 1 MB.
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1800 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        var q = 0.85, out = c.toDataURL('image/jpeg', q);
+        while (out.length > 900000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+        resolve(out);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('This file is not an image the browser can open.')); };
+      img.src = url;
+    });
+  }
+
+  function findPayment(id) {
+    var hit = null;
+    fstate.rows.forEach(function (r) { r.payments.forEach(function (p) { if (p.id === id) hit = { row: r, p: p }; }); });
+    return hit;
+  }
+  function showShot(id) {
+    var hit = findPayment(id); if (!hit) return;
+    fetch('/api/nakayatra-admin/payments/' + id + '/screenshot', { headers: { Authorization: 'Bearer ' + store.get() } })
+      .then(function (r) { if (!r.ok) throw new Error('Screenshot not found.'); return r.blob(); })
+      .then(function (b) {
+        var v = $('viewer'), im = $('viewerImg');
+        if (im.src) URL.revokeObjectURL(im.src);
+        im.src = URL.createObjectURL(b);
+        $('viewerCap').textContent = hit.row.name + ' · ' + rs(hit.p.amount) + ' · ' + dmy(hit.p.date) + ' — tap to close';
+        v.classList.add('show');
+      })
+      .catch(function (e) { toast(e.message); });
+  }
+  $('viewer').onclick = function () { $('viewer').classList.remove('show'); };
+
+  fview.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-payf],[data-pay-add],[data-pay-edit],[data-pay-del],[data-pay-shot],[data-pay-cancel]');
+    if (!b) return;
+    if (b.hasAttribute('data-payf')) { payFilter = b.getAttribute('data-payf'); renderFinal(fstate); return; }
+    if (b.hasAttribute('data-pay-add')) { payOpen = Number(b.getAttribute('data-pay-add')); payEdit = null; payShot = null; renderFinal(fstate); focusForm(); return; }
+    if (b.hasAttribute('data-pay-edit')) { payEdit = Number(b.getAttribute('data-pay-edit')); payOpen = null; payShot = null; renderFinal(fstate); focusForm(); return; }
+    if (b.hasAttribute('data-pay-cancel')) { payOpen = payEdit = null; payShot = null; renderFinal(fstate); return; }
+    if (b.hasAttribute('data-pay-shot')) { showShot(Number(b.getAttribute('data-pay-shot'))); return; }
+    if (b.hasAttribute('data-pay-del')) {
+      var hit = findPayment(Number(b.getAttribute('data-pay-del'))); if (!hit) return;
+      if (!confirm('Delete the payment of ' + rs(hit.p.amount) + ' (' + dmy(hit.p.date) + ') for ' + hit.row.name + '?')) return;
+      api('/api/nakayatra-admin/payments/' + hit.p.id, { method: 'DELETE' }).then(function (x) { renderFinal(x); toast('Payment deleted'); })
+        .catch(function (err) { toast(err.message); });
+    }
+  });
+  function focusForm() {
+    var f = fview.querySelector('form.payform'); if (!f) return;
+    f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (!f.amount.value) f.amount.focus();
+  }
+  fview.addEventListener('change', function (e) {
+    if (e.target.name !== 'shot') return;
+    var f = e.target.form, prev = f.querySelector('.shotprev'), msg = f.querySelector('.msg'), file = e.target.files[0];
+    payShot = null; prev.innerHTML = ''; msg.textContent = '';
+    if (!file) return;
+    prev.textContent = 'Preparing…';
+    shrinkImage(file).then(function (d) {
+      payShot = d;
+      prev.innerHTML = '<img class="shot" src="' + d + '" alt="Selected screenshot">';
+    }).catch(function (err) { prev.innerHTML = ''; e.target.value = ''; msg.textContent = err.message; });
+  });
+  fview.addEventListener('submit', function (e) {
+    var f = e.target.closest('form.payform'); if (!f) return;
+    e.preventDefault();
+    var msg = f.querySelector('.msg'), btn = f.querySelector('[type=submit]'), pid = f.getAttribute('data-pid');
+    if (f.shot.files[0] && !payShot) { msg.textContent = 'Please wait — the screenshot is still being prepared.'; return; }
+    var body = { amount: f.amount.value, date: f.date.value, mode: f.mode.value, note: f.note.value };
+    if (payShot) body.screenshot = payShot;
+    else if (f.noshot && f.noshot.checked) body.removeScreenshot = true;
+    if (!pid && !payShot && !confirm('Save this payment without a screenshot?')) return;
+    btn.disabled = true; msg.textContent = '';
+    var url = pid ? '/api/nakayatra-admin/payments/' + pid : '/api/nakayatra-admin/final/' + f.getAttribute('data-payform') + '/payments';
+    api(url, { method: pid ? 'PATCH' : 'POST', json: body }).then(function (x) {
+      payOpen = payEdit = null; payShot = null; renderFinal(x); toast(pid ? 'Payment updated' : 'Payment saved');
+    }).catch(function (err) { btn.disabled = false; msg.textContent = err.message; });
+  });
+
   function renderFinal(st) {
     fstate = st;
     var h = '<section class="card"><h2>📋 Final list (members check &amp; correct)</h2>';
@@ -279,7 +452,12 @@
           '<div class="chips">' + chip('Name', r.name) + chip('Aadhaar', r.aadhaar) + chip('Age', r.age ? String(r.age) : '') + chip('Mobile', mob10(r.mobile)) + chip('Gothram', r.gothram) + '</div>' +
           (r.correctedAt ? '<div class="t" style="color:#8A6D1E;font-weight:700">✎ Corrected ' + esc(istWhen(r.correctedAt)) + ' (' + esc(r.correctedFields.replace(/,/g, ', ')) + ')</div>' : '') + '</div></li>';
       }).join('') + '</ul></section>';
-    fview.innerHTML = bookingCard(st.booking) + h;
+    fview.innerHTML = payCard(st) + bookingCard(st.booking) + h;
+    $('payCopy').onclick = function () {
+      var lines = st.rows.map(function (r) { return r.sr + '. ' + r.name + ' — ' + (r.balance ? 'paid ' + rs(r.paid) + ', balance ' + rs(r.balance) : '✅ ' + rs(r.paid) + ' paid'); });
+      var got = st.rows.reduce(function (t, r) { return t + r.paid; }, 0);
+      copy('🙏 *' + TITLE + ' – ' + EVENT + '*\n*Contribution status* (' + rs(st.perMember) + ' per member)\n\n' + lines.join('\n') + '\n\nTotal received: ' + rs(got) + ' of ' + rs(st.perMember * st.rows.length), 'Status copied');
+    };
     $('fCopy').onclick = function () { copy(listLink(), 'Link copied'); };
     if ($('bCopy')) $('bCopy').onclick = function () { copy(bookingLink(), 'Booking link copied'); };
     $('bNew').onclick = function () {

@@ -225,6 +225,17 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-10** — **Naka Yatra contribution payments.** New "💰 Yatra contribution" card on
+  `/nakayatra/admin`: per final-list member, received / balance against ₹10,000
+  (`PER_MEMBER_AMOUNT` in `routes/nakayatraList.js`), group totals, Balance due / Fully paid
+  filters and a "Copy status for WhatsApp" button. The admin adds each payment (amount, payment
+  date, mode, admin-only note, screenshot), can view the screenshot, edit or delete it. The
+  members' list link shows each member's received / balance and payment dates (no notes, no
+  screenshots), whether or not the list is locked. The Excel download gains Contribution paid,
+  Balance and Payments columns. New table `nakayatra_payments`; screenshots are JPEG files in
+  `nakayatra-data/payments/` (git-ignored). Routes: `POST
+  /api/nakayatra-admin/final/:finalId/payments`, `PATCH/DELETE /payments/:id`, `GET
+  /payments/:id/screenshot`.
 - **2026-11-06** — **Donor list: भाग ३ (GPay online) + add/delete rows.** A third section for
   payments made by GPay straight into the account. The tab gets an "नवीन नोंद जोडा" form, a
   per-row भाग selector and delete; adding/removing a row moves the final total by the same

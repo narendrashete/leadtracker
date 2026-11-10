@@ -8,8 +8,13 @@
 // A second, separate code — the booking link (`booking_code`), handed only to the
 // trusted members who do the TTD booking — opens the same page with full Aadhaar
 // numbers to copy. Rotating either code (admin) kills its old link at once.
+const path = require('path');
 const express = require('express');
 const { query, run } = require('../db');
+
+// Payment screenshots (written by the admin routes), git-ignored.
+const PAY_DIR = path.resolve(__dirname, '..', '..', 'nakayatra-data', 'payments');
+function payFile(name) { return path.join(PAY_DIR, path.basename(name)); }
 
 const router = express.Router();
 router.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
@@ -36,13 +41,13 @@ function paymentsByMember() {
   return out;
 }
 
-// What the members' page may see: date, amount, mode — never the note or the
-// screenshot, which stay on the admin page.
+// What the members' page may see: date, amount, mode and the screenshot (so
+// members can check it — the owner's choice); never the admin's note.
 function paymentSummary(list) {
   const paid = (list || []).reduce((t, p) => t + p.amount, 0);
   return {
     paid, balance: Math.max(0, PER_MEMBER_AMOUNT - paid), extra: Math.max(0, paid - PER_MEMBER_AMOUNT),
-    payments: (list || []).map(p => ({ date: p.paid_on, amount: p.amount, mode: p.mode || '' })),
+    payments: (list || []).map(p => ({ id: p.id, date: p.paid_on, amount: p.amount, mode: p.mode || '', hasScreenshot: !!p.screenshot })),
   };
 }
 
@@ -155,6 +160,20 @@ router.get('/:code', (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// A payment's screenshot, for anyone holding the group (or booking) link, so
+// members can check what the admin uploaded for them.
+router.get('/:code/payments/:pid/screenshot', (req, res, next) => {
+  try {
+    if (!checkCode(req, res)) return;
+    const p = query(`SELECT screenshot FROM nakayatra_payments WHERE id = ?`, [Number(req.params.pid)])[0];
+    if (!p || !p.screenshot) return res.status(404).json({ error: 'No screenshot for this payment.' });
+    res.set('Cache-Control', 'private, no-store');
+    res.sendFile(payFile(p.screenshot), err => {
+      if (err && !res.headersSent) res.status(404).json({ error: 'Screenshot file is missing.' });
+    });
+  } catch (err) { next(err); }
+});
+
 // { name?, aadhaar?, age?, mobile?, gothram? } — only fields that differ are saved.
 router.patch('/:code/:id', (req, res, next) => {
   try {
@@ -204,3 +223,5 @@ module.exports.DEFAULT_GOTHRAM = DEFAULT_GOTHRAM;
 module.exports.PER_MEMBER_AMOUNT = PER_MEMBER_AMOUNT;
 module.exports.paymentsByMember = paymentsByMember;
 module.exports.nowIst = nowIst;
+module.exports.PAY_DIR = PAY_DIR;
+module.exports.payFile = payFile;

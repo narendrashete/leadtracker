@@ -124,6 +124,13 @@
   .mini i{display:block;height:100%;background:var(--yes)}
   .pay ul{list-style:none;margin:8px 0 0;padding:0;font-size:13.5px}
   .pay li{padding:3px 0;border-top:1px dashed var(--line)}
+  .pay li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pay li .pt{flex:1;min-width:0}
+  .shotbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 9px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20;padding:16px;cursor:zoom-out}
+  .viewer.show{display:flex}
+  .viewer img{max-width:100%;max-height:calc(100vh - 70px);border-radius:8px;background:#fff}
+  .viewer .vc{color:#fff;font-size:14px;margin-top:10px;text-align:center}
   @media (max-width:420px){ .pay{margin-left:0} }
 </style>
 </head>
@@ -135,6 +142,7 @@
   <footer>Naka Family · Please check only your own details. This page is for our group only — don't forward it.</footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="viewer" id="viewer"><img id="viewerImg" alt="Payment screenshot"><div class="vc" id="viewerCap"></div></div>
 
 <script>
 (function () {
@@ -165,7 +173,18 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-copy]');
     if (b) copyText(b.getAttribute('data-copy'), b);
+    var s = e.target.closest && e.target.closest('[data-shot]');
+    if (s) showShot(s.getAttribute('data-shot'), s.getAttribute('data-cap'));
   });
+  // Payment screenshot uploaded by the admin, so members can check it.
+  function showShot(id, cap) {
+    var v = document.getElementById('viewer'), im = document.getElementById('viewerImg');
+    im.onerror = function () { v.classList.remove('show'); toast('Screenshot could not be loaded.'); };
+    im.src = '/api/nakayatra/list/' + encodeURIComponent(code) + '/payments/' + encodeURIComponent(id) + '/screenshot';
+    document.getElementById('viewerCap').textContent = cap + ' — tap to close';
+    v.classList.add('show');
+  }
+  document.getElementById('viewer').onclick = function () { this.classList.remove('show'); document.getElementById('viewerImg').removeAttribute('src'); };
   function bookingHtml(bk) {
     if (!bk) return '';
     return '<section class="card"><h2>Common booking details</h2>' + [['Darshan date', bk.darshanDate], ['State', bk.state], ['City', bk.city], ['Pincode', bk.pincode]].map(function (r) {
@@ -182,7 +201,10 @@
       (m.balance ? '<span class="amt due">Balance ' + rs(m.balance) + '</span>' : '<span class="amt paid">✓ Fully paid</span>') +
       (m.extra ? '<span class="amt extra">Extra ' + rs(m.extra) + '</span>' : '') + '</div>' +
       '<div class="mini"><i style="width:' + Math.min(100, m.paid / per * 100) + '%"></i></div>' +
-      (m.payments && m.payments.length ? '<ul>' + m.payments.map(function (p) { return '<li>' + esc(dmy(p.date)) + ' · <b>' + rs(p.amount) + '</b>' + (p.mode ? ' · ' + esc(p.mode) : '') + '</li>'; }).join('') + '</ul>' : '') +
+      (m.payments && m.payments.length ? '<ul>' + m.payments.map(function (p) {
+        return '<li><span class="pt">' + esc(dmy(p.date)) + ' · <b>' + rs(p.amount) + '</b>' + (p.mode ? ' · ' + esc(p.mode) : '') + '</span>' +
+          (p.hasScreenshot ? '<button type="button" class="shotbtn" data-shot="' + p.id + '" data-cap="' + esc(m.name + ' · ' + rs(p.amount) + ' · ' + dmy(p.date)) + '">🖼 Screenshot</button>' : '') + '</li>';
+      }).join('') + '</ul>' : '') +
       '</div>';
   }
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); }

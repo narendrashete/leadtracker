@@ -723,12 +723,15 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   an admin-only note and the payment screenshot — in `nakayatra_payments` (one row per
   payment, keyed by `nakayatra_final.id`). Paid / balance / extra are derived from those rows,
   never stored. The members' list link shows each member's paid / balance and the date,
-  amount and mode of each payment — never the note or the screenshot. Screenshots are
+  amount and mode of each payment, with a 🖼 Screenshot button so members can check the
+  uploaded receipt (owner's choice, added 2026-11-10) — never the admin's note. Screenshots are
   re-encoded in the browser to JPEG (≤1800px, kept under nginx's 1 MB body limit), sent as a
   data URL, checked for JPEG magic bytes and saved as random-named files in
-  `nakayatra-data/payments/` (git-ignored — bank receipts, public repo); they are only served
-  through the admin API (`GET /api/nakayatra-admin/payments/:id/screenshot`), which the page
-  fetches with its bearer token and shows as a blob. Deleting or replacing a payment's
+  `nakayatra-data/payments/` (git-ignored — bank receipts, public repo). Served two ways: the
+  admin API (`GET /api/nakayatra-admin/payments/:id/screenshot`, fetched with the bearer token
+  and shown as a blob) and, gated by the group or booking code, `GET
+  /api/nakayatra/list/:code/payments/:pid/screenshot` for the members' page. Anyone holding
+  the group link can therefore open every member's screenshot — that is intended. Deleting or replacing a payment's
   screenshot deletes the file. Payments are independent of `list_locked`.
 
 ## Family tree — sibling order

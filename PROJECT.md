@@ -225,6 +225,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-10** — **Naka Yatra: members can view payment screenshots.** Each payment on the
+  members' list link gets a 🖼 Screenshot button (full-screen viewer) so members can check the
+  receipt the admin uploaded. New route `GET /api/nakayatra/list/:code/payments/:pid/screenshot`
+  (group or booking code). The admin's note stays admin-only.
 - **2026-11-10** — **Naka Yatra contribution payments.** New "💰 Yatra contribution" card on
   `/nakayatra/admin`: per final-list member, received / balance against ₹10,000
   (`PER_MEMBER_AMOUNT` in `routes/nakayatraList.js`), group totals, Balance due / Fully paid

@@ -4,7 +4,6 @@
 // same split as /api/kulgaon-admin.
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
 const express = require('express');
 const { query, run, runMany } = require('../db');
 const { requireAuth, requireAdmin } = require('../auth');
@@ -171,10 +170,8 @@ router.post('/final/rotate', (req, res, next) => {
 // ---- Yatra contribution payments ----
 // Screenshots are JPEG files (the admin page re-encodes whatever was picked to a
 // JPEG of at most ~1800px, which keeps the request under nginx's 1 MB limit).
-const PAY_DIR = path.resolve(__dirname, '..', '..', 'nakayatra-data', 'payments');
+const { PAY_DIR, payFile } = nakayatraList;
 const MODES = ['UPI', 'NEFT / Bank transfer', 'Cash', 'Cheque', 'Other'];
-
-function payFile(name) { return path.join(PAY_DIR, path.basename(name)); }
 
 // "data:image/jpeg;base64,..." → saved file name, or { error }.
 function saveScreenshot(dataUrl) {

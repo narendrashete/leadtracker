@@ -225,6 +225,10 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-10** — **Naka Yatra screenshot viewer fix.** On a phone the full-screen screenshot
+  had no visible close button, and the phone's Back button left the page. Both pages' viewers
+  (members' list and admin) now have a large × in the corner, a smaller image with margin, and
+  opening pushes a history entry, so Back (or Esc, or a tap anywhere) closes only the viewer.
 - **2026-11-10** — **Naka Yatra: members can view payment screenshots.** Each payment on the
   members' list link gets a 🖼 Screenshot button (full-screen viewer) so members can check the
   receipt the admin uploaded. New route `GET /api/nakayatra/list/:code/payments/:pid/screenshot`

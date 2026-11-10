@@ -114,7 +114,8 @@
   .payform .row2{display:flex;gap:8px;margin-top:12px} .payform .row2 .btn{flex:1}
   .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20;padding:16px;cursor:zoom-out}
   .viewer.show{display:flex}
-  .viewer img{max-width:100%;max-height:calc(100vh - 70px);border-radius:8px;background:#fff}
+  .viewer img{max-width:100%;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);border-radius:8px;background:#fff;box-shadow:0 6px 30px rgba(0,0,0,.5)}
+  .viewer .vx{position:fixed;top:14px;right:14px;width:48px;height:48px;border-radius:50%;border:0;background:#fff;color:#2B2118;font-size:30px;line-height:1;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.4);z-index:21;-webkit-tap-highlight-color:transparent}
   .viewer .vc{color:#fff;font-size:14px;margin-top:10px;text-align:center}
   #payView .list li{align-items:flex-start}
   @media (max-width:560px){ .payform .g2{grid-template-columns:1fr} }
@@ -140,7 +141,7 @@
   <div id="appView" style="display:none"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div class="viewer" id="viewer"><img id="viewerImg" alt="Payment screenshot"><div class="vc" id="viewerCap"></div></div>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true"><button type="button" class="vx" id="viewerX" aria-label="Close">×</button><img id="viewerImg" alt="Payment screenshot"><div class="vc" id="viewerCap"></div></div>
 
 <script>
 (function () {
@@ -351,12 +352,29 @@
         var v = $('viewer'), im = $('viewerImg');
         if (im.src) URL.revokeObjectURL(im.src);
         im.src = URL.createObjectURL(b);
-        $('viewerCap').textContent = hit.row.name + ' · ' + rs(hit.p.amount) + ' · ' + dmy(hit.p.date) + ' — tap to close';
-        v.classList.add('show');
+        $('viewerCap').textContent = hit.row.name + ' · ' + rs(hit.p.amount) + ' · ' + dmy(hit.p.date) + ' — tap × to close';
+        viewerOpen();
       })
       .catch(function (e) { toast(e.message); });
   }
-  $('viewer').onclick = function () { $('viewer').classList.remove('show'); };
+  // Screenshot viewer: × button, a tap anywhere, Esc, or the phone's Back
+  // button closes it. Opening pushes a history entry so Back only closes the
+  // viewer instead of leaving the page.
+  var viewerEl = document.getElementById('viewer');
+  function viewerOpen() {
+    if (viewerEl.classList.contains('show')) return;
+    viewerEl.classList.add('show');
+    try { history.pushState({ shotViewer: 1 }, ''); } catch (e) {}
+  }
+  function viewerHide() { viewerEl.classList.remove('show'); }
+  function viewerClose() {
+    if (!viewerEl.classList.contains('show')) return;
+    if (history.state && history.state.shotViewer) history.back(); // popstate hides it
+    else viewerHide();
+  }
+  window.addEventListener('popstate', viewerHide);
+  viewerEl.onclick = viewerClose;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') viewerClose(); });
 
   fview.addEventListener('click', function (e) {
     var b = e.target.closest('[data-payf],[data-pay-add],[data-pay-edit],[data-pay-del],[data-pay-shot],[data-pay-cancel]');

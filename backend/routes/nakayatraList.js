@@ -8,8 +8,13 @@
 // A second, separate code — the booking link (`booking_code`), handed only to the
 // trusted members who do the TTD booking — opens the same page with full Aadhaar
 // numbers to copy. Rotating either code (admin) kills its old link at once.
+const path = require('path');
 const express = require('express');
 const { query, run } = require('../db');
+
+// Payment screenshots (written by the admin routes), git-ignored.
+const PAY_DIR = path.resolve(__dirname, '..', '..', 'nakayatra-data', 'payments');
+function payFile(name) { return path.join(PAY_DIR, path.basename(name)); }
 
 const router = express.Router();
 router.use((req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
@@ -23,6 +28,28 @@ const DEFAULT_GOTHRAM = 'Kashyap';
 // Details common to the whole group's TTD darshan booking, shown with copy
 // buttons on the list and admin pages. Edit here; both pages read them from the API.
 const BOOKING = { darshanDate: '12-02-2027', state: 'Maharashtra', city: 'Badlapur', pincode: '421503' };
+// Each member's full yatra contribution. Paid / balance are derived from the
+// payments the admin enters (nakayatra_payments); edit the figure here.
+const PER_MEMBER_AMOUNT = 10000;
+
+// { final_id: [payment rows, oldest first] }
+function paymentsByMember() {
+  const out = {};
+  query(`SELECT * FROM nakayatra_payments ORDER BY paid_on, id`).forEach(p => {
+    (out[p.final_id] = out[p.final_id] || []).push(p);
+  });
+  return out;
+}
+
+// What the members' page may see: date, amount, mode and the screenshot (so
+// members can check it — the owner's choice); never the admin's note.
+function paymentSummary(list) {
+  const paid = (list || []).reduce((t, p) => t + p.amount, 0);
+  return {
+    paid, balance: Math.max(0, PER_MEMBER_AMOUNT - paid), extra: Math.max(0, paid - PER_MEMBER_AMOUNT),
+    payments: (list || []).map(p => ({ id: p.id, date: p.paid_on, amount: p.amount, mode: p.mode || '', hasScreenshot: !!p.screenshot })),
+  };
+}
 
 function currentValue(row, f) {
   if (f === 'gothram') return row.gothram || DEFAULT_GOTHRAM;
@@ -45,8 +72,9 @@ function maskAadhaar(a) {
   return a ? 'XXXX XXXX ' + a.slice(-4) : '';
 }
 
-function publicRow(r, booker) {
+function publicRow(r, booker, payments) {
   return {
+    ...paymentSummary(payments),
     ...(booker && r.aadhaar ? { aadhaarFull: r.aadhaar } : {}),
     id: r.id, sr: r.sr, name: r.name, aadhaar: maskAadhaar(r.aadhaar), hasAadhaar: !!r.aadhaar,
     age: r.age, mobile: r.mobile || '', gothram: currentValue(r, 'gothram'),
@@ -124,7 +152,25 @@ function frozen() {
 router.get('/:code', (req, res, next) => {
   try {
     if (!checkCode(req, res)) return;
-    res.json({ locked: frozen(), booker: req.booker, booking: BOOKING, rows: allRows().map(r => publicRow(r, req.booker)) });
+    const pays = paymentsByMember();
+    res.json({
+      locked: frozen(), booker: req.booker, booking: BOOKING, perMember: PER_MEMBER_AMOUNT,
+      rows: allRows().map(r => publicRow(r, req.booker, pays[r.id])),
+    });
+  } catch (err) { next(err); }
+});
+
+// A payment's screenshot, for anyone holding the group (or booking) link, so
+// members can check what the admin uploaded for them.
+router.get('/:code/payments/:pid/screenshot', (req, res, next) => {
+  try {
+    if (!checkCode(req, res)) return;
+    const p = query(`SELECT screenshot FROM nakayatra_payments WHERE id = ?`, [Number(req.params.pid)])[0];
+    if (!p || !p.screenshot) return res.status(404).json({ error: 'No screenshot for this payment.' });
+    res.set('Cache-Control', 'private, no-store');
+    res.sendFile(payFile(p.screenshot), err => {
+      if (err && !res.headersSent) res.status(404).json({ error: 'Screenshot file is missing.' });
+    });
   } catch (err) { next(err); }
 });
 
@@ -146,7 +192,8 @@ router.patch('/:code/:id', (req, res, next) => {
       if (String(c.value) !== String(currentValue(row, f))) changes[f] = c.value;
     }
     const keys = Object.keys(changes);
-    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row, req.booker) });
+    const pays = () => paymentsByMember()[row.id];
+    if (!keys.length) return res.json({ ok: true, changed: [], row: publicRow(row, req.booker, pays()) });
 
     const at = nowIst();
     const fields = new Set((row.corrected_fields || '').split(',').filter(Boolean));
@@ -160,7 +207,7 @@ router.patch('/:code/:id', (req, res, next) => {
       [...keys.map(k => changes[k]), at, [...fields].join(','), JSON.stringify(history), row.id]
     );
     const updated = query(`SELECT * FROM nakayatra_final WHERE id = ?`, [row.id])[0];
-    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated, req.booker) });
+    res.json({ ok: true, changed: keys.map(k => LABELS[k]), row: publicRow(updated, req.booker, pays()) });
   } catch (err) { next(err); }
 });
 
@@ -173,3 +220,8 @@ module.exports.cleanField = cleanField;
 module.exports.currentValue = currentValue;
 module.exports.BOOKING = BOOKING;
 module.exports.DEFAULT_GOTHRAM = DEFAULT_GOTHRAM;
+module.exports.PER_MEMBER_AMOUNT = PER_MEMBER_AMOUNT;
+module.exports.paymentsByMember = paymentsByMember;
+module.exports.nowIst = nowIst;
+module.exports.PAY_DIR = PAY_DIR;
+module.exports.payFile = payFile;

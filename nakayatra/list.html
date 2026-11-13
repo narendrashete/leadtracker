@@ -115,6 +115,24 @@
   .cp.done{background:var(--yes-soft);color:var(--yes);border-color:var(--yes)}
   .m-grid{grid-template-columns:auto 1fr auto;align-items:center}
   .m-grid dd.c{text-align:right}
+  .pay{margin:12px 0 0 38px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#FFFBF5}
+  .pay .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted);font-weight:600}
+  .pay .nums{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .amt{font-size:13.5px;font-weight:700;padding:2px 10px;border-radius:999px}
+  .amt.paid{background:var(--yes-soft);color:var(--yes)} .amt.due{background:var(--no-soft);color:var(--no)} .amt.extra{background:var(--pend-soft);color:var(--pend)}
+  .mini{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px}
+  .mini i{display:block;height:100%;background:var(--yes)}
+  .pay ul{list-style:none;margin:8px 0 0;padding:0;font-size:13.5px}
+  .pay li{padding:3px 0;border-top:1px dashed var(--line)}
+  .pay li{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pay li .pt{flex:1;min-width:0}
+  .shotbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 9px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:20;padding:16px;cursor:zoom-out}
+  .viewer.show{display:flex}
+  .viewer img{max-width:100%;max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);border-radius:8px;background:#fff;box-shadow:0 6px 30px rgba(0,0,0,.5)}
+  .viewer .vx{position:fixed;top:14px;right:14px;width:48px;height:48px;border-radius:50%;border:0;background:#fff;color:#2B2118;font-size:30px;line-height:1;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.4);z-index:21;-webkit-tap-highlight-color:transparent}
+  .viewer .vc{color:#fff;font-size:14px;margin-top:10px;text-align:center}
+  @media (max-width:420px){ .pay{margin-left:0} }
 </style>
 </head>
 <body>
@@ -125,6 +143,7 @@
   <footer>Naka Family · Please check only your own details. This page is for our group only — don't forward it.</footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true"><button type="button" class="vx" id="viewerX" aria-label="Close">×</button><img id="viewerImg" alt="Payment screenshot"><div class="vc" id="viewerCap"></div></div>
 
 <script>
 (function () {
@@ -155,12 +174,56 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-copy]');
     if (b) copyText(b.getAttribute('data-copy'), b);
+    var s = e.target.closest && e.target.closest('[data-shot]');
+    if (s) showShot(s.getAttribute('data-shot'), s.getAttribute('data-cap'));
   });
+  // Payment screenshot uploaded by the admin, so members can check it.
+  function showShot(id, cap) {
+    var v = document.getElementById('viewer'), im = document.getElementById('viewerImg');
+    im.onerror = function () { viewerClose(); toast('Screenshot could not be loaded.'); };
+    im.src = '/api/nakayatra/list/' + encodeURIComponent(code) + '/payments/' + encodeURIComponent(id) + '/screenshot';
+    document.getElementById('viewerCap').textContent = cap + ' — tap × to close';
+    viewerOpen();
+  }
+  // Screenshot viewer: × button, a tap anywhere, Esc, or the phone's Back
+  // button closes it. Opening pushes a history entry so Back only closes the
+  // viewer instead of leaving the page.
+  var viewerEl = document.getElementById('viewer');
+  function viewerOpen() {
+    if (viewerEl.classList.contains('show')) return;
+    viewerEl.classList.add('show');
+    try { history.pushState({ shotViewer: 1 }, ''); } catch (e) {}
+  }
+  function viewerHide() { viewerEl.classList.remove('show'); }
+  function viewerClose() {
+    if (!viewerEl.classList.contains('show')) return;
+    if (history.state && history.state.shotViewer) history.back(); // popstate hides it
+    else viewerHide();
+  }
+  window.addEventListener('popstate', viewerHide);
+  viewerEl.onclick = viewerClose;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') viewerClose(); });
   function bookingHtml(bk) {
     if (!bk) return '';
     return '<section class="card"><h2>Common booking details</h2>' + [['Darshan date', bk.darshanDate], ['State', bk.state], ['City', bk.city], ['Pincode', bk.pincode]].map(function (r) {
       return '<div class="kv"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + cpBtn(r[1], r[0]) + '</div>';
     }).join('') + '</section>';
+  }
+  function rs(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+  function dmy(d) { var x = new Date(d + 'T00:00:00'); return isNaN(x) ? d : x.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  // Contribution entered by the admin: paid / balance against the per-member figure.
+  function payHtml(m) {
+    var per = state.perMember || 0; if (!per) return '';
+    return '<div class="pay"><div class="ph"><span>Yatra contribution</span><span>' + rs(per) + ' per member</span></div>' +
+      '<div class="nums"><span class="amt paid">Received ' + rs(m.paid) + '</span>' +
+      (m.balance ? '<span class="amt due">Balance ' + rs(m.balance) + '</span>' : '<span class="amt paid">✓ Fully paid</span>') +
+      (m.extra ? '<span class="amt extra">Extra ' + rs(m.extra) + '</span>' : '') + '</div>' +
+      '<div class="mini"><i style="width:' + Math.min(100, m.paid / per * 100) + '%"></i></div>' +
+      (m.payments && m.payments.length ? '<ul>' + m.payments.map(function (p) {
+        return '<li><span class="pt">' + esc(dmy(p.date)) + ' · <b>' + rs(p.amount) + '</b>' + (p.mode ? ' · ' + esc(p.mode) : '') + '</span>' +
+          (p.hasScreenshot ? '<button type="button" class="shotbtn" data-shot="' + p.id + '" data-cap="' + esc(m.name + ' · ' + rs(p.amount) + ' · ' + dmy(p.date)) + '">🖼 Screenshot</button>' : '') + '</li>';
+      }).join('') + '</ul>' : '') +
+      '</div>';
   }
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -175,6 +238,7 @@
         '<dt>Age</dt><dd' + (m.age ? '>' + m.age + ' yrs' : ' class="missing">Not given') + '</dd><dd class="c">' + (m.age ? cpBtn(String(m.age), 'age') : '') + '</dd>' +
         '<dt>Mobile</dt><dd' + (m.mobile ? '>' + esc(m.mobile) : ' class="missing">Not given') + '</dd><dd class="c">' + (m.mobile ? cpBtn(mob10(m.mobile), 'mobile') : '') + '</dd>' +
         '<dt>Gothram</dt><dd>' + esc(m.gothram) + '</dd><dd class="c">' + (m.gothram ? cpBtn(m.gothram, 'gothram') : '') + '</dd></dl>';
+      h += payHtml(m);
       if (m.corrected) h += '<div class="flag">✎ Corrected · ' + esc(when(m.correctedAt)) + ' · ' + esc(m.correctedFields.join(', ')) + '</div>';
       if (!state.locked) h += '<div class="m-acts"><button class="btn btn-ghost" data-edit="' + m.id + '">✎ Correct my details</button></div>';
     } else {
@@ -196,7 +260,7 @@
     var rows = state.rows.filter(function (m) { return !q || norm(m.name).indexOf(norm(q)) !== -1; });
     var nCorr = state.rows.filter(function (m) { return m.corrected; }).length;
     var h = bookingHtml(state.booking) + '<section class="card"><h2 style="margin:0">' + state.rows.length + ' members joining</h2>' +
-      '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
+      '<p class="legend">Find your name and check your Aadhaar, age, mobile number and gothram, and your yatra contribution received so far. If anything is wrong, tap <b>Correct my details</b>. Changed rows are marked <b>✎ Corrected</b>.' +
       (nCorr ? ' (' + nCorr + ' corrected so far)' : '') + '</p>' +
       (state.booker ? '<div class="banner frozen">🔑 Booking link — full Aadhaar numbers are shown for the TTD booking. Please don\'t forward this link.</div>' : '') +
       (state.locked ? '<div class="banner frozen">🔒 The list is final and locked. Contact the admin for any change.</div>' : '') +

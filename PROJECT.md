@@ -242,6 +242,25 @@ Unscoped, not committed to — do not build without an explicit ask:
   filter by open/done and owner, overdue flagged. Tables `primex_todos`, `primex_links`; API
   `/api/primex` (requireAuth). Accounts, follow-ups, WhatsApp invites and walk-in capture shown
   as "To be built".
+- **2026-11-10** — **Naka Yatra screenshot viewer fix.** On a phone the full-screen screenshot
+  had no visible close button, and the phone's Back button left the page. Both pages' viewers
+  (members' list and admin) now have a large × in the corner, a smaller image with margin, and
+  opening pushes a history entry, so Back (or Esc, or a tap anywhere) closes only the viewer.
+- **2026-11-10** — **Naka Yatra: members can view payment screenshots.** Each payment on the
+  members' list link gets a 🖼 Screenshot button (full-screen viewer) so members can check the
+  receipt the admin uploaded. New route `GET /api/nakayatra/list/:code/payments/:pid/screenshot`
+  (group or booking code). The admin's note stays admin-only.
+- **2026-11-10** — **Naka Yatra contribution payments.** New "💰 Yatra contribution" card on
+  `/nakayatra/admin`: per final-list member, received / balance against ₹10,000
+  (`PER_MEMBER_AMOUNT` in `routes/nakayatraList.js`), group totals, Balance due / Fully paid
+  filters and a "Copy status for WhatsApp" button. The admin adds each payment (amount, payment
+  date, mode, admin-only note, screenshot), can view the screenshot, edit or delete it. The
+  members' list link shows each member's received / balance and payment dates (no notes, no
+  screenshots), whether or not the list is locked. The Excel download gains Contribution paid,
+  Balance and Payments columns. New table `nakayatra_payments`; screenshots are JPEG files in
+  `nakayatra-data/payments/` (git-ignored). Routes: `POST
+  /api/nakayatra-admin/final/:finalId/payments`, `PATCH/DELETE /payments/:id`, `GET
+  /payments/:id/screenshot`.
 - **2026-11-06** — **Donor list: भाग ३ (GPay online) + add/delete rows.** A third section for
   payments made by GPay straight into the account. The tab gets an "नवीन नोंद जोडा" form, a
   per-row भाग selector and delete; adding/removing a row moves the final total by the same

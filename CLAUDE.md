@@ -168,6 +168,7 @@ thigdam/
   index.html           Thigdam — the friends' group photo album (collage + zoom viewer +
                        upload). One plain file, no build step. API in routes/thigdam.js.
 thigdam-data/photos/   Thigdam uploads: original bytes + small -thumb.jpg previews (git-ignored)
+nakayatra-data/payments/  Naka Yatra contribution payment screenshots (git-ignored)
 kulgaon/
   index.html           Kulgaon gat member list — search (Marathi/English) + suggest changes.
   admin.html           Its admin page — login, approve/reject suggestions, edit/add members.
@@ -732,6 +733,22 @@ February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts,
   Replacing the booking code kills the old booking link at once. The yatra schedule
   image is `nakayatra/schedule.jpg`, served at `/nakayatra/schedule.jpg` (registered before
   `/nakayatra/:code`); it holds no personal data, so it is committed.
+- **Contribution payments** (added 2026-11-10): each joining member owes
+  `PER_MEMBER_AMOUNT` (₹10,000, `routes/nakayatraList.js` — edit it there). The admin records
+  every payment on the admin page's "💰 Yatra contribution" card — amount, payment date, mode,
+  an admin-only note and the payment screenshot — in `nakayatra_payments` (one row per
+  payment, keyed by `nakayatra_final.id`). Paid / balance / extra are derived from those rows,
+  never stored. The members' list link shows each member's paid / balance and the date,
+  amount and mode of each payment, with a 🖼 Screenshot button so members can check the
+  uploaded receipt (owner's choice, added 2026-11-10) — never the admin's note. Screenshots are
+  re-encoded in the browser to JPEG (≤1800px, kept under nginx's 1 MB body limit), sent as a
+  data URL, checked for JPEG magic bytes and saved as random-named files in
+  `nakayatra-data/payments/` (git-ignored — bank receipts, public repo). Served two ways: the
+  admin API (`GET /api/nakayatra-admin/payments/:id/screenshot`, fetched with the bearer token
+  and shown as a blob) and, gated by the group or booking code, `GET
+  /api/nakayatra/list/:code/payments/:pid/screenshot` for the members' page. Anyone holding
+  the group link can therefore open every member's screenshot — that is intended. Deleting or replacing a payment's
+  screenshot deletes the file. Payments are independent of `list_locked`.
 
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small

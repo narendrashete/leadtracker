@@ -52,6 +52,8 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const nakayatraRouter      = require('./routes/nakayatra');
   const nakayatraAdminRouter = require('./routes/nakayatraAdmin');
   const nakayatraListRouter  = require('./routes/nakayatraList');
+  const primexRouter     = require('./routes/primex');
+  primexRouter.seed();
   const { recordVisit } = require('./analytics');
 
   // Public: auth endpoints
@@ -73,6 +75,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/api/contacts',  requireAuth, contactsRouter); // import route adds requireAdmin itself
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
   app.use('/api/stats',     statsRouter); // stats router applies requireAuth + requireAdmin itself
+  app.use('/api/primex',    requireAuth, primexRouter); // PrimexERP2027 expo workspace
 
   // Public: Shete Parivar Navratri — member directory + photo gallery, both
   // gated by an admin queue. Unauthenticated on purpose, same as /api/calendar:

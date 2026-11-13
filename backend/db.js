@@ -243,33 +243,6 @@ async function getDb() {
              ON page_hits (day, page, visitor)`);
   } catch { /* index already exists */ }
 
-  // PrimexERP2027 — the ERP Expo 2027 workspace page in the SPA. Doables are
-  // seeded once from the readiness plan (routes/primex.js); links point at the
-  // plan docs/artifacts made for the expo.
-  _db.run(`
-    CREATE TABLE IF NOT EXISTS primex_todos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phase TEXT NOT NULL,
-      week TEXT,
-      title TEXT NOT NULL,
-      owner TEXT,
-      due_date TEXT,
-      done INTEGER NOT NULL DEFAULT 0,
-      done_at TEXT,
-      done_by TEXT,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-    )
-  `);
-  _db.run(`
-    CREATE TABLE IF NOT EXISTS primex_links (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      url TEXT NOT NULL,
-      note TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-    )
-  `);
 
   _db.run(`
     CREATE TABLE IF NOT EXISTS calendar_spaces (

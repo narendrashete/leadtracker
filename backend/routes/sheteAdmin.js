@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { query, run } = require('../db');
+const { query, run, runMany } = require('../db');
 const { requireAuth, requireAdmin } = require('../auth');
 
 const router = express.Router();
@@ -510,6 +510,148 @@ router.delete('/wa/:id', (req, res) => {
     return res.status(404).json({ error: 'संपर्क सापडला नाही.' });
   }
   run(`DELETE FROM shete_wa_contacts WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
+// ---- Donor lists (देणगी यादी) ----
+// Parsed from the admin's CSV in the browser; the server only stores rows.
+// Not in git (public repo) — leads.db only.
+
+function donationList(id) {
+  const list = query(`SELECT id, title, rounded_total AS roundedTotal, created_at AS createdAt
+                      FROM shete_donation_lists WHERE id = ?`, [id])[0];
+  if (!list) return null;
+  list.rows = query(`SELECT id, section, receipt, book, name, amount, village, mobile, note
+                     FROM shete_donations WHERE list_id = ? ORDER BY section, sort, id`, [id]);
+  return list;
+}
+
+router.get('/donations', (req, res) => {
+  res.json(query(
+    `SELECT l.id, l.title, l.rounded_total AS roundedTotal, l.created_at AS createdAt,
+            COUNT(d.id) AS count, COALESCE(SUM(d.amount), 0) AS total
+     FROM shete_donation_lists l LEFT JOIN shete_donations d ON d.list_id = l.id
+     GROUP BY l.id ORDER BY l.id DESC`
+  ));
+});
+
+router.get('/donations/:id', (req, res) => {
+  const list = donationList(Number(req.params.id));
+  if (!list) return res.status(404).json({ error: 'यादी सापडली नाही.' });
+  res.json(list);
+});
+
+const str = (v, n) => (v == null ? '' : String(v)).trim().slice(0, n);
+// 1 = on the सभासद यादी, 2 = not yet, 3 = paid online by GPay straight into the account.
+const donSection = v => ([1, 2, 3].includes(Number(v)) ? Number(v) : 1);
+
+// The list's written final total keeps the same round-off when a row's amount
+// comes or goes, so adding a ₹500 GPay payment moves the final by ₹500.
+function shiftRounded(listId, delta) {
+  if (delta) run(`UPDATE shete_donation_lists SET rounded_total = rounded_total + ? WHERE id = ? AND rounded_total IS NOT NULL`, [delta, listId]);
+}
+
+router.post('/donations', (req, res, next) => {
+  try {
+    const title = str(req.body.title, 200);
+    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    if (!title) return res.status(400).json({ error: 'यादीचे शीर्षक आवश्यक आहे.' });
+    if (!rows.length || rows.length > 2000) return res.status(400).json({ error: 'CSV मध्ये एकही नोंद सापडली नाही.' });
+    const clean = [];
+    for (const r of rows) {
+      const name = str(r.name, 120);
+      const amount = Math.round(Number(r.amount));
+      if (!name || !Number.isFinite(amount) || amount < 0 || amount > 10000000) {
+        return res.status(400).json({ error: 'अवैध नोंद: ' + (name || '(नाव नाही)') });
+      }
+      clean.push({ section: donSection(r.section), receipt: str(r.receipt, 20), book: str(r.book, 20),
+        name, amount, village: str(r.village, 80), mobile: str(r.mobile, 60), note: str(r.note, 200) });
+    }
+    let rounded = req.body.roundedTotal;
+    rounded = rounded === '' || rounded == null ? null : Math.round(Number(rounded));
+    if (rounded !== null && !Number.isFinite(rounded)) rounded = null;
+    const listId = run(`INSERT INTO shete_donation_lists (title, rounded_total) VALUES (?,?)`, [title, rounded]);
+    runMany(
+      `INSERT INTO shete_donations (list_id, section, sort, receipt, book, name, amount, village, mobile, note)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      clean.map((r, i) => [listId, r.section, i, r.receipt, r.book, r.name, r.amount, r.village, r.mobile, r.note])
+    );
+    res.json({ ok: true, id: listId });
+  } catch (err) { next(err); }
+});
+
+router.patch('/donations/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_donation_lists WHERE id = ?`, [id]).length) {
+    return res.status(404).json({ error: 'यादी सापडली नाही.' });
+  }
+  const title = str(req.body.title, 200);
+  if (!title) return res.status(400).json({ error: 'यादीचे शीर्षक आवश्यक आहे.' });
+  let rounded = req.body.roundedTotal;
+  rounded = rounded === '' || rounded == null ? null : Math.round(Number(rounded));
+  if (rounded !== null && !Number.isFinite(rounded)) return res.status(400).json({ error: 'अंतिम एकूण अवैध आहे.' });
+  run(`UPDATE shete_donation_lists SET title = ?, rounded_total = ? WHERE id = ?`, [title, rounded, id]);
+  res.json({ ok: true });
+});
+
+router.delete('/donations/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_donation_lists WHERE id = ?`, [id]).length) {
+    return res.status(404).json({ error: 'यादी सापडली नाही.' });
+  }
+  run(`DELETE FROM shete_donations WHERE list_id = ?`, [id]);
+  run(`DELETE FROM shete_donation_lists WHERE id = ?`, [id]);
+  res.json({ ok: true });
+});
+
+// One row: move between भाग १/२ (when a donor joins the सभासद यादी) or fix a field.
+router.patch('/donation-rows/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const row = query(`SELECT * FROM shete_donations WHERE id = ?`, [id])[0];
+  if (!row) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+  const b = req.body || {};
+  const next = {
+    section: b.section !== undefined ? donSection(b.section) : row.section,
+    receipt: b.receipt !== undefined ? str(b.receipt, 20) : row.receipt,
+    name: b.name !== undefined ? str(b.name, 120) : row.name,
+    amount: b.amount !== undefined ? Math.round(Number(b.amount)) : row.amount,
+    village: b.village !== undefined ? str(b.village, 80) : row.village,
+    mobile: b.mobile !== undefined ? str(b.mobile, 60) : row.mobile,
+    note: b.note !== undefined ? str(b.note, 200) : row.note
+  };
+  if (!next.name) return res.status(400).json({ error: 'नाव आवश्यक आहे.' });
+  if (!Number.isFinite(next.amount) || next.amount < 0) return res.status(400).json({ error: 'रक्कम अवैध आहे.' });
+  shiftRounded(row.list_id, next.amount - row.amount);
+  run(`UPDATE shete_donations SET section = ?, receipt = ?, name = ?, amount = ?, village = ?, mobile = ?, note = ? WHERE id = ?`,
+    [next.section, next.receipt, next.name, next.amount, next.village, next.mobile, next.note, id]);
+  res.json({ ok: true });
+});
+
+router.post('/donations/:id/rows', (req, res) => {
+  const listId = Number(req.params.id);
+  if (!query(`SELECT id FROM shete_donation_lists WHERE id = ?`, [listId]).length) {
+    return res.status(404).json({ error: 'यादी सापडली नाही.' });
+  }
+  const b = req.body || {};
+  const name = str(b.name, 120);
+  const amount = Math.round(Number(b.amount));
+  if (!name) return res.status(400).json({ error: 'नाव आवश्यक आहे.' });
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 10000000) return res.status(400).json({ error: 'रक्कम अवैध आहे.' });
+  const section = donSection(b.section);
+  const sort = (query(`SELECT MAX(sort) AS m FROM shete_donations WHERE list_id = ?`, [listId])[0].m || 0) + 1;
+  shiftRounded(listId, amount);
+  run(`INSERT INTO shete_donations (list_id, section, sort, receipt, book, name, amount, village, mobile, note)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [listId, section, sort, str(b.receipt, 20), str(b.book, 20), name, amount, str(b.village, 80), str(b.mobile, 60), str(b.note, 200)]);
+  res.json({ ok: true });
+});
+
+router.delete('/donation-rows/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const row = query(`SELECT list_id, amount FROM shete_donations WHERE id = ?`, [id])[0];
+  if (!row) return res.status(404).json({ error: 'नोंद सापडली नाही.' });
+  shiftRounded(row.list_id, -row.amount);
+  run(`DELETE FROM shete_donations WHERE id = ?`, [id]);
   res.json({ ok: true });
 });
 

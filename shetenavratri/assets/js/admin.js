@@ -79,6 +79,8 @@
       document.getElementById('uniqueTab').style.display = tab === 'unique' ? 'block' : 'none';
       document.getElementById('waTab').style.display = tab === 'wa' ? 'block' : 'none';
       document.getElementById('linksTab').style.display = tab === 'links' ? 'block' : 'none';
+      document.getElementById('donationsTab').style.display = tab === 'donations' ? 'block' : 'none';
+      if (tab === 'donations') loadDonationLists();
       if (tab === 'links') loadLinks();
       if (tab === 'approved') loadGalleryApproved();
       if (tab === 'roster') loadRoster();
@@ -1137,6 +1139,322 @@
     loadMembersPending();
     loadTrees();
   }
+
+  // ---- देणगी यादी (donor lists) ----
+  // The CSV is the one made from the handwritten receipt sheets: a title line,
+  // "भाग १ …" / "भाग २ …" headings, a header row, data rows (पावती क्र. numeric),
+  // sub-total rows and an "अंतिम एकूण" row. Only data rows and the final
+  // figure are kept; every total is recomputed from the rows.
+  const donSelect = document.getElementById('donSelect');
+  const donView = document.getElementById('donView');
+  const donEmpty = document.getElementById('donEmpty');
+  let donCurrent = null;
+  const DON_SEC = { 1: 'भाग १ — सभासद यादीतील देणगीदार', 2: 'भाग २ — सभासद यादीत नसलेले देणगीदार',
+    3: 'भाग ३ — GPay द्वारे थेट खात्यात जमा (ऑनलाइन)' };
+  const DON_NUM = { 1: '१', 2: '२', 3: '३' };
+
+  function inr(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+  function donSum(rows) { return rows.reduce(function (t, r) { return t + (Number(r.amount) || 0); }, 0); }
+
+  function parseDonationCsv(text) {
+    const lines = parseCsv(text.replace(/^﻿/, ''));
+    let title = '', section = 1, rounded = null;
+    const rows = [];
+    lines.forEach(function (c) {
+      const cells = c.map(function (x) { return (x || '').trim(); });
+      const first = cells[0] || '';
+      if (!cells.some(Boolean)) return;
+      if (/^भाग\s*(३|3)/.test(first)) { section = 3; return; }
+      if (/^भाग\s*(२|2)/.test(first)) { section = 2; return; }
+      if (/^भाग\s*(१|1)/.test(first)) { section = 1; return; }
+      const label = cells.slice(0, 4).join(' ');
+      if (/अंतिम\s*एकूण/.test(label)) { const v = parseInt((cells[4] || '').replace(/[^\d-]/g, ''), 10); if (!isNaN(v)) rounded = v; return; }
+      if ((/^\d+$/.test(cells[1] || '') || (section === 3 && /^\d+$/.test(first))) && cells[3]) {
+        rows.push({ section: section, receipt: cells[1], book: cells[2], name: cells[3],
+          amount: parseInt((cells[4] || '').replace(/[^\d]/g, ''), 10) || 0,
+          village: cells[5] || '', mobile: cells[6] || '', note: cells[7] || '' });
+        return;
+      }
+      if (!title && !rows.length && cells.filter(Boolean).length === 1 && !/^अ\.?क्र/.test(first)) title = first;
+    });
+    return { title: title, roundedTotal: rounded, rows: rows };
+  }
+
+  document.getElementById('donImportBtn').addEventListener('click', function () {
+    const msg = document.getElementById('donImportMsg');
+    const f = document.getElementById('donFile').files[0];
+    if (!f) { msg.textContent = 'आधी CSV फाईल निवडा.'; msg.className = 'roster-msg error'; return; }
+    f.text().then(function (text) {
+      const parsed = parseDonationCsv(text);
+      if (!parsed.rows.length) throw new Error('CSV मध्ये एकही नोंद सापडली नाही.');
+      if (!parsed.title) parsed.title = f.name.replace(/\.csv$/i, '');
+      return api('/api/shete-admin/donations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(parsed)
+      }).then(function (res) {
+        if (!res.ok) throw new Error(res.body.error || 'आयात अयशस्वी.');
+        msg.textContent = '✓ ' + parsed.rows.length + ' नोंदी आयात झाल्या.';
+        msg.className = 'roster-msg success';
+        document.getElementById('donFile').value = '';
+        loadDonationLists(res.body.id);
+      });
+    }).catch(function (e) {
+      if (e.message === 'unauthorized') return;
+      msg.textContent = e.message; msg.className = 'roster-msg error';
+    });
+  });
+
+  function loadDonationLists(selectId) {
+    api('/api/shete-admin/donations').then(function (res) {
+      const lists = res.body || [];
+      donSelect.innerHTML = lists.map(function (l) {
+        return '<option value="' + l.id + '">' + escapeHtml(l.title) + ' (' + l.count + ' नोंदी)</option>';
+      }).join('');
+      donEmpty.style.display = lists.length ? 'none' : 'block';
+      donSelect.parentElement.style.display = lists.length ? 'flex' : 'none';
+      if (!lists.length) { donView.style.display = 'none'; donCurrent = null; return; }
+      const want = selectId || (donCurrent && donCurrent.id) || lists[0].id;
+      donSelect.value = lists.some(function (l) { return l.id === want; }) ? want : lists[0].id;
+      loadDonation(Number(donSelect.value));
+    }).catch(function () {});
+  }
+
+  function loadDonation(id) {
+    api('/api/shete-admin/donations/' + id).then(function (res) {
+      if (!res.ok) return;
+      donCurrent = res.body;
+      renderDonation();
+    }).catch(function () {});
+  }
+
+  donSelect.addEventListener('change', function () { loadDonation(Number(donSelect.value)); });
+
+  document.getElementById('donDelete').addEventListener('click', function () {
+    if (!donCurrent || !confirm('"' + donCurrent.title + '" ही संपूर्ण यादी हटवायची?')) return;
+    api('/api/shete-admin/donations/' + donCurrent.id, { method: 'DELETE' }).then(function () {
+      donCurrent = null; loadDonationLists();
+    }).catch(function () {});
+  });
+
+  document.getElementById('donMetaSave').addEventListener('click', function () {
+    const msg = document.getElementById('donMetaMsg');
+    api('/api/shete-admin/donations/' + donCurrent.id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: document.getElementById('donTitle').value, roundedTotal: document.getElementById('donRounded').value })
+    }).then(function (res) {
+      msg.textContent = res.ok ? '✓ जतन केले.' : (res.body.error || 'जतन अयशस्वी.');
+      msg.className = 'roster-msg ' + (res.ok ? 'success' : 'error');
+      if (res.ok) loadDonationLists(donCurrent.id);
+    }).catch(function () {});
+  });
+
+  function donTotals(d) {
+    const s1 = d.rows.filter(function (r) { return r.section === 1; });
+    const s2 = d.rows.filter(function (r) { return r.section === 2; });
+    const s3 = d.rows.filter(function (r) { return r.section === 3; });
+    const total = donSum(d.rows);
+    const final = d.roundedTotal == null ? total : d.roundedTotal;
+    return { s1: s1, s2: s2, s3: s3, total: total, final: final, round: final - total };
+  }
+
+  function renderDonation() {
+    const d = donCurrent;
+    const t = donTotals(d);
+    donView.style.display = 'block';
+    document.getElementById('donTitle').value = d.title;
+    document.getElementById('donRounded').value = d.roundedTotal == null ? '' : d.roundedTotal;
+    document.getElementById('donMetaMsg').textContent = '';
+    document.getElementById('donSummary').textContent =
+      d.rows.length + ' देणगीदार · भाग १: ' + t.s1.length + ' · भाग २: ' + t.s2.length + ' · भाग ३ (GPay): ' + t.s3.length + ' · अंतिम एकूण ' + inr(t.final);
+    function table(sec, rows) {
+      if (!rows.length) return '';
+      return '<div class="don-sec"><h3>' + DON_SEC[sec] + '</h3><div class="don-scroll"><table class="don-table">' +
+        '<tr><th>अ.क्र.</th><th>पावती</th><th>नाव</th><th class="amt">रक्कम</th><th>गाव</th><th>मोबाईल</th><th>टीप</th><th></th></tr>' +
+        rows.map(function (r, i) {
+          return '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(r.receipt) + '</td><td>' + escapeHtml(r.name) + '</td>' +
+            '<td class="amt">' + inr(r.amount) + '</td><td>' + escapeHtml(r.village) + '</td><td>' + escapeHtml(r.mobile) + '</td>' +
+            '<td class="note">' + escapeHtml(r.note) + '</td>' +
+            '<td><select class="don-move" data-id="' + r.id + '" title="भाग बदला">' +
+              [1, 2, 3].map(function (k) {
+                return '<option value="' + k + '"' + (k === sec ? ' selected' : '') + '>भाग ' + DON_NUM[k] + '</option>';
+              }).join('') + '</select> ' +
+              '<button class="don-del-row" data-id="' + r.id + '" title="नोंद हटवा">✕</button></td></tr>';
+        }).join('') +
+        '<tr class="sub"><td></td><td></td><td>उप-एकूण</td><td class="amt">' + inr(donSum(rows)) + '</td><td colspan="4"></td></tr>' +
+        '</table></div></div>';
+    }
+    document.getElementById('donTables').innerHTML = table(1, t.s1) + table(2, t.s2) + table(3, t.s3) +
+      '<div class="don-total"><div><span>एकूण</span><span>' + inr(t.total) + '</span></div>' +
+      (t.round ? '<div><span>राउंड ऑफ</span><span>' + (t.round > 0 ? '+' : '−') + inr(Math.abs(t.round)) + '</span></div>' : '') +
+      '<div class="final"><span>अंतिम एकूण</span><span>' + inr(t.final) + '</span></div></div>';
+  }
+
+  document.getElementById('donTables').addEventListener('change', function (e) {
+    const sel = e.target.closest('.don-move');
+    if (!sel) return;
+    sel.disabled = true;
+    api('/api/shete-admin/donation-rows/' + sel.dataset.id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: Number(sel.value) })
+    }).then(function () { loadDonation(donCurrent.id); }).catch(function () {});
+  });
+
+  document.getElementById('donTables').addEventListener('click', function (e) {
+    const b = e.target.closest('.don-del-row');
+    if (!b || !confirm('ही नोंद हटवायची?')) return;
+    api('/api/shete-admin/donation-rows/' + b.dataset.id, { method: 'DELETE' })
+      .then(function () { loadDonation(donCurrent.id); }).catch(function () {});
+  });
+
+  // Add one donor to the open list — e.g. a GPay payment straight into the
+  // account, which has no paper receipt (भाग ३).
+  document.getElementById('donAddBtn').addEventListener('click', function () {
+    const msg = document.getElementById('donAddMsg');
+    const v = function (id) { return document.getElementById(id).value.trim(); };
+    api('/api/shete-admin/donations/' + donCurrent.id + '/rows', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section: Number(v('donAddSection')), name: v('donAddName'), village: v('donAddVillage'),
+        mobile: v('donAddMobile'), amount: v('donAddAmount'), receipt: v('donAddReceipt'), note: v('donAddNote') })
+    }).then(function (res) {
+      msg.textContent = res.ok ? '✓ नोंद जोडली.' : (res.body.error || 'जोडता आली नाही.');
+      msg.className = 'roster-msg ' + (res.ok ? 'success' : 'error');
+      if (!res.ok) return;
+      ['donAddName', 'donAddVillage', 'donAddMobile', 'donAddAmount', 'donAddReceipt'].forEach(function (id) { document.getElementById(id).value = ''; });
+      loadDonationLists(donCurrent.id);
+    }).catch(function () {});
+  });
+
+  function donFileName(ext) {
+    // ASCII only: Chrome drops a Devanagari download name and saves "download".
+    const dev = '०१२३४५६७८९';
+    const digits = (donCurrent.title || '').replace(/[०-९]/g, function (c) { return dev.indexOf(c); });
+    const year = (digits.match(/20\d\d/) || [])[0];
+    return 'devangi-yadi-' + (year || donCurrent.id) + '.' + ext;
+  }
+
+  function downloadBlob(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // Same layout as the uploaded CSV, so it can be re-imported; BOM so Excel
+  // shows Devanagari.
+  document.getElementById('donCsv').addEventListener('click', function () {
+    const d = donCurrent, t = donTotals(d);
+    const q = function (v) { v = (v == null ? '' : String(v)); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const head = 'अ.क्र.,पावती क्र.,बुक नं.,सदस्याचे नाव,देणगी (₹),गाव,मोबाईल नंबर,टीप';
+    const out = [q(d.title), ''];
+    [[1, t.s1], [2, t.s2], [3, t.s3]].forEach(function (p) {
+      if (!p[1].length) return;
+      out.push(q(DON_SEC[p[0]]), head);
+      p[1].forEach(function (r, i) {
+        out.push([i + 1, r.receipt, r.book, r.name, r.amount, r.village, r.mobile, r.note].map(q).join(','));
+      });
+      out.push(',,,' + q('उप-एकूण (भाग ' + DON_NUM[p[0]] + ')') + ',' + donSum(p[1]) + ',,,', '');
+    });
+    out.push(',,,एकूण,' + t.total + ',,,');
+    if (t.round) out.push(',,,राउंड ऑफ,' + t.round + ',,,');
+    out.push(',,,अंतिम एकूण,' + t.final + ',,,');
+    downloadBlob(new Blob(['﻿' + out.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }), donFileName('csv'));
+  });
+
+  // A shareable picture of the list (WhatsApp etc.), drawn on a canvas at 2x
+  // like the family-tree PNG. Mobiles are off by default — it gets forwarded.
+  function donationCanvas(d, withMobile) {
+    const FONT = "'Noto Sans Devanagari','Poppins',sans-serif";
+    const t = donTotals(d);
+    const W = 900, PAD = 28, ROW = 30, S = 2;
+    const cols = [
+      { k: 'n', h: 'अ.क्र.', w: 54 }, { k: 'receipt', h: 'पावती', w: 66 },
+      { k: 'name', h: 'नाव', w: withMobile ? 250 : 360 }, { k: 'village', h: 'गाव', w: withMobile ? 130 : 200 }
+    ];
+    if (withMobile) cols.push({ k: 'mobile', h: 'मोबाईल', w: 200 });
+    cols.push({ k: 'amount', h: 'रक्कम', w: 0, right: true });
+    const used = cols.reduce(function (s, c) { return s + c.w; }, 0);
+    cols[cols.length - 1].w = W - 2 * PAD - used;
+    const secs = [[1, t.s1], [2, t.s2], [3, t.s3]].filter(function (p) { return p[1].length; });
+    const totalLines = 2 + (t.round ? 1 : 0);
+    const H = 120 + secs.reduce(function (h, p) { return h + 44 + ROW + p[1].length * ROW + ROW + 16; }, 0) + totalLines * 32 + 60;
+
+    const cv = document.createElement('canvas');
+    cv.width = W * S; cv.height = H * S;
+    const ctx = cv.getContext('2d');
+    ctx.scale(S, S);
+    ctx.fillStyle = '#fffaf2'; ctx.fillRect(0, 0, W, H);
+    const g = ctx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, '#7a1024'); g.addColorStop(1, '#520a19');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 92);
+    ctx.fillStyle = '#e8b04b'; ctx.fillRect(0, 92, W, 4);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#f6d98b'; ctx.font = '700 15px ' + FONT;
+    ctx.fillText('॥ शेटे परिवार नवरात्री ॥', W / 2, 26);
+    ctx.fillStyle = '#fff'; ctx.font = '800 21px ' + FONT;
+    let title = d.title;
+    while (ctx.measureText(title).width > W - 2 * PAD && title.length > 10) title = title.slice(0, -2);
+    if (title !== d.title) title += '…';
+    ctx.fillText(title, W / 2, 62);
+
+    function cell(text, x, w, y, right, font, color) {
+      ctx.font = font; ctx.fillStyle = color;
+      let s = String(text == null ? '' : text);
+      while (s.length > 1 && ctx.measureText(s).width > w - 12) s = s.slice(0, -1);
+      ctx.textAlign = right ? 'right' : 'left';
+      ctx.fillText(s, right ? x + w - 8 : x + 8, y);
+    }
+    let y = 116;
+    secs.forEach(function (p) {
+      ctx.textAlign = 'left'; ctx.fillStyle = '#7a1024'; ctx.font = '800 16px ' + FONT;
+      ctx.fillText(DON_SEC[p[0]], PAD, y + 14);
+      y += 34;
+      ctx.fillStyle = '#7a1024'; ctx.fillRect(PAD, y, W - 2 * PAD, ROW);
+      let x = PAD;
+      cols.forEach(function (c) { cell(c.h, x, c.w, y + ROW / 2, c.right, '700 13px ' + FONT, '#fff'); x += c.w; });
+      y += ROW;
+      p[1].forEach(function (r, i) {
+        ctx.fillStyle = i % 2 ? '#fdf1df' : '#ffffff'; ctx.fillRect(PAD, y, W - 2 * PAD, ROW);
+        let cx = PAD;
+        cols.forEach(function (c) {
+          const v = c.k === 'n' ? i + 1 : c.k === 'amount' ? inr(r.amount) : r[c.k];
+          cell(v, cx, c.w, y + ROW / 2, c.right, (c.k === 'name' ? '600 ' : '400 ') + '13.5px ' + FONT, '#3a2a22');
+          cx += c.w;
+        });
+        y += ROW;
+      });
+      ctx.fillStyle = '#f6d98b'; ctx.fillRect(PAD, y, W - 2 * PAD, ROW);
+      cell('उप-एकूण (' + p[1].length + ' देणगीदार)', PAD + cols[0].w + cols[1].w, 300, y + ROW / 2, false, '700 13.5px ' + FONT, '#520a19');
+      const last = cols[cols.length - 1];
+      cell(inr(donSum(p[1])), W - PAD - last.w, last.w, y + ROW / 2, true, '800 14px ' + FONT, '#520a19');
+      ctx.strokeStyle = '#e2d3c0'; ctx.lineWidth = 1;
+      ctx.strokeRect(PAD + 0.5, y - p[1].length * ROW - ROW + 0.5, W - 2 * PAD - 1, (p[1].length + 2) * ROW - 1);
+      y += ROW + 16;
+    });
+    const BX = W - PAD - 360;
+    function totalLine(label, val, big) {
+      ctx.font = (big ? '800 18px ' : '600 15px ') + FONT; ctx.fillStyle = big ? '#7a1024' : '#3a2a22';
+      ctx.textAlign = 'left'; ctx.fillText(label, BX, y + 14);
+      ctx.textAlign = 'right'; ctx.fillText(val, W - PAD - 8, y + 14);
+      y += 32;
+    }
+    totalLine('एकूण', inr(t.total));
+    if (t.round) totalLine('राउंड ऑफ', (t.round > 0 ? '+' : '−') + inr(Math.abs(t.round)));
+    ctx.fillStyle = '#e8b04b'; ctx.fillRect(BX, y - 2, W - PAD - BX, 2);
+    totalLine('अंतिम एकूण', inr(t.final), true);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#9a8070'; ctx.font = '400 11px ' + FONT;
+    ctx.fillText('शेटे परिवार नवरात्री — देणगी यादी', W / 2, H - 18);
+    return cv;
+  }
+
+  document.getElementById('donPng').addEventListener('click', function () {
+    const withMobile = document.getElementById('donPngMobile').checked;
+    Promise.all([
+      document.fonts.load("700 16px 'Noto Sans Devanagari'"),
+      document.fonts.load("400 16px 'Noto Sans Devanagari'")
+    ]).catch(function () {}).then(function () { return document.fonts.ready; }).then(function () {
+      donationCanvas(donCurrent, withMobile).toBlob(function (b) { downloadBlob(b, donFileName('png')); }, 'image/png');
+    });
+  });
 
   // ---- Boot ----
   if (token()) {

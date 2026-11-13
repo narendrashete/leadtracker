@@ -53,6 +53,12 @@ Express (backend/server.js)
    ├── /api/kulgaon-admin (requireAuth + requireAdmin — approve suggestions, edit/load the list)
    ├── /kulgaon       (public, noindex — serves kulgaon/index.html verbatim, no build step)
    ├── /kulgaon/admin (admin login page — kulgaon/admin.html; /kulgaon/common.js shared by both)
+   ├── /api/nakayatra (public — one member's answer, gated by their personal code)
+   ├── /api/nakayatra-admin (requireAuth + requireAdmin — members, codes, freeze)
+   ├── /nakayatra/<code> (public, noindex — nakayatra/index.html, the member's Yes/No page)
+   ├── /nakayatra/admin (admin login page — nakayatra/admin.html)
+   ├── /api/nakayatra/list (public — final travellers list, one shared code, open corrections)
+   ├── /nakayatra/list/<code> (public, noindex — nakayatra/list.html)
    └── static frontend/dist + SPA fallback
    │
    ▼
@@ -680,6 +686,53 @@ page `/kulgaon/admin` (the only place anything changes).
 - `X-Robots-Tag: noindex` on the pages and API. Public page counted in Visitors as
   `kulgaon` (aggregate, hashed — see Visitor Counting); the admin page is not counted.
 
+## Naka Family yatra poll (/nakayatra)
+A ninth app sharing this process: a Yes/No consent poll for the Naka Family WhatsApp group's
+February 2027 yatra. Admin page `/nakayatra/admin` (Lead Tracker admin accounts, token in
+`lt_token`) and one member page served at `/nakayatra/<code>`.
+- **Personal codes are the access control.** Each member row gets `NF` + 7 random digits
+  (`crypto.randomInt`, unique). Only `/api/nakayatra-admin` ever returns codes; the public
+  `/api/nakayatra/:code` answers only as that member and never lists codes. Wrong-code
+  lookups are capped at 30 per IP per hour (in memory).
+- **Others' answers are hidden until the member answers** (or the poll is frozen) — the
+  owner's design, so people answer for themselves first.
+- **Freeze** (`nakayatra_settings.frozen = '1'`) blocks every change (409) and shows the
+  final list. Reopen is allowed.
+- **Names are not in git** (public repo): the admin pastes them on the page; a pasted
+  "Sr. No. / Name" header and leading list numbers are stripped, duplicates skipped.
+- Route order matters: `/nakayatra/admin` is registered before `/nakayatra/:code`.
+- WhatsApp sharing is `https://wa.me/?text=…` — WhatsApp asks which chat to send it to.
+- **Final travellers list** (`/nakayatra/list/<code>`, `routes/nakayatraList.js`, table
+  `nakayatra_final`): the joining members' name, Aadhaar, age (Feb 2027) and mobile, which
+  the members check and correct themselves. **No approval, by the owner's explicit choice**
+  ("members are trustworthy") — anyone with the group link can correct any row; don't add
+  an approval queue. Each change sets `corrected_at` (IST, `Asia/Kolkata`, not server time)
+  and `corrected_fields`, and appends old → new to `history`; the admin's CSV download
+  carries the flag, fields, time and history. One shared code per list (`list_code` in
+  `nakayatra_settings`, 12 hex chars), separate from the personal poll codes; the admin can
+  lock the list (`list_locked`). **Full Aadhaar numbers never reach the group link** — it
+  gets `XXXX XXXX 1234`, and a member re-types all 12 digits only to change it. The one
+  exception is the **booking link** (below). Data is
+  loaded once by pasting rows on the admin page (import refuses if rows exist, so it can't
+  wipe corrections); it is never committed. Mobiles are stored in one canonical spelling
+  (`+91 98201 01355`) so re-saving the same number differently is not flagged.
+  `/api/nakayatra/list` is mounted before `/api/nakayatra`.
+- **Darshan booking details** (added 2026-11-05): `nakayatra_final.gothram` (NULL = group
+  default `DEFAULT_GOTHRAM`, "Kashyap", in `routes/nakayatraList.js`; saving the default is not
+  a correction). The group-wide booking values (darshan date, state, city, pincode) live in
+  `BOOKING` in the same file and reach both pages through the API — edit them there, not in
+  the HTML. Both pages have copy buttons for the TTD booking form; mobile copies as 10 digits.
+  Full Aadhaar digits can be copied in two places only: the **admin page's "Darshan booking
+  helper"**, and the **booking link** — the same `list.html` opened with a second code,
+  `booking_code` in `nakayatra_settings` (12 hex), which the admin creates/replaces on the
+  admin page (`POST /api/nakayatra-admin/final/booking-link`) and sends one-to-one to the
+  trusted members doing the booking. `checkCode()` sets `req.booker` for that code, and only
+  then does `publicRow()` add `aadhaarFull`. The owner asked for this so the bookers can copy
+  Aadhaar; keep it off the group link (`list_code`), which the whole WhatsApp group has.
+  Replacing the booking code kills the old booking link at once. The yatra schedule
+  image is `nakayatra/schedule.jpg`, served at `/nakayatra/schedule.jpg` (registered before
+  `/nakayatra/:code`); it holds no personal data, so it is committed.
+
 ## Family tree — sibling order
 Every tree node renders its children left-to-right in `n.children` array order; a small
 numbered badge (`.ft-seq`, purple, distinct from the blue सभासद-number badge and the green WA
@@ -701,6 +754,27 @@ admin types the wanted order, save computes the new id order and posts it.
 - Writes both `data` and `published` on every row it touches, unconditionally — matching the
   `/copy` route's own convention — since this is an admin action, not a member's own edit that
   should wait for approval.
+
+## Shete Navratri donor lists (admin "देणगी यादी" tab)
+Admin-only lists of who paid the yearly सभासद वर्गणी, transcribed from the handwritten receipt
+sheets. Names, mobiles and amounts of private people, so — like Kulgaon — **never in git**:
+the admin uploads the CSV on the tab and it lives in leads.db (`shete_donation_lists` for title
++ `rounded_total`, `shete_donations` for rows with `section` 1 = on the सभासद यादी, 2 = not yet,
+3 = paid by GPay straight into the account, no paper receipt).
+- The CSV is parsed in the browser (`parseDonationCsv` in `admin.js`): "भाग १"/"भाग २" heading
+  lines switch the section, a row with a numeric पावती क्र. is a donor, the "अंतिम एकूण" row
+  gives `rounded_total`; sub-totals in the file are ignored and always recomputed. Each upload
+  is a new list (one per year/collector); the CSV download writes the same layout back, so it
+  re-imports.
+- `rounded_total` is the figure as written on the sheet (round-off at the total, by the
+  owner's choice); NULL means the plain sum. Round-off = final − sum, shown only when non-zero.
+  Adding, deleting or re-pricing a row on the tab (`POST /donations/:id/rows`, `DELETE`/`PATCH
+  /donation-rows/:id`) shifts `rounded_total` by the same amount (`shiftRounded`), so the
+  round-off stays what it was and is never silently absorbed by a new payment.
+- The PNG is drawn on a canvas at 2x (same approach as the family-tree PNG). Mobiles are left
+  out unless the admin ticks the box — the image is made to be forwarded. Download names are
+  ASCII (`devangi-yadi-<year>.csv/png`): Chrome silently renames a Devanagari download name
+  to "download".
 
 ## Shete Parivar Navratri — installable app (/shetenavratri/app)
 Installable (Add to Home Screen) and offline-shell-capable, the same distribution model as
@@ -912,7 +986,8 @@ at `https://leadtracker.primecomputers.co.in/kinetic-gem` (installable copy at
 `/kinetic-gem/app`), and Shete Parivar Navratri at
 `https://leadtracker.primecomputers.co.in/shetenavratri` (installable copy at
 `/shetenavratri/app`), and the Kulgaon gat member list at
-`https://leadtracker.primecomputers.co.in/kulgaon`. All three installable apps cache themselves on the devices that
+`https://leadtracker.primecomputers.co.in/kulgaon`, and the Naka Family yatra poll at
+`https://leadtracker.primecomputers.co.in/nakayatra/admin`. All three installable apps cache themselves on the devices that
 installed them, so shipping a change to any of them means bumping its `CACHE_VERSION` in the
 matching `sw.js` — without that, installed phones keep serving the version they cached, however
 many times you redeploy. The **Calendar Links** admin

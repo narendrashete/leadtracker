@@ -468,6 +468,35 @@ async function getDb() {
     )
   `);
 
+  // Shete Navratri donor lists (देणगी यादी), admin-only. Private people's
+  // names, mobiles and amounts, so never in git: the admin uploads a CSV and
+  // it lives here. One list per upload (a year/collector); section 1 = on the
+  // सभासद यादी, 2 = not (yet). rounded_total is the final figure as written
+  // on the sheet (round-off at the total), NULL = plain sum.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_donation_lists (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL DEFAULT '',
+      rounded_total INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS shete_donations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      list_id INTEGER NOT NULL,
+      section INTEGER NOT NULL DEFAULT 1,
+      sort INTEGER NOT NULL DEFAULT 0,
+      receipt TEXT NOT NULL DEFAULT '',
+      book TEXT NOT NULL DEFAULT '',
+      name TEXT NOT NULL DEFAULT '',
+      amount INTEGER NOT NULL DEFAULT 0,
+      village TEXT NOT NULL DEFAULT '',
+      mobile TEXT NOT NULL DEFAULT '',
+      note TEXT NOT NULL DEFAULT ''
+    )
+  `);
+
   // Thigdam — the friends' group photo album at /thigdam. One row per photo;
   // the photo itself (original bytes, never re-encoded) and its small preview
   // are files in thigdam-data/photos, not blobs here, because run() rewrites
@@ -525,6 +554,52 @@ async function getDb() {
       result_sr INTEGER
     )
   `);
+
+  // Naka Family yatra consent poll at /nakayatra. One row per invited member;
+  // `code` is that member's personal link (/nakayatra/<code>) and is the only
+  // thing that lets anyone answer as them. Names are entered through the admin
+  // page, never committed (this repo is public). nakayatra_settings holds the
+  // freeze flag (key 'frozen', '1' = answers closed).
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      code TEXT NOT NULL UNIQUE,
+      response TEXT,
+      responded_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )
+  `);
+  // The yatra's final travellers list (/nakayatra/list/<code>): ID details the
+  // members check and correct themselves, no approval. Loaded by the admin
+  // (paste), never committed — Aadhaar numbers, public repo. corrected_at /
+  // corrected_fields flag a member's change; history keeps old → new values
+  // for the admin's download only.
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_final (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sr INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      aadhaar TEXT,
+      age INTEGER,
+      mobile TEXT,
+      corrected_at TEXT,
+      corrected_fields TEXT,
+      history TEXT
+    )
+  `);
+  _db.run(`
+    CREATE TABLE IF NOT EXISTS nakayatra_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `);
+
+  // Gothram for the TTD darshan booking form, added after the list was loaded.
+  // NULL means the group default (Kashyap, set in routes/nakayatraList.js).
+  try {
+    _db.run(`ALTER TABLE nakayatra_final ADD COLUMN gothram TEXT`);
+  } catch { /* column already exists */ }
 
   // Optional second number for calling, when a member's WhatsApp number isn't
   // the one they want calls on. Databases predating it get the column here.

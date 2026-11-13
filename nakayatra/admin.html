@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Naka Yatra – Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF6EE; --card:#FFFFFF; --ink:#2B2118; --muted:#7A6A5A; --line:#EADFCF;
+    --brand:#B4471E; --brand-dark:#8A3416; --brand-soft:#FBE7DA;
+    --yes:#1E7A4C; --yes-soft:#E1F3E8; --no:#B42318; --no-soft:#FDE6E3;
+    --pend:#8A6D1E; --pend-soft:#FBF1D6; --wa:#1FA855;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Mukta',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.45}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+  header.hero{background:linear-gradient(135deg,var(--brand) 0%,#D9762B 100%);color:#fff;border-radius:18px;padding:22px 20px 20px;position:relative;overflow:hidden}
+  header.hero:after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.9;font-weight:600}
+  .hero h1{margin:4px 0 2px;font-size:26px;line-height:1.15;font-weight:700}
+  .hero p{margin:0;opacity:.92}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+  .greet{font-size:15px;color:var(--muted);margin:0}
+  .name{font-size:24px;font-weight:700;margin:0 0 10px}
+  .q{font-size:18px;font-weight:600;margin:0 0 14px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .choice{border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px 10px;font:inherit;font-size:19px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--ink)}
+  .choice small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+  .choice.yes:hover,.choice.yes.on{border-color:var(--yes);background:var(--yes-soft);color:var(--yes)}
+  .choice.no:hover,.choice.no.on{border-color:var(--no);background:var(--no-soft);color:var(--no)}
+  .choice:disabled{cursor:not-allowed;opacity:.6}
+  .choice.on{opacity:1!important}
+  .note{font-size:14px;color:var(--muted);margin:12px 0 0}
+  .banner{border-radius:12px;padding:10px 14px;font-weight:600;margin-top:16px;font-size:15px}
+  .banner.frozen{background:#EEF2F7;color:#344054;border:1px solid #D0D5DD}
+  .banner.ok{background:var(--yes-soft);color:var(--yes)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .stat{border-radius:12px;padding:10px 8px;text-align:center}
+  .stat b{display:block;font-size:26px;line-height:1.1}
+  .stat span{font-size:13px;font-weight:600}
+  .s-yes{background:var(--yes-soft);color:var(--yes)} .s-no{background:var(--no-soft);color:var(--no)}
+  .s-pend{background:var(--pend-soft);color:var(--pend)} .s-tot{background:var(--brand-soft);color:var(--brand-dark)}
+  .bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-top:12px;background:var(--line)}
+  .bar i{display:block;height:100%}
+  h2{font-size:18px;margin:0 0 12px}
+  .list{list-style:none;margin:0;padding:0}
+  .list li{display:flex;align-items:center;gap:10px;padding:10px 2px;border-top:1px solid var(--line)}
+  .list li:first-child{border-top:0}
+  .sr{width:26px;color:var(--muted);font-size:14px;text-align:right;flex:none}
+  .who{flex:1;min-width:0}
+  .who .n{font-weight:600}
+  .who .t{font-size:12.5px;color:var(--muted)}
+  .me-row{background:var(--brand-soft);border-radius:10px;padding-left:8px!important;padding-right:8px!important}
+  .pill{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;flex:none}
+  .p-yes{background:var(--yes-soft);color:var(--yes)} .p-no{background:var(--no-soft);color:var(--no)} .p-pend{background:var(--pend-soft);color:var(--pend)}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .btn-wa{background:var(--wa);color:#fff}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-lg{padding:12px 16px;font-size:16px}
+  .btn-freeze{background:#344054;color:#fff}
+  .btn-open{background:var(--brand);color:#fff}
+  .acts{display:flex;gap:6px;flex:none}
+  .row-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  .err{background:var(--no-soft);color:var(--no);border-radius:12px;padding:14px;font-weight:600}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  .demo{background:#FFF8D6;border:1px dashed #D9B84A;color:#6B5310;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+  @media (max-width:560px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .hero h1{font-size:22px}
+    .admin li{flex-wrap:wrap}
+    .admin .acts{width:100%;padding-left:36px}
+    .admin .acts .btn{flex:1}
+  }
+  input[type=text],input[type=password],textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:160px;resize:vertical}
+  label{display:block;font-weight:600;font-size:14px;margin:10px 0 4px}
+  .msg{font-size:14px;margin-top:8px;min-height:1em} .msg.error{color:var(--no)} .msg.ok{color:var(--yes)}
+  .btn-x{background:#fff;border:1px solid var(--line);color:var(--no)}
+  .topbar{display:flex;justify-content:flex-end;margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{border:1px solid var(--line);background:var(--brand-soft);color:var(--brand-dark);border-radius:999px;padding:5px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .chip.done{background:var(--yes-soft);color:var(--yes);border-color:var(--yes)}
+  .bk{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line)}
+  .bk:first-of-type{border-top:0}
+  .bk .k{width:110px;flex:none;color:var(--muted);font-size:14px}
+  .bk .v{flex:1;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><button class="btn btn-ghost" id="logoutBtn" style="display:none">Log out</button></div>
+  <header class="hero"><div class="eyebrow">🙏 February 2027</div><h1>Naka Family Yatra</h1><p>Admin panel · send links and track responses</p></header>
+
+  <section class="card" id="loginView" style="display:none">
+    <h2>Admin login</h2>
+    <p class="note" style="margin-top:0">Use your Lead Tracker admin account.</p>
+    <form id="loginForm">
+      <label for="loginUser">Username</label><input type="text" id="loginUser" autocomplete="username" required>
+      <label for="loginPass">Password</label><input type="password" id="loginPass" autocomplete="current-password" required>
+      <button class="btn btn-lg btn-open" type="submit" style="width:100%;margin-top:14px">Log in</button>
+      <div class="msg error" id="loginMsg"></div>
+    </form>
+  </section>
+
+  <div id="finalView" style="display:none"></div>
+  <div id="appView" style="display:none"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var TITLE = 'Naka Family Yatra', EVENT = 'February 2027';
+  var TOKEN_KEY = 'lt_token'; // shared with the Lead Tracker SPA and the other admin pages
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function () { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } },
+    set: function (v) { try { v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+  };
+  var view = $('appView'), filter = 'all', state = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2000); }
+  function pill(r) { return r === 'Yes' ? '<span class="pill p-yes">✓ Yes</span>' : r === 'No' ? '<span class="pill p-no">✕ No</span>' : '<span class="pill p-pend">Pending</span>'; }
+  function when(s) { if (!s) return ''; var d = new Date(s.replace(' ', 'T')); return isNaN(d) ? s : d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' }); }
+
+  function api(url, opts) {
+    opts = opts || {};
+    var headers = { Authorization: 'Bearer ' + store.get() };
+    if (opts.json) headers['Content-Type'] = 'application/json';
+    return fetch(url, { method: opts.method || (opts.json ? 'POST' : 'GET'), headers: headers, body: opts.json ? JSON.stringify(opts.json) : undefined })
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (!r.ok) {
+            if (r.status === 401 || r.status === 403) showLogin(r.status === 403 ? 'This account is not an admin.' : '');
+            throw new Error(j.error || 'Something went wrong.');
+          }
+          return j;
+        });
+      });
+  }
+
+  function showLogin(msg) { $('finalView').style.display = 'none'; view.style.display = 'none'; $('logoutBtn').style.display = 'none'; $('loginView').style.display = 'block'; $('loginMsg').textContent = msg || ''; }
+  function showApp() { $('loginView').style.display = 'none'; view.style.display = 'block'; $('finalView').style.display = 'block'; $('logoutBtn').style.display = 'inline-flex'; load(); loadFinal(); }
+
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: $('loginUser').value.trim(), password: $('loginPass').value }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Login failed.'); return j; }); })
+      .then(function (res) {
+        if (!res.user || res.user.role !== 'admin') return showLogin('This account is not an admin.');
+        store.set(res.token); $('loginPass').value = ''; showApp();
+      })
+      .catch(function (err) { $('loginMsg').textContent = err.message; });
+  });
+  $('logoutBtn').onclick = function () { api('/api/auth/logout', { method: 'POST' }).catch(function () {}); store.set(''); showLogin(''); };
+
+  function linkFor(m) { return location.origin + '/nakayatra/' + m.code; }
+  function waText(m) {
+    return 'Namaskar ' + m.name + ' 🙏\n\nPlease confirm whether you will join the *' + TITLE + ' – ' + EVENT + '*.\n\nTap your personal link to answer Yes / No:\n' + linkFor(m) + '\n\n(This link is only for you — please don\'t forward it.)';
+  }
+  function copy(text, done) {
+    function fallback() { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(done); } catch (e) { prompt('Copy:', text); } ta.remove(); }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { toast(done); }, fallback); else fallback();
+  }
+
+
+  // ---------------- Final travellers list ----------------
+  var fview = $('finalView'), fstate = null, parsed = null;
+  function istWhen(s) { if (!s) return ''; var d = new Date(s.replace(' ', 'T') + '+05:30'); return isNaN(d) ? s : d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  function spaced(a) { return a ? a.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : ''; }
+  function listLink() { return location.origin + '/nakayatra/list/' + fstate.code; }
+  function bookingLink() { return fstate.bookingCode ? location.origin + '/nakayatra/list/' + fstate.bookingCode : ''; }
+  function loadFinal() { return api('/api/nakayatra-admin/final').then(renderFinal).catch(function () {}); }
+
+  // Rows copied from Excel (tabs) or typed (commas): finds the name, the
+  // 12-digit Aadhaar, a 10+ digit mobile and a 1-3 digit age in any order.
+  function parseRows(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (line) {
+      var cells = line.split(/\t|,|\s{2,}/).map(function (c) { return c.trim(); }).filter(Boolean);
+      var r = { name: '', aadhaar: '', age: '', mobile: '' }, small = [];
+      cells.forEach(function (c) {
+        var d = c.replace(/\D/g, '');
+        if (/[a-z]/i.test(c) && !r.name) r.name = c.replace(/^\d+[.)]\s*/, '');
+        else if (/^[\d\s]+$/.test(c) && d.length === 12 && !r.aadhaar) r.aadhaar = d;
+        else if (/^[+\d\s()-]+$/.test(c) && d.length >= 10 && !r.mobile) r.mobile = c;
+        else if (/^\d{1,3}$/.test(c)) small.push(c);
+      });
+      if (small.length) r.age = small[small.length - 1];
+      if (r.name && !/^(name|#|sr\.?)$/i.test(r.name) && (r.aadhaar || r.mobile)) out.push(r);
+    });
+    return out;
+  }
+
+  function csvCell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function downloadCsv() {
+    var lines = [['Sr', 'Name', 'Aadhaar No.', 'Age (Feb 2027)', 'Mobile', 'Gothram', 'Corrected', 'Corrected fields', 'Corrected at (IST)', 'Change history']];
+    fstate.rows.forEach(function (r) {
+      var hist = r.history.map(function (h) { return h.at + ' ' + h.field + ': ' + (h.field === 'aadhaar' ? spaced(h.from) : h.from) + ' → ' + (h.field === 'aadhaar' ? spaced(h.to) : h.to); }).join(' | ');
+      lines.push([r.sr, r.name, spaced(r.aadhaar), r.age || '', r.mobile, r.gothram || '', r.correctedAt ? 'CORRECTED' : '', r.correctedFields.replace(/,/g, ', '), r.correctedAt, hist]);
+    });
+    var csv = '﻿' + lines.map(function (l) { return l.map(csvCell).join(','); }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'Naka_Yatra_Final_List_' + new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // Booking helper: tap a chip to copy that value for the TTD booking form.
+  // Full Aadhaar digits are copied from here only — the members' page is masked.
+  function chip(label, v) { return v ? '<button type="button" class="chip" data-copy="' + esc(v) + '">' + esc(label) + ' ⧉</button>' : ''; }
+  function mob10(s) { var d = String(s || '').replace(/\D/g, ''); return d.length > 10 ? d.slice(-10) : d; }
+  fview.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    var v = b.getAttribute('data-copy');
+    copy(v, 'Copied: ' + (v.length > 30 ? v.slice(0, 30) + '…' : v));
+    b.classList.add('done'); setTimeout(function () { b.classList.remove('done'); }, 1400);
+  });
+  function bookingCard(bk) {
+    if (!bk) return '';
+    return '<section class="card"><h2>🎟️ Darshan booking helper</h2><p class="note" style="margin-top:0">Keep this open while booking on the TTD site. Tap a value to copy it; each member\'s values are in the list below.</p>' +
+      [['Darshan date', bk.darshanDate], ['State', bk.state], ['City', bk.city], ['Pincode', bk.pincode]].map(function (r) {
+        return '<div class="bk"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span>' + chip('Copy', r[1]) + '</div>';
+      }).join('') + '</section>';
+  }
+  function renderFinal(st) {
+    fstate = st;
+    var h = '<section class="card"><h2>📋 Final list (members check &amp; correct)</h2>';
+    if (!st.rows.length) {
+      h += '<p class="note" style="margin-top:0">Open the final-list Excel file, select the members\' rows on the <b>Joining</b> tab (Name, Aadhaar, Age, Mobile) and paste them here.</p>' +
+        '<textarea id="fPaste" placeholder="Paste rows here"></textarea>' +
+        '<div id="fPreview"></div><div class="msg" id="fMsg"></div>' +
+        '<button class="btn btn-lg btn-open" id="fCheck" style="margin-top:10px;width:100%">Check pasted rows</button></section>';
+      fview.innerHTML = h;
+      $('fCheck').onclick = function () {
+        parsed = parseRows($('fPaste').value);
+        if (!parsed.length) { $('fMsg').className = 'msg error'; $('fMsg').textContent = 'No member rows found. Copy the rows with name and Aadhaar or mobile.'; return; }
+        $('fMsg').textContent = '';
+        $('fPreview').innerHTML = '<ul class="list" style="margin-top:10px">' + parsed.map(function (r, i) {
+          return '<li><span class="sr">' + (i + 1) + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' +
+            (r.aadhaar ? 'Aadhaar …' + r.aadhaar.slice(-4) : '<b style="color:var(--no)">no Aadhaar</b>') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + '</div></div></li>';
+        }).join('') + '</ul>';
+        var b = $('fCheck'); b.textContent = 'Load these ' + parsed.length + ' members';
+        b.onclick = function () {
+          b.disabled = true;
+          api('/api/nakayatra-admin/final/import', { json: { rows: parsed } }).then(function (x) { renderFinal(x); toast(x.rows.length + ' members loaded'); })
+            .catch(function (e) { b.disabled = false; $('fMsg').className = 'msg error'; $('fMsg').textContent = e.message; });
+        };
+      };
+      return;
+    }
+    var nCorr = st.rows.filter(function (r) { return r.correctedAt; }).length;
+    var wa = '🙏 *' + TITLE + ' – ' + EVENT + '*\n\n*Final list of members joining* (' + st.rows.length + ')\n\nPlease open the link, find your name and check your *Aadhaar number, name, age and mobile number*. If anything is wrong, tap "Correct my details" and save.\n\n' + listLink();
+    h += '<div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat s-tot"><b>' + st.rows.length + '</b><span>Members</span></div><div class="stat s-pend"><b>' + nCorr + '</b><span>Corrected</span></div></div>' +
+      (st.locked ? '<div class="banner frozen">🔒 Locked — members can view but not correct.</div>' : '') +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+      '<a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(wa) + '">Share in WhatsApp group</a>' +
+      '<button class="btn btn-ghost" id="fCopy">Copy link</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(listLink()) + '">Open</a>' +
+      '<button class="btn btn-open" id="fDl">⬇ Download list (Excel)</button>' +
+      '<button class="btn btn-freeze" id="fLock">' + (st.locked ? '🔓 Unlock' : '🔒 Lock list') + '</button></div>' +
+      '<div class="banner frozen" style="margin-top:12px">🔑 <b>Booking link</b> — same list with full Aadhaar numbers to copy. Send it only to the members doing the TTD booking, one to one (not to the group).' +
+      (st.bookingCode
+        ? '<div class="code" style="margin-top:6px;word-break:break-all">' + esc(bookingLink()) + '</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+          '<a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('🙏 *' + TITLE + ' – ' + EVENT + '*\n\n*Darshan booking link* (full Aadhaar numbers — please don\'t forward)\n\n' + bookingLink()) + '">Send on WhatsApp</a>' +
+          '<button class="btn btn-ghost" id="bCopy">Copy link</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(bookingLink()) + '">Open</a>' +
+          '<button class="btn btn-x" id="bNew">New link (old stops working)</button></div>'
+        : '<div style="margin-top:8px"><button class="btn btn-open" id="bNew">Create booking link</button></div>') + '</div>' +
+      '<ul class="list" style="margin-top:12px">' + st.rows.map(function (r) {
+        return '<li><span class="sr">' + r.sr + '</span><div class="who"><div class="n">' + esc(r.name) + '</div><div class="t">' + esc(spaced(r.aadhaar) || 'no Aadhaar') + ' · Age ' + esc(r.age || '—') + ' · ' + esc(r.mobile || 'no mobile') + ' · ' + esc(r.gothram || '') + '</div>' +
+          '<div class="chips">' + chip('Name', r.name) + chip('Aadhaar', r.aadhaar) + chip('Age', r.age ? String(r.age) : '') + chip('Mobile', mob10(r.mobile)) + chip('Gothram', r.gothram) + '</div>' +
+          (r.correctedAt ? '<div class="t" style="color:#8A6D1E;font-weight:700">✎ Corrected ' + esc(istWhen(r.correctedAt)) + ' (' + esc(r.correctedFields.replace(/,/g, ', ')) + ')</div>' : '') + '</div></li>';
+      }).join('') + '</ul></section>';
+    fview.innerHTML = bookingCard(st.booking) + h;
+    $('fCopy').onclick = function () { copy(listLink(), 'Link copied'); };
+    if ($('bCopy')) $('bCopy').onclick = function () { copy(bookingLink(), 'Booking link copied'); };
+    $('bNew').onclick = function () {
+      if (st.bookingCode && !confirm('Make a new booking link? The current one will stop working.')) return;
+      api('/api/nakayatra-admin/final/booking-link', { json: {} }).then(function (x) { renderFinal(x); toast('Booking link ready'); })
+        .catch(function (e) { toast(e.message); });
+    };
+    $('fDl').onclick = downloadCsv;
+    $('fLock').onclick = function () {
+      var l = !st.locked;
+      if (!confirm(l ? 'Lock the list? Members will no longer be able to correct their details.' : 'Unlock the list so members can correct their details again?')) return;
+      api('/api/nakayatra-admin/final/lock', { json: { locked: l } }).then(function (x) { renderFinal(x); toast(l ? 'List locked' : 'List unlocked'); });
+    };
+  }
+
+  function load() { return api('/api/nakayatra-admin').then(render).catch(function () {}); }
+
+  function render(st) {
+    state = st;
+    var s = st.summary, t = s.total || 1, h = '';
+    if (!st.members.length) {
+      h += '<section class="card"><h2>Add the members</h2><p class="note" style="margin-top:0">Paste the names, one per line. Each person gets their own personal link.</p>' +
+        '<textarea id="names" placeholder="Ajit Kulkarni&#10;Alankar Naik&#10;…"></textarea><button class="btn btn-lg btn-open" id="addBtn" style="margin-top:10px;width:100%">Add members</button><div class="msg" id="addMsg"></div></section>';
+      view.innerHTML = h; wireAdd(); return;
+    }
+    h += '<section class="card"><div class="row-top"><h2 style="margin:0">' + (st.frozen ? '🔒 Final summary' : 'Live summary') + '</h2>' +
+      '<button class="btn btn-lg btn-freeze" id="freeze">' + (st.frozen ? '🔓 Reopen responses' : '🔒 Freeze responses') + '</button></div>' +
+      '<div style="margin-top:12px"><div class="stats"><div class="stat s-yes"><b>' + s.yes + '</b><span>Joining</span></div><div class="stat s-no"><b>' + s.no + '</b><span>Not joining</span></div>' +
+      '<div class="stat s-pend"><b>' + s.pending + '</b><span>Pending</span></div><div class="stat s-tot"><b>' + s.total + '</b><span>Members</span></div></div>' +
+      '<div class="bar"><i style="width:' + (s.yes / t * 100) + '%;background:var(--yes)"></i><i style="width:' + (s.no / t * 100) + '%;background:var(--no)"></i></div></div>' +
+      (st.frozen ? '<div class="banner frozen">Responses are frozen. Members see the final list but cannot change their answer.</div>'
+                 : '<p class="note">Tap <b>WhatsApp</b> next to a name, then pick that person in WhatsApp. Each link only works for that member.</p>') +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost" id="refresh">↻ Refresh</button><button class="btn btn-ghost" id="copyYes">Copy list of who\'s joining</button><button class="btn btn-ghost" id="showAdd">＋ Add members</button></div>' +
+      '<div id="addBox" style="display:none;margin-top:12px"><textarea id="names" placeholder="One name per line"></textarea><button class="btn btn-open" id="addBtn" style="margin-top:8px">Add</button><div class="msg" id="addMsg"></div></div></section>';
+    h += '<section class="card admin"><div class="tabs">' + [['all', 'All', s.total], ['Yes', 'Joining', s.yes], ['No', 'Not joining', s.no], ['pending', 'Pending', s.pending]].map(function (f) {
+      return '<button class="tab' + (filter === f[0] ? ' on' : '') + '" data-f="' + f[0] + '">' + f[1] + ' (' + f[2] + ')</button>';
+    }).join('') + '</div><ul class="list">' + st.members.filter(function (m) {
+      return filter === 'all' || (filter === 'pending' ? !m.response : m.response === filter);
+    }).map(function (m, i) {
+      return '<li><span class="sr">' + (i + 1) + '</span><div class="who"><div class="n">' + esc(m.name) + '</div><div class="t"><span class="code">/nakayatra/' + esc(m.code) + '</span>' + (m.respondedAt ? ' · ' + esc(when(m.respondedAt)) : '') + '</div></div>' + pill(m.response) +
+        '<div class="acts"><a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(waText(m)) + '">WhatsApp</a>' +
+        '<button class="btn btn-ghost" data-copy="' + m.id + '">Copy</button><a class="btn btn-ghost" target="_blank" rel="noopener" href="' + esc(linkFor(m)) + '">Open</a>' +
+        '<button class="btn btn-x" data-del="' + m.id + '" title="Remove">✕</button></div></li>';
+    }).join('') + '</ul></section>';
+    view.innerHTML = h;
+
+    $('freeze').onclick = function () {
+      var f = !st.frozen;
+      if (!confirm(f ? 'Freeze responses now? Members will no longer be able to change their answer.' : 'Reopen responses so members can change their answer again?')) return;
+      api('/api/nakayatra-admin/freeze', { json: { frozen: f } }).then(function (x) { render(x); toast(f ? 'Responses frozen' : 'Responses reopened'); });
+    };
+    $('refresh').onclick = function () { load().then(function () { toast('Updated'); }); };
+    $('showAdd').onclick = function () { var b = $('addBox'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; };
+    $('copyYes').onclick = function () {
+      var yes = st.members.filter(function (m) { return m.response === 'Yes'; });
+      copy('*' + TITLE + ' – ' + EVENT + '*\nJoining (' + yes.length + '):\n' + yes.map(function (m, i) { return (i + 1) + '. ' + m.name; }).join('\n'), 'List copied');
+    };
+    view.querySelectorAll('.tab').forEach(function (b) { b.onclick = function () { filter = b.getAttribute('data-f'); render(st); }; });
+    view.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.onclick = function () { var m = st.members.filter(function (x) { return String(x.id) === b.getAttribute('data-copy'); })[0]; copy(linkFor(m), 'Link copied'); };
+    });
+    view.querySelectorAll('[data-del]').forEach(function (b) {
+      b.onclick = function () {
+        var m = st.members.filter(function (x) { return String(x.id) === b.getAttribute('data-del'); })[0];
+        if (!confirm('Remove ' + m.name + '? Their link will stop working.')) return;
+        api('/api/nakayatra-admin/members/' + m.id, { method: 'DELETE' }).then(function (x) { render(x); toast('Removed'); });
+      };
+    });
+    wireAdd();
+  }
+
+  function wireAdd() {
+    var btn = $('addBtn'); if (!btn) return;
+    btn.onclick = function () {
+      var names = $('names').value.split(/\r?\n/).map(function (n) { return n.replace(/^\s*\d+[.)\s]+/, '').trim(); }).filter(function (n) { return n && !/^sr\.?\s*no/i.test(n); });
+      if (!names.length) { $('addMsg').className = 'msg error'; $('addMsg').textContent = 'Paste at least one name.'; return; }
+      btn.disabled = true;
+      api('/api/nakayatra-admin/members', { json: { names: names } }).then(function (x) { render(x); toast(x.added + ' member(s) added'); })
+        .catch(function (e) { btn.disabled = false; $('addMsg').className = 'msg error'; $('addMsg').textContent = e.message; });
+    };
+  }
+
+  if (store.get()) showApp(); else showLogin('');
+})();
+</script>
+</body>
+</html>

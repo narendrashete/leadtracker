@@ -235,7 +235,6 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
-
 - **2026-11-13** — **PrimexERP2027 page.** New SPA route `/primexerp2027` (sidebar, all
   logged-in users) for the ERP Expo 2027 (4–6 Feb 2027, Chinchwad): countdown, "Plan &
   artifacts" links (seeded with the readiness-plan doc), and a Doables checklist seeded once
@@ -243,7 +242,40 @@ Unscoped, not committed to — do not build without an explicit ask:
   filter by open/done and owner, overdue flagged. Tables `primex_todos`, `primex_links`; API
   `/api/primex` (requireAuth). Accounts, follow-ups, WhatsApp invites and walk-in capture shown
   as "To be built".
+- **2026-11-06** — **Donor list: भाग ३ (GPay online) + add/delete rows.** A third section for
+  payments made by GPay straight into the account. The tab gets an "नवीन नोंद जोडा" form, a
+  per-row भाग selector and delete; adding/removing a row moves the final total by the same
+  amount, so the round-off is kept.
+- **2026-11-06** — **Shete Navratri donor list (देणगी यादी) admin tab.** Admin uploads the
+  donor-list CSV (title, भाग १ members / भाग २ not-yet-members, final rounded total); it is
+  stored in leads.db (`shete_donation_lists`, `shete_donations`), never in git. The tab shows
+  both sections with sub-totals, total, round-off and final total; edits the title and final
+  figure; moves a donor between भाग १ and भाग २; downloads the CSV (re-importable) and a PNG
+  image (mobiles optional, off by default). Routes: `GET/POST /api/shete-admin/donations`,
+  `GET/PATCH/DELETE /donations/:id`, `PATCH /donation-rows/:id`.
+- **2026-11-05** — **Naka Yatra booking link.** A second list code (`booking_code`) opens the
+  same list page with full Aadhaar numbers and a copy button, for the trusted members doing
+  the TTD booking; the group link stays masked. Admin page: create / copy / WhatsApp / replace
+  the booking link (`POST /api/nakayatra-admin/final/booking-link`).
+- **2026-11-05** — **Naka Yatra darshan booking details.** List page: yatra schedule image on
+  top, common booking details (darshan date 12-02-2027, Maharashtra, Badlapur, 421503), copy
+  buttons on every field, and a Gothram field (default Kashyap, members can correct it).
+  Admin page: "Darshan booking helper" with copy chips per member, including full Aadhaar;
+  Gothram added to the admin list and the Excel download. New column `nakayatra_final.gothram`
+  (added by `ALTER TABLE` on start-up); new route `/nakayatra/schedule.jpg`.
 
+- **2026-11-05** — **Naka Yatra final travellers list (`/nakayatra/list/<code>`).** Admin pastes
+  the joining members (name, Aadhaar, age, mobile) on `/nakayatra/admin`, shares one group
+  link; members correct their own details with no approval, each change flagged with IST
+  time + fields, old → new kept in history. Admin: share/copy link, lock/unlock, CSV
+  download with the flags. Public page shows only the last 4 Aadhaar digits. Table
+  `nakayatra_final`; route `routes/nakayatraList.js`; page `nakayatra/list.html`.
+- **2026-11-03** — **Naka Family yatra consent poll (`/nakayatra`).** Admin page
+  `/nakayatra/admin` (Lead Tracker admin login): paste member names, each gets a personal
+  link `/nakayatra/NF#######` with a WhatsApp share button; live Yes/No/Pending counts;
+  freeze/reopen. Member page shows their name and a Yes/No choice, then everyone's answers;
+  answers can change until frozen. Tables `nakayatra_members`, `nakayatra_settings`; routes
+  `routes/nakayatra.js` (public, code-gated) and `routes/nakayatraAdmin.js`.
 - **2026-10-28** — **Kulgaon list: admin approval + anonymous suggestions.** Public page no
   longer changes the list or asks for name/mobile: status, correction and new-member
   suggestions go to `kulgaon_requests` (no sender columns, day only) and wait for an admin.

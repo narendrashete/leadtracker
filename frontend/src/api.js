@@ -57,14 +57,6 @@ export const api = {
   getFollowups:   (lead_id) => request(`/followups?lead_id=${lead_id}`),
   createFollowup: (data)    => request('/followups', { method: 'POST', body: JSON.stringify(data) }),
 
-  // PrimexERP2027 — expo workspace
-  getPrimexTodos:   ()        => request('/primex/todos'),
-  addPrimexTodo:    (data)    => request('/primex/todos', { method: 'POST', body: JSON.stringify(data) }),
-  updatePrimexTodo: (id, d)   => request(`/primex/todos/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
-  deletePrimexTodo: (id)      => request(`/primex/todos/${id}`, { method: 'DELETE' }),
-  getPrimexLinks:   ()        => request('/primex/links'),
-  addPrimexLink:    (data)    => request('/primex/links', { method: 'POST', body: JSON.stringify(data) }),
-  deletePrimexLink: (id)      => request(`/primex/links/${id}`, { method: 'DELETE' }),
 
   // Calendar links (admin only) — group share links for the availability calendar
   getCalendarGroups:   ()     => request('/calendar-admin'),

@@ -11,6 +11,7 @@ import CalendarLinks from './components/Admin/CalendarLinks';
 import Visitors from './components/Admin/Visitors';
 import ImportLeads from './components/Admin/ImportLeads';
 import Contacts from './components/Contacts/Contacts';
+import PrimexERP2027 from './components/PrimexERP2027/PrimexERP2027';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -40,6 +41,7 @@ function AppShell() {
             <Route path="/followups" element={<FollowupScreen />} />
             <Route path="/reports"   element={<Reports />} />
             <Route path="/contacts"  element={<Contacts />} />
+            <Route path="/primexerp2027" element={<PrimexERP2027 />} />
             {user.role === 'admin' && (
               <Route path="/users" element={<UserManagement />} />
             )}

@@ -28,6 +28,7 @@ Express (backend/server.js)
    ├── /api/contacts  (requireAuth; /import adds requireAdmin) — separate contacts.db
    ├── /api/users     (requireAuth + requireAdmin)
    ├── /api/stats     (requireAuth + requireAdmin — visitor counts)
+   ├── /api/primex    (requireAuth — PrimexERP2027 expo doables + plan links)
    ├── /calendar/<group-code>  (public — serves mokla-divas/index.html)
    ├── /aartisangrah  (public — serves aartisangrah/index.html verbatim, no API)
    ├── /aartisangrah/app  (public — separate installable/offline copy, app.html)
@@ -168,6 +169,21 @@ kulgaon/
   members.json         The 526-member list transcribed from the PDF — GIT-IGNORED (see below).
 start.bat               local one-click launcher (runs the production build)
 ```
+
+## PrimexERP2027 (ERP Expo 2027 workspace)
+A Lead Tracker SPA page (`/primexerp2027`, `components/PrimexERP2027/`), not a standalone app:
+it is the company's own sales work for the ERP Expo 2027 (4–6 Feb 2027, Chinchwad), so it
+lives behind login with the leads, open to every logged-in user (the expo team).
+- **Built section by section, as asked.** Live: "Plan & artifacts" (`primex_links` — links to
+  the plan docs made in claude.ai) and "Doables" (`primex_todos`). Exhibition accounts,
+  customer follow-ups, WhatsApp invites and walk-in visitors show as "To be built" cards
+  (`COMING` in the component); replace a card with the real section when it is built.
+- **Seeded once, then the DB owns it.** `routes/primex.js` `seed()` (called at boot) fills
+  both tables from the readiness plan only when each is empty, so ticks/edits/deletes are never
+  overwritten. Each week's tasks are due on that week's last day.
+- Walk-in visitors and follow-ups are leads in all but name — when building them, decide with
+  the owner whether they become rows in `leads` (source "ERP Expo 2027") rather than a parallel
+  table, so the board, follow-ups and reports see them.
 
 ## Prime API Integration (multi-courier shipping demo)
 A sixth app sharing this repo and Express process for hosting only — no tables, no API, no

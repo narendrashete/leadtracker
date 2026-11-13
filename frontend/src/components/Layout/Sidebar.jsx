@@ -9,6 +9,7 @@ const NAV = [
   { to: '/followups', label: 'Follow-ups',       icon: '📋' },
   { to: '/reports',   label: 'Reports',          icon: '📊' },
   { to: '/contacts',  label: 'Marketing Contacts', icon: '📇' },
+  { to: '/primexerp2027', label: 'PrimexERP2027',  icon: '🏁' },
 ];
 
 export default function Sidebar() {

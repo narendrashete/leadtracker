@@ -54,6 +54,11 @@ address/city/state to leads.
   See `CLAUDE.md` → Rishta Album.
 
 ## Features In Progress
+- **PrimexERP2027 (ERP Expo 2027, 4–6 Feb 2027)** — `/primexerp2027` in the SPA. Live: plan &
+  artifact links and the Doables checklist (62 tasks seeded from the readiness plan). Still to
+  build, one at a time as asked: Exhibition accounts, Customer follow-ups, WhatsApp invites,
+  Walk-in visitor capture (name, mobile, email, company, industry, notes). The SPA has no phone
+  layout yet (fixed sidebar) — walk-in capture at the stall will need one.
 - **Aarti audio playback** — the player is live, and which aartis have one is driven by the
   contents of `aartisangrah/audio/`: drop `NN-name.mp3` and aarti NN grows a player.
   Three recordings are in (aartis 1, 4 and 5), cut from the one supplied file. The
@@ -141,6 +146,10 @@ Base path `/api`. All responses JSON; errors are `{ error }` with a 4xx/5xx stat
 | POST | /users | admin | create a `user`-role account |
 | PUT | /users/:id/reset-password | admin | blocked for `admin`-role target |
 | DELETE | /users/:id | admin | blocked for `admin`-role target |
+| GET/POST | /primex/todos | user | PrimexERP2027 doables; POST `{ title, phase, owner, due_date }` |
+| PATCH/DELETE | /primex/todos/:id | user | PATCH any of `done`, `title`, `owner`, `due_date` |
+| GET/POST | /primex/links | user | plan/artifact links `{ title, url, note }` |
+| DELETE | /primex/links/:id | user | removes the link only |
 
 No API versioning (single unversioned `/api` surface) — appropriate at current scope.
 
@@ -153,6 +162,7 @@ Routes defined in `frontend/src/App.jsx`, gated by `AuthContext`:
 | /followups | FollowupScreen | any logged-in user |
 | /reports | Reports | any logged-in user |
 | /contacts | Contacts | any logged-in user (import panel admin-only) |
+| /primexerp2027 | PrimexERP2027 | any logged-in user |
 | /users | UserManagement | admin only |
 | / and unknown paths | redirect → /board | — |
 | (logged out) | LoginPage | — |
@@ -225,6 +235,14 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+
+- **2026-11-13** — **PrimexERP2027 page.** New SPA route `/primexerp2027` (sidebar, all
+  logged-in users) for the ERP Expo 2027 (4–6 Feb 2027, Chinchwad): countdown, "Plan &
+  artifacts" links (seeded with the readiness-plan doc), and a Doables checklist seeded once
+  from that plan's timeline and post-expo follow-up — tick off (records who/when), add, delete,
+  filter by open/done and owner, overdue flagged. Tables `primex_todos`, `primex_links`; API
+  `/api/primex` (requireAuth). Accounts, follow-ups, WhatsApp invites and walk-in capture shown
+  as "To be built".
 
 - **2026-10-28** — **Kulgaon list: admin approval + anonymous suggestions.** Public page no
   longer changes the list or asks for name/mobile: status, correction and new-member

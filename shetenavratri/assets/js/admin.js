@@ -567,7 +567,8 @@
             '<div class="rtitle">' + escapeHtml(r.name) + '</div>' +
             '<div class="rmeta">भरणारे: ' + escapeHtml(r.ownerName) + ' · ' + r.mobile + ' · ' + FamilyTree.count(r.data) + ' व्यक्ती · ' + r.updatedAt + '</div>' +
             '<div class="rmeta"><span class="ft-status ' + r.status + '">' + TREE_STATUS[r.status] + '</span>' +
-              (r.status !== 'approved' && r.hasPublished ? ' (जुना मंजूर वृक्ष प्रकाशित आहे)' : '') + '</div>' +
+              (r.status !== 'approved' && r.hasPublished ? ' (जुना मंजूर वृक्ष प्रकाशित आहे)' : '') +
+              (r.hideInIndex ? '<span class="ft-hidden-tag">कुटुंब वृक्ष यादीत लपवला</span>' : '') + '</div>' +
           '</div>' +
           '<div class="request-btns">' +
             '<button class="btn-save" data-act="view" data-id="' + r.memberId + '">पहा</button>' +
@@ -577,6 +578,10 @@
             '<button class="btn-save" data-act="copy" data-id="' + r.memberId + '">कॉपी करा</button>' +
             (FamilyTree.siblingGroups(r.data).length
               ? '<button class="btn-save" data-act="order" data-id="' + r.memberId + '">भावंडांचा क्रम</button>' : '') +
+            '<button class="btn-save" data-act="rename" data-id="' + r.memberId + '">नावे बदला</button>' +
+            (r.hasPublished
+              ? '<button class="btn-save" data-act="hide" data-id="' + r.memberId + '">' +
+                  (r.hideInIndex ? 'कुटुंब वृक्ष यादीत दाखवा' : 'कुटुंब वृक्ष यादीतून लपवा') + '</button>' : '') +
             '<button class="btn-reject" data-act="delete" data-id="' + r.memberId + '">हटवा</button>' +
           '</div></div>';
       }).join('');
@@ -602,6 +607,16 @@
       api('/api/shete-admin/trees/' + id + '/reopen', { method: 'POST' }).then(loadTrees);
     } else if (btn.dataset.act === 'delete') {
       deleteTree(row);
+    } else if (btn.dataset.act === 'rename') {
+      openRename(row);
+    } else if (btn.dataset.act === 'hide') {
+      const hide = !row.hideInIndex;
+      if (!confirm(hide
+        ? 'हा वृक्ष (व त्याच्या कॉपी) कुटुंब वृक्ष यादीतून लपवायचा? सभासदाच्या 🌳 कार्डवर तो दिसत राहील.'
+        : 'हा वृक्ष कुटुंब वृक्ष यादीत पुन्हा दाखवायचा?')) return;
+      api('/api/shete-admin/trees/' + id + '/index-visibility', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hidden: hide }),
+      }).then(loadTrees);
     }
   });
 
@@ -935,6 +950,72 @@
         next(i + 1);
       }).catch(function () { failed = true; next(i + 1); });
     })(0);
+  });
+
+  // ---- Rename people (e.g. a tree typed in English → Marathi, or a typo) ----
+  // One input per distinct name in the tree (people and spouses). Only the
+  // changed ones are sent; the server applies them to the whole family
+  // (working + published copy, original + copies).
+  const renameOverlay = document.getElementById('renameOverlay');
+  const renameList = document.getElementById('renameList');
+  const renameMsg = document.getElementById('renameMsg');
+  let renameRow = null;
+
+  function treeNames(n, out) {
+    [n.name, n.spouse].forEach(function (v) {
+      v = (v || '').trim();
+      if (v && out.indexOf(v) < 0) out.push(v);
+    });
+    (n.children || []).forEach(function (c) { treeNames(c, out); });
+    return out;
+  }
+  function openRename(row) {
+    renameRow = row;
+    renameMsg.textContent = ''; renameMsg.className = 'form-msg';
+    document.getElementById('renamePaste').value = '';
+    renameList.innerHTML = treeNames(row.data, []).map(function (n) {
+      return '<label class="rename-row"><span class="rename-old">' + escapeHtml(n) + '</span>' +
+        '<input type="text" maxlength="120" data-old="' + escapeHtml(n) + '" value="' + escapeHtml(n) + '"></label>';
+    }).join('');
+    renameOverlay.classList.add('open');
+  }
+  renameList.addEventListener('input', function (e) {
+    if (e.target.dataset.old !== undefined) e.target.classList.toggle('changed', e.target.value.trim() !== e.target.dataset.old);
+  });
+  document.getElementById('renameFill').addEventListener('click', function () {
+    let filled = 0;
+    const inputs = Array.from(renameList.querySelectorAll('input[data-old]'));
+    document.getElementById('renamePaste').value.split(/\r?\n/).forEach(function (line) {
+      const i = line.indexOf('=');
+      if (i < 0) return;
+      const from = line.slice(0, i).trim(), to = line.slice(i + 1).trim();
+      const inp = inputs.find(function (x) { return x.dataset.old === from; });
+      if (inp && to) { inp.value = to; inp.classList.toggle('changed', to !== from); filled++; }
+    });
+    renameMsg.textContent = filled + ' नावे भरली. तपासून "नावे जतन करा" दाबा.';
+    renameMsg.className = 'form-msg';
+  });
+  document.getElementById('renameClose').addEventListener('click', function () { renameOverlay.classList.remove('open'); });
+  renameOverlay.addEventListener('click', function (e) { if (e.target === renameOverlay) renameOverlay.classList.remove('open'); });
+  document.getElementById('renameSaveBtn').addEventListener('click', function () {
+    const btn = this, map = {};
+    renameList.querySelectorAll('input[data-old]').forEach(function (inp) {
+      const to = inp.value.trim();
+      if (to && to !== inp.dataset.old) map[inp.dataset.old] = to;
+    });
+    if (!Object.keys(map).length) { renameMsg.textContent = 'काहीही बदल नाही.'; renameMsg.className = 'form-msg'; return; }
+    btn.disabled = true;
+    renameMsg.textContent = 'जतन होत आहे...'; renameMsg.className = 'form-msg';
+    api('/api/shete-admin/trees/' + renameRow.memberId + '/rename', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ map: map }),
+    }).then(function (res) {
+      btn.disabled = false;
+      if (!res.ok) { renameMsg.textContent = (res.body && res.body.error) || 'जतन झाले नाही.'; renameMsg.className = 'form-msg error'; return; }
+      renameMsg.textContent = Object.keys(map).length + ' नावे बदलली — ' + res.body.trees + ' वृक्षांमध्ये लागू.';
+      renameMsg.className = 'form-msg success';
+      loadTrees();
+      setTimeout(function () { renameOverlay.classList.remove('open'); }, 1400);
+    }).catch(function () { btn.disabled = false; renameMsg.textContent = 'नेटवर्क समस्या.'; renameMsg.className = 'form-msg error'; });
   });
 
   // ---- WhatsApp group list ----

@@ -306,6 +306,7 @@ const TREE_ACTION = {
   reopened:  'reopened for editing',
   copied:    'copied a tree in',
   deleted:   'deleted the tree',
+  renamed:   'renamed people',
 };
 
 const VIA = { link: 'WhatsApp link', mobile: 'name + mobile', admin: 'admin' };

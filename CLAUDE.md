@@ -140,7 +140,10 @@ shetenavratri/
   kutumbvruksha.html     कुटुंब वृक्ष index (home tile 🌳): one row per मूळपुरुष from
                        GET /api/shete/trees, tap → full-screen pinch/zoom viewer drawn with
                        FamilyTree.toCanvas. Copies (same root node id) list once, credited
-                       to the family's first tree maker + their live village.
+                       to the family's first tree maker + their live village. Admin can
+                       hide a family from this list (`hide_in_index`, e.g. incomplete)
+                       without unpublishing it, and rename people across a family's
+                       trees ("नावे बदला", e.g. English → Marathi; paste "old = new").
   tree.html             Public viewer: published (approved) tree only, ?m=<member id>.
                        Members list shows 🌳 only when one exists. Renderer shared by
                        viewer/editor/admin: assets/js/tree-render.js (CSS org chart, no lib).

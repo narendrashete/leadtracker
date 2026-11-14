@@ -612,6 +612,13 @@ async function getDb() {
     _db.run(`ALTER TABLE shete_family_trees ADD COLUMN created_at TEXT`);
   } catch { /* column already exists */ }
 
+  // 1 = keep this family off the public कुटुंब वृक्ष index (kutumbvruksha.html),
+  // e.g. while the tree is still incomplete. The tree stays published and
+  // reachable from the member's 🌳 card. Set/cleared per family (root id).
+  try {
+    _db.run(`ALTER TABLE shete_family_trees ADD COLUMN hide_in_index INTEGER`);
+  } catch { /* column already exists */ }
+
   // Every change to a family tree, newest last — for the Visitors screen's
   // "who is making trees" section. by_name = the name the member typed (or the
   // admin); via = 'link' (personal WhatsApp link), 'mobile' (name + mobile

@@ -316,6 +316,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     '/upcoming.html':    'shetenavratri-upcoming',
     '/familytree.html':  'shetenavratri-familytree',
     '/tree.html':        'shetenavratri-tree',
+    '/kutumbvruksha.html': 'shetenavratri-vruksha',
   };
   app.use('/shetenavratri', (req, res, next) => {
     if (req.method === 'GET' && SHETE_COUNTED[req.path]) recordVisit(req, SHETE_COUNTED[req.path]);

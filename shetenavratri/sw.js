@@ -14,7 +14,7 @@
 // on when you tap the home-screen icon, plus its manifest and icons)
 // available instantly and offline; everything you tap from inside the app
 // goes to the network exactly as it would in a normal browser tab.
-const CACHE_VERSION = 'shete-v2';
+const CACHE_VERSION = 'shete-v3';
 const CACHE_NAME = 'shetenavratri-' + CACHE_VERSION;
 
 const SHELL_URLS = [

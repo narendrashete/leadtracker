@@ -137,6 +137,10 @@ shetenavratri/
   familytree.html        कुटुंब वृक्ष editor — member identifies (full name + registered
                        mobile), builds tree from मूळपुरुष, saves draft / submits for admin
                        approval; locked once approved until admin reopens it.
+  kutumbvruksha.html     कुटुंब वृक्ष index (home tile 🌳): one row per मूळपुरुष from
+                       GET /api/shete/trees, tap → full-screen pinch/zoom viewer drawn with
+                       FamilyTree.toCanvas. Copies (same root node id) list once, credited
+                       to the family's first tree maker + their live village.
   tree.html             Public viewer: published (approved) tree only, ?m=<member id>.
                        Members list shows 🌳 only when one exists. Renderer shared by
                        viewer/editor/admin: assets/js/tree-render.js (CSS org chart, no lib).

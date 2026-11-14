@@ -246,7 +246,9 @@ window.FamilyTree = (function () {
     (n.children || []).forEach(function (c) { drawAll(ctx, c, depth + 1, levels); });
   }
 
-  function toCanvas(data, title) {
+  // maxPixels (optional) lowers the 2x scale for a very wide tree so the
+  // canvas stays inside a phone browser's limit (iOS refuses ~16.7M px).
+  function toCanvas(data, title, maxPixels) {
     const tree = JSON.parse(JSON.stringify(data));
     tree._root = true;
     const ctx0 = document.createElement('canvas').getContext('2d');
@@ -257,8 +259,10 @@ window.FamilyTree = (function () {
     levels.forEach(function (h, i) { tops[i] = y; y += h + GAP_Y; });
     place(tree, M, 0, tops);
     const W = tree._sw + M * 2, H = y - GAP_Y + M + 22;
-    const scale = 2, cv = document.createElement('canvas');
-    cv.width = W * scale; cv.height = H * scale;
+    const scale = maxPixels ? Math.min(2, Math.sqrt(maxPixels / (W * H))) : 2;
+    const cv = document.createElement('canvas');
+    cv.width = Math.floor(W * scale); cv.height = Math.floor(H * scale);
+    cv.drawScale = scale;
     const ctx = cv.getContext('2d');
     ctx.scale(scale, scale);
     ctx.fillStyle = '#fff8ec'; ctx.fillRect(0, 0, W, H);
@@ -281,6 +285,6 @@ window.FamilyTree = (function () {
     });
   }
 
-  return { render: render, find: find, count: count, newId: newId, esc: esc, downloadPng: downloadPng,
+  return { render: render, find: find, count: count, newId: newId, esc: esc, downloadPng: downloadPng, toCanvas: toCanvas,
     nameKey: nameKey, waNameMatch: waNameMatch, siblingGroups: siblingGroups };
 })();

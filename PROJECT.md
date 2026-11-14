@@ -225,6 +225,17 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-14** — **Shete Navratri: कुटुंब वृक्ष index page (`/shetenavratri/kutumbvruksha.html`).**
+  New 🌳 कुटुंब वृक्ष tile on the home page (plain `index.html` and the installable `app.html`;
+  `sw.js` → `shete-v3`). The page lists every published tree once per मूळपुरुष (Marathi
+  alphabetical, generations, "माहिती: <maker>, <village>"); tapping one draws it full screen
+  with `FamilyTree.toCanvas` (now exported, with an optional pixel cap for phone canvas limits)
+  in a pinch/drag/double-tap zoom viewer with ✕, ‹ मागील / पुढील ›, Back-button close, and a
+  per-phone green "seen" mark. New public route `GET /api/shete/trees`: published trees only;
+  trees sharing a root node id (admin copies) are one family, showing the version with the
+  most people and credited to whoever made that family's tree first (lowest row id), village
+  read live from `shete_members`. Counted in Visitors as `shetenavratri-vruksha`. Verified
+  locally on an emulated phone (drafts hidden, copies merged, open/next/close/Back).
 - **2026-11-13** — **PrimexERP2027 moved out** to its own app/repo (`narendrashete/primexerp2027`)
   at https://primexerp2027.primecomputers.co.in on prime-dev. Removed the `/primexerp2027` page,
   sidebar link, `/api/primex` route and table creation here; existing tables are left in place.

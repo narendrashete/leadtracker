@@ -295,6 +295,44 @@ router.put('/tree', (req, res) => {
   });
 });
 
+// Public: one row per मूळपुरुष for the कुटुंब वृक्ष index page (kutumbvruksha.html).
+// Published trees only. Copies made by the admin's /copy feature keep the
+// original node ids, so trees sharing a root id are the same family: listed
+// once, showing the fullest version (most people), credited to whoever made
+// that family's tree first (lowest row id = earliest created), with their
+// village read live from the member directory.
+function treeDepth(n) {
+  return 1 + Math.max(0, ...(n.children || []).map(treeDepth));
+}
+function treePersons(n) {
+  return 1 + (n.children || []).reduce((s, c) => s + treePersons(c), 0);
+}
+router.get('/trees', (req, res) => {
+  const rows = query(
+    `SELECT t.id, t.member_id AS memberId, t.published, m.name AS madeBy, m.village
+     FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
+     WHERE t.published IS NOT NULL ORDER BY t.id`
+  );
+  const families = new Map();
+  for (const r of rows) {
+    let tree;
+    try { tree = JSON.parse(r.published); } catch { continue; }
+    if (!tree || !tree.name) continue;
+    const key = tree.id || 'row' + r.id;
+    const persons = treePersons(tree);
+    const f = families.get(key);
+    if (!f) {
+      families.set(key, {
+        memberId: r.memberId, rootName: tree.name, generations: treeDepth(tree), persons,
+        madeBy: r.madeBy, village: r.village,
+      });
+    } else if (persons > f.persons) {
+      Object.assign(f, { memberId: r.memberId, rootName: tree.name, generations: treeDepth(tree), persons });
+    }
+  }
+  res.json([...families.values()]);
+});
+
 // Public: the published (approved) tree only — never the working copy.
 router.get('/tree/:memberId', (req, res) => {
   const t = query(

@@ -220,6 +220,17 @@
 }
 .order-name{font-size:13.5px;color:var(--text);}
 
+/* Rename people editor */
+#renameList{max-height:50vh;overflow-y:auto;}
+.rename-row{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px dashed #eadfd0;}
+.rename-old{font-size:12.5px;color:var(--text-soft);}
+.rename-row input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #e2d3c0;border-radius:8px;font:inherit;font-size:14px;}
+.rename-row input.changed{border-color:#7b3fa0;background:#f7f0fb;}
+.rename-paste{margin:6px 0 10px;font-size:13px;}
+.rename-paste summary{cursor:pointer;color:var(--maroon-dark);font-weight:600;}
+.rename-paste textarea{width:100%;box-sizing:border-box;margin:8px 0;padding:10px;border:1px solid #e2d3c0;border-radius:8px;font:inherit;font-size:13px;line-height:1.45;}
+.ft-hidden-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;background:#eee;color:#555;font-size:11.5px;}
+
 /* देणगी यादी */
 .don-pick{margin:12px 0 8px;}
 .don-pick select{flex:1;min-width:0;}

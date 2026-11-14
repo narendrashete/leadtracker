@@ -309,16 +309,19 @@ function treePersons(n) {
 }
 router.get('/trees', (req, res) => {
   const rows = query(
-    `SELECT t.id, t.member_id AS memberId, t.published, m.name AS madeBy, m.village
+    `SELECT t.id, t.member_id AS memberId, t.published, t.hide_in_index AS hidden, m.name AS madeBy, m.village
      FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
      WHERE t.published IS NOT NULL ORDER BY t.id`
   );
+  // A family the admin hid from this list (still incomplete, say) is left out
+  // entirely, whichever of its copies carries the flag.
+  const parsed = rows.map(r => { try { return { r, tree: JSON.parse(r.published) }; } catch { return null; } })
+    .filter(x => x && x.tree && x.tree.name);
+  const hiddenRoots = new Set(parsed.filter(x => x.r.hidden).map(x => x.tree.id || 'row' + x.r.id));
   const families = new Map();
-  for (const r of rows) {
-    let tree;
-    try { tree = JSON.parse(r.published); } catch { continue; }
-    if (!tree || !tree.name) continue;
+  for (const { r, tree } of parsed) {
     const key = tree.id || 'row' + r.id;
+    if (hiddenRoots.has(key)) continue;
     const persons = treePersons(tree);
     const f = families.get(key);
     if (!f) {

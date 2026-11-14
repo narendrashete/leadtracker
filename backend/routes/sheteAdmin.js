@@ -204,11 +204,12 @@ function logTree(memberId, action, note) {
 router.get('/trees', (req, res) => {
   const rows = query(
     `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
-            t.published IS NOT NULL AS hasPublished, t.updated_at AS updatedAt, m.name, m.mobile
+            t.published IS NOT NULL AS hasPublished, t.hide_in_index AS hideInIndex,
+            t.updated_at AS updatedAt, m.name, m.mobile
      FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
      ORDER BY CASE t.status WHEN 'pending' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END, t.updated_at DESC`
   );
-  res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, data: JSON.parse(r.data) })));
+  res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, hideInIndex: !!r.hideInIndex, data: JSON.parse(r.data) })));
 });
 
 // The member's personal tree-link key, made on first ask and then kept, so a
@@ -385,6 +386,71 @@ router.post('/trees/:memberId/reorder', (req, res) => {
     updated++;
   }
   res.json({ ok: true, updated });
+});
+
+// Every tree row of the same family as this member's tree (same root person
+// id — the original plus any /copy copies), with both JSON copies parsed.
+function familyRows(memberId) {
+  const src = query(`SELECT data FROM shete_family_trees WHERE member_id = ?`, [memberId])[0];
+  if (!src) return null;
+  let rootId;
+  try { rootId = JSON.parse(src.data).id; } catch { return null; }
+  return query(`SELECT id, member_id AS memberId, data, published FROM shete_family_trees`)
+    .map(r => {
+      let data = null, pub = null;
+      try { data = JSON.parse(r.data); } catch { /* skip */ }
+      try { pub = r.published ? JSON.parse(r.published) : null; } catch { /* skip */ }
+      return { ...r, tree: data, pubTree: pub };
+    })
+    .filter(r => (r.tree && r.tree.id === rootId) || (r.pubTree && r.pubTree.id === rootId));
+}
+
+// Hide / show a family on the public कुटुंब वृक्ष index. Applied to every copy,
+// so a family is hidden or shown as one. The trees themselves are untouched.
+router.post('/trees/:memberId/index-visibility', (req, res) => {
+  const rows = familyRows(Number(req.params.memberId));
+  if (!rows) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  const hidden = req.body.hidden ? 1 : null;
+  for (const r of rows) run(`UPDATE shete_family_trees SET hide_in_index = ? WHERE id = ?`, [hidden, r.id]);
+  res.json({ ok: true, updated: rows.length });
+});
+
+// Rename people: { map: { "old name": "new name", ... } } is applied to every
+// person's name and spouse in this family's trees (working and published
+// copies, original and copies) — e.g. to switch a tree typed in English to
+// Marathi, or fix a typo. Matching is on the exact old text, trimmed.
+function renameInTree(node, map) {
+  let n = 0;
+  for (const f of ['name', 'spouse']) {
+    const v = typeof node[f] === 'string' ? node[f].trim() : '';
+    if (v && Object.prototype.hasOwnProperty.call(map, v) && map[v] !== node[f]) { node[f] = map[v]; n++; }
+  }
+  (node.children || []).forEach(c => { n += renameInTree(c, map); });
+  return n;
+}
+router.post('/trees/:memberId/rename', (req, res) => {
+  const raw = req.body && typeof req.body.map === 'object' && req.body.map ? req.body.map : {};
+  const map = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const from = String(k).trim(), to = String(v == null ? '' : v).trim();
+    if (!from || !to || from === to) continue;
+    if (from.length > 120 || to.length > 120) return res.status(400).json({ error: 'नाव खूप लांब आहे.' });
+    map[from] = to;
+  }
+  if (!Object.keys(map).length) return res.status(400).json({ error: 'काहीही बदल नाही.' });
+  const rows = familyRows(Number(req.params.memberId));
+  if (!rows) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  let names = 0, trees = 0;
+  for (const r of rows) {
+    const a = r.tree ? renameInTree(r.tree, map) : 0;
+    const b = r.pubTree ? renameInTree(r.pubTree, map) : 0;
+    if (!a && !b) continue;
+    run(`UPDATE shete_family_trees SET data = ?, published = ?, updated_at = datetime('now','localtime') WHERE id = ?`,
+      [r.tree ? JSON.stringify(r.tree) : r.data, r.pubTree ? JSON.stringify(r.pubTree) : r.published, r.id]);
+    logTree(r.memberId, 'renamed', a + ' names');
+    names = Math.max(names, a, b); trees++;
+  }
+  res.json({ ok: true, names, trees });
 });
 
 // ---- History list (add/edit/delete) ----

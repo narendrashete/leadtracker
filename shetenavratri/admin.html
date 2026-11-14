@@ -250,6 +250,22 @@
   </div>
 </div>
 
+<div class="modal-overlay form-overlay" id="renameOverlay">
+  <div class="form-sheet">
+    <button class="modal-close" id="renameClose">✕</button>
+    <h2>नावे बदला</h2>
+    <p class="form-hint">सध्याच्या नावापुढे नवीन नाव लिहा (उदा. इंग्रजी नाव मराठीत). जे बदलायचे नाही ते तसेच ठेवा. हा बदल या वृक्षाच्या सर्व कॉपींमध्ये आणि प्रकाशित वृक्षात लगेच होईल.</p>
+    <details class="rename-paste">
+      <summary>यादी पेस्ट करून भरा</summary>
+      <textarea id="renamePaste" rows="5" placeholder="प्रत्येक ओळीत:  जुने नाव = नवीन नाव"></textarea>
+      <button type="button" class="btn-save" id="renameFill">यादीतून भरा</button>
+    </details>
+    <div id="renameList"></div>
+    <div class="form-msg" id="renameMsg"></div>
+    <button class="form-submit" id="renameSaveBtn">नावे जतन करा</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="previewOverlay">
   <button class="modal-close" id="previewClose">✕</button>
   <img id="previewImg" src="" alt="फोटो">

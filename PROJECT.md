@@ -225,6 +225,16 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-14** — **Family trees: hide from the कुटुंब वृक्ष list + rename people (admin).**
+  Each tree card in the admin कुटुंब वृक्ष tab gets **कुटुंब वृक्ष यादीतून लपवा / यादीत दाखवा**
+  (new nullable column `shete_family_trees.hide_in_index`, set/cleared on every copy of the
+  family; `GET /api/shete/trees` leaves hidden families out; the tree stays published and on
+  the member's 🌳 card) and **नावे बदला**: one input per distinct person/spouse name, plus a
+  "paste old = new" box, applied to the working and published copy of every tree in the
+  family. Routes `POST /api/shete-admin/trees/:memberId/index-visibility` `{hidden}` and
+  `POST .../rename` `{map}`; renames are logged (`renamed`, shown on Visitors). Made to hide
+  the incomplete बाबू यशवंत शेटे tree and switch the English-typed Narayan Jayaram Shete tree to
+  Marathi. Verified locally (API + admin UI on an emulated phone).
 - **2026-11-14** — **Shete Navratri: कुटुंब वृक्ष index page (`/shetenavratri/kutumbvruksha.html`).**
   New 🌳 कुटुंब वृक्ष tile on the home page (plain `index.html` and the installable `app.html`;
   `sw.js` → `shete-v3`). The page lists every published tree once per मूळपुरुष (Marathi

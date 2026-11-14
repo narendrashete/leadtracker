@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>कुटुंब वृक्ष — शेटे परिवार नवरात्री</title>
+<link rel="stylesheet" href="/shetenavratri/assets/css/style.css">
+<style>
+/* Index of every published family tree, one row per मूळपुरुष; tapping one
+   draws it full screen (tree-render.js toCanvas, the same drawing as the
+   admin's PNG download) in a pinch/zoom viewer. Nothing here is stored in the
+   page — the list comes from /api/shete/trees, so it is always current. */
+.kv-page{max-width:640px;margin:0 auto;padding:16px 16px 28px}
+.kv-hint{font-size:14px;color:var(--text-soft);text-align:center;margin:2px 0 14px;line-height:1.5}
+.kv-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.kv-row{display:flex;align-items:center;gap:14px;background:var(--card-bg);border:1.5px solid #f0e0c4;
+  border-radius:14px;padding:14px;box-shadow:0 2px 6px rgba(122,16,36,.06);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:transform .1s,border-color .15s}
+.kv-row:active{transform:scale(.985)}
+.kv-row:hover{border-color:var(--gold)}
+.kv-num{flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:#7b3fa0;color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:17px}
+.kv-row.seen .kv-num{background:#2e7d4f}
+.kv-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.kv-nm b{font-size:19px;color:var(--maroon);line-height:1.35}
+.kv-nm small{font-size:13px;color:var(--text-soft)}
+.kv-nm em{font-style:normal;font-size:13px;color:#5a4a8a;margin-top:2px;line-height:1.35}
+.kv-go{font-size:30px;color:var(--gold);line-height:1}
+
+#viewer{display:none;position:fixed;inset:0;z-index:50;flex-direction:column;background:#fbf2e4}
+#viewer.open{display:flex}
+.vbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 8px 14px;
+  background:linear-gradient(135deg,var(--maroon),var(--maroon-dark));color:#fff;border-bottom:3px solid var(--gold)}
+.vtitle{flex:1;min-width:0}
+.vtitle small{display:block;color:var(--gold-light);font-size:12px}
+.vtitle b{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vtitle i{display:block;font-style:normal;font-size:12px;color:#f3dcc0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vclose{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.55);
+  background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;padding:0}
+.vclose:active{background:rgba(255,255,255,.3)}
+#stage{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;background:#fff8ec}
+#stage.drag{cursor:grabbing}
+#stage canvas{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none}
+.vmsg{position:absolute;inset:0;display:grid;place-items:center;color:var(--text-soft);font-size:15px;padding:20px;text-align:center}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:8px;z-index:2}
+.zoom button{width:44px;height:44px;border-radius:12px;border:1px solid #f0e0c4;background:#fff;
+  color:var(--maroon);font-size:22px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);padding:0}
+.zoom button:active{background:#f6e7cf}
+.tip{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:2;
+  background:rgba(59,16,24,.86);color:#fff;font-size:13px;padding:7px 14px;border-radius:20px;
+  white-space:nowrap;pointer-events:none;transition:opacity .6s}
+.tip.hide{opacity:0}
+.vnav{flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #f0e0c4}
+.vnav button{flex:1;height:46px;border-radius:12px;border:1.5px solid var(--maroon);background:#fff;
+  color:var(--maroon);font-size:16px;font-weight:600;cursor:pointer}
+.vnav button.primary{background:var(--maroon);color:#fff}
+.vnav button:disabled{opacity:.35}
+.vnav .count{flex:0 0 auto;min-width:56px;text-align:center;font-size:15px;color:var(--text-soft)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/shetenavratri/" class="back-link">←</a>
+  <div>
+    <h1>कुटुंब वृक्ष</h1>
+    <div class="sub" id="kvSub">मूळपुरुषांची यादी</div>
+  </div>
+</header>
+
+<div class="kv-page">
+  <p class="kv-hint">मूळपुरुषाच्या नावावर टॅप करा — त्यांचा कुटुंब वृक्ष उघडेल.<br>
+    तपासून झाल्यावर ✕ दाबा किंवा “पुढील” वर जा.</p>
+  <div class="loading-note" id="kvMsg">कुटुंब वृक्ष लोड होत आहेत...</div>
+  <ol class="kv-list" id="kvList"></ol>
+</div>
+
+<div id="viewer" role="dialog" aria-modal="true" aria-labelledby="vname">
+  <div class="vbar">
+    <div class="vtitle"><small>मूळपुरुष</small><b id="vname"></b><i id="vby"></i></div>
+    <button class="vclose" id="vclose" aria-label="बंद करा">✕</button>
+  </div>
+  <div id="stage">
+    <div class="vmsg" id="vmsg"></div>
+    <div class="zoom">
+      <button id="zin" aria-label="मोठे करा">+</button>
+      <button id="zout" aria-label="लहान करा">−</button>
+      <button id="zfit" aria-label="पूर्ण वृक्ष" title="पूर्ण वृक्ष">⤢</button>
+    </div>
+    <div class="tip" id="tip">बोटांनी मोठे करा · सरकवून पाहा</div>
+  </div>
+  <div class="vnav">
+    <button id="vprev">‹ मागील</button>
+    <span class="count" id="vcount"></span>
+    <button id="vnext" class="primary">पुढील ›</button>
+  </div>
+</div>
+
+<script src="/shetenavratri/assets/js/tree-render.js"></script>
+<script>
+(function () {
+  var DEV = '०१२३४५६७८९';
+  function dn(n) { return String(n).replace(/\d/g, function (d) { return DEV[d]; }); }
+  var esc = FamilyTree.esc;
+  // Display/sort name: drop a leading श्री./Shri so the list reads and sorts by the name itself.
+  function clean(s) { return (s || '').replace(/^\s*(श्री|shri)\s*\.?\s*/i, '').trim(); }
+
+  var trees = [], cur = 0, openedHere = false;
+  var viewer = document.getElementById('viewer'), stage = document.getElementById('stage'),
+      vmsg = document.getElementById('vmsg'), tip = document.getElementById('tip');
+  var listEl = document.getElementById('kvList'), msg = document.getElementById('kvMsg');
+
+  /* ---- seen marks (this phone only), so a member knows which trees they've checked ---- */
+  var seen = {};
+  try { seen = JSON.parse(localStorage.getItem('shete.vruksha.seen') || '{}'); } catch (e) {}
+  function markSeen(t) {
+    seen[t.memberId] = 1;
+    try { localStorage.setItem('shete.vruksha.seen', JSON.stringify(seen)); } catch (e) {}
+    var row = listEl.querySelector('[data-m="' + t.memberId + '"]');
+    if (row) row.classList.add('seen');
+  }
+
+  fetch('/api/shete/trees')
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (rows) {
+      trees = rows.map(function (t) { t.name = clean(t.rootName); return t; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name, 'mr'); });
+      if (!trees.length) { msg.textContent = 'अजून एकही कुटुंब वृक्ष प्रकाशित झालेला नाही.'; return; }
+      msg.style.display = 'none';
+      document.getElementById('kvSub').textContent = 'मूळपुरुषांची यादी · एकूण ' + dn(trees.length) + ' वृक्ष';
+      listEl.innerHTML = trees.map(function (t, i) {
+        t.by = 'माहिती: ' + t.madeBy + (t.village ? ', ' + t.village : '');
+        return '<li class="kv-row' + (seen[t.memberId] ? ' seen' : '') + '" data-i="' + (i + 1) + '" data-m="' + t.memberId + '" role="button" tabindex="0">' +
+          '<span class="kv-num">' + dn(i + 1) + '</span>' +
+          '<span class="kv-nm"><b>' + esc(t.name) + '</b>' +
+          '<small>मूळपुरुष · ' + dn(t.generations) + ' पिढ्या</small>' +
+          '<em>' + esc(t.by) + '</em></span>' +
+          '<span class="kv-go" aria-hidden="true">›</span></li>';
+      }).join('');
+      route();
+    })
+    .catch(function () { msg.textContent = 'नेटवर्क समस्या. पुन्हा प्रयत्न करा.'; });
+
+  function openRow(e) {
+    var row = e.target.closest('.kv-row');
+    if (!row) return;
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault(); openedHere = true;
+    location.hash = '#t' + row.getAttribute('data-i');
+  }
+  listEl.addEventListener('click', openRow);
+  listEl.addEventListener('keydown', openRow);
+
+  /* ---- zoom / pan state ---- */
+  var cv = null, k = 2, s = 1, tx = 0, ty = 0, W = 0, H = 0, iw = 1, ih = 1, fitAll = 1, start = 1;
+  var MAXS = 2.5;
+  function minS() { return Math.min(fitAll, start) * 0.9; }
+  function apply() {
+    if (!cv) return;
+    var sw = iw * s, sh = ih * s;
+    tx = sw <= W ? (W - sw) / 2 : Math.min(0, Math.max(W - sw, tx));
+    ty = sh <= H ? (H - sh) / 2 : Math.min(0, Math.max(H - sh, ty));
+    cv.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + s + ')';
+  }
+  function zoomAt(ns, cx, cy) {
+    ns = Math.max(minS(), Math.min(MAXS, ns));
+    tx = cx - (cx - tx) * (ns / s);
+    ty = cy - (cy - ty) * (ns / s);
+    s = ns; apply();
+  }
+  function measure() {
+    var r = stage.getBoundingClientRect(); W = r.width; H = r.height;
+    fitAll = Math.min(W / iw, H / ih);
+    // k = canvas pixels per drawing unit (2, less for a huge tree). Names are
+    // drawn 15 units tall, so s*k*15 is their on-screen size: show the whole
+    // tree if that stays readable (~12px), otherwise fill the height (capped
+    // at ~22px names) so the member reads it and swipes sideways.
+    start = fitAll >= 0.8 / k ? Math.min(fitAll, 1.5 / k) : Math.max(0.84 / k, Math.min(H / ih, 1.5 / k));
+  }
+  function reset() { measure(); s = start; tx = (W - iw * s) / 2; ty = 0; apply(); }
+
+  /* ---- open / close / next ---- */
+  var cache = {}, loadSeq = 0;
+  function getTree(t) {
+    if (!cache[t.memberId]) {
+      cache[t.memberId] = fetch('/api/shete/tree/' + t.memberId)
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .catch(function (e) { delete cache[t.memberId]; throw e; });
+    }
+    return cache[t.memberId];
+  }
+  var fontsReady = null;
+  function fonts() {
+    fontsReady = fontsReady || Promise.all([
+      document.fonts.load("700 15px 'Noto Sans Devanagari'"),
+      document.fonts.load("400 13px 'Noto Sans Devanagari'"),
+      document.fonts.load("700 11px 'Noto Sans Devanagari'"),
+    ]).catch(function () {});
+    return fontsReady;
+  }
+
+  function show(i) {
+    cur = i; var t = trees[i - 1], seq = ++loadSeq;
+    document.getElementById('vname').textContent = t.name;
+    document.getElementById('vby').textContent = t.by;
+    document.getElementById('vcount').textContent = dn(i) + ' / ' + dn(trees.length);
+    document.getElementById('vprev').disabled = i <= 1;
+    document.getElementById('vnext').textContent = i >= trees.length ? 'यादी ✓' : 'पुढील ›';
+    viewer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (cv) { cv.remove(); cv = null; }
+    vmsg.textContent = 'वृक्ष लोड होत आहे...'; vmsg.style.display = '';
+    Promise.all([getTree(t), fonts()]).then(function (res) {
+      if (seq !== loadSeq) return; // the member already moved on to another tree
+      cv = FamilyTree.toCanvas(res[0].data, '', 14e6);
+      iw = cv.width; ih = cv.height; k = cv.drawScale || 2;
+      cv.style.width = iw + 'px'; cv.style.height = ih + 'px';
+      stage.insertBefore(cv, stage.firstChild);
+      vmsg.style.display = 'none';
+      reset(); markSeen(t);
+      tip.classList.remove('hide');
+      clearTimeout(show.t); show.t = setTimeout(function () { tip.classList.add('hide'); }, 3500);
+    }).catch(function () {
+      if (seq === loadSeq) vmsg.textContent = 'वृक्ष लोड झाला नाही. नेटवर्क तपासून पुन्हा उघडा.';
+    });
+  }
+  function hide() {
+    viewer.classList.remove('open');
+    document.body.style.overflow = '';
+    loadSeq++;
+    if (cv) { cv.remove(); cv = null; }
+  }
+  function route() {
+    var m = /^#t(\d+)$/.exec(location.hash), i = m ? +m[1] : 0;
+    if (i >= 1 && i <= trees.length) show(i); else hide();
+  }
+  // Switch tree without growing history, so the phone's Back still returns to the list.
+  function go(i) { location.replace('#t' + i); }
+  function closeViewer() {
+    if (openedHere) { openedHere = false; history.back(); }
+    else { hide(); history.replaceState(null, '', location.pathname + location.search); }
+  }
+  window.addEventListener('hashchange', route);
+  document.getElementById('vclose').onclick = closeViewer;
+  document.getElementById('vprev').onclick = function () { if (cur > 1) go(cur - 1); };
+  document.getElementById('vnext').onclick = function () { if (cur < trees.length) go(cur + 1); else closeViewer(); };
+  document.getElementById('zin').onclick = function () { zoomAt(s * 1.4, W / 2, H / 2); };
+  document.getElementById('zout').onclick = function () { zoomAt(s / 1.4, W / 2, H / 2); };
+  document.getElementById('zfit').onclick = function () {
+    if (Math.abs(s - fitAll) < 0.01) reset(); else { s = fitAll; apply(); }
+  };
+  document.addEventListener('keydown', function (e) {
+    if (!viewer.classList.contains('open')) return;
+    if (e.key === 'Escape') closeViewer();
+    else if (e.key === 'ArrowRight' && cur < trees.length) go(cur + 1);
+    else if (e.key === 'ArrowLeft' && cur > 1) go(cur - 1);
+  });
+  window.addEventListener('resize', function () {
+    if (!cv) return;
+    var cx = (W / 2 - tx) / s, cy = (H / 2 - ty) / s; // keep the same spot centred
+    measure(); s = Math.max(minS(), s); tx = W / 2 - cx * s; ty = H / 2 - cy * s; apply();
+  });
+
+  /* ---- gestures: drag to pan, pinch to zoom, double-tap, wheel ---- */
+  var pts = {}, last = null, lastTap = 0, tapX = 0, tapY = 0, moved = 0;
+  function local(e) { var r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function list() { return Object.keys(pts).map(function (k) { return pts[k]; }); }
+  function snapshot() {
+    var p = list();
+    if (p.length >= 2) return { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2,
+      d: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), n: 2 };
+    if (p.length === 1) return { x: p[0].x, y: p[0].y, d: 0, n: 1 };
+    return null;
+  }
+  stage.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.zoom')) return;
+    stage.setPointerCapture(e.pointerId);
+    pts[e.pointerId] = local(e); last = snapshot(); moved = 0;
+    stage.classList.add('drag'); tip.classList.add('hide');
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = local(e);
+    var now = snapshot(); if (!now || !last) { last = now; return; }
+    if (now.n === last.n && cv) {
+      moved += Math.abs(now.x - last.x) + Math.abs(now.y - last.y);
+      if (now.n === 2 && last.d > 0) {
+        var ns = Math.max(minS(), Math.min(MAXS, s * now.d / last.d));
+        tx = now.x - (last.x - tx) * (ns / s);
+        ty = now.y - (last.y - ty) * (ns / s);
+        s = ns;
+      } else { tx += now.x - last.x; ty += now.y - last.y; }
+      apply();
+    }
+    last = now;
+  });
+  function up(e) {
+    if (!pts[e.pointerId]) return;
+    var p = pts[e.pointerId], wasSingle = list().length === 1;
+    delete pts[e.pointerId]; last = snapshot();
+    if (!list().length) stage.classList.remove('drag');
+    if (cv && wasSingle && moved < 10 && e.type === 'pointerup') {
+      var t = Date.now();
+      if (t - lastTap < 320 && Math.hypot(p.x - tapX, p.y - tapY) < 40) {
+        if (s < start * 1.6) zoomAt(Math.min(MAXS, Math.max(s * 2, 1)), p.x, p.y); else reset();
+        lastTap = 0;
+      } else { lastTap = t; tapX = p.x; tapY = p.y; }
+    }
+  }
+  stage.addEventListener('pointerup', up);
+  stage.addEventListener('pointercancel', up);
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault(); if (!cv) return;
+    var p = local(e);
+    zoomAt(s * Math.pow(1.0015, -e.deltaY), p.x, p.y);
+  }, { passive: false });
+  // iOS Safari zooms the whole page on pinch unless these are cancelled
+  ['gesturestart', 'gesturechange'].forEach(function (t) {
+    viewer.addEventListener(t, function (e) { e.preventDefault(); });
+  });
+})();
+</script>
+</body>
+</html>

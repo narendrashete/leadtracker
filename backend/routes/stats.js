@@ -39,7 +39,8 @@ const NAVRATRI_PAGES = {
   'shetenavratri-devbasavane': 'devbasavane',
   'shetenavratri-upcoming':    'Upcoming Event',
   'shetenavratri-familytree':  'Family tree — editor',
-  'shetenavratri-tree':        'Family tree — viewer'
+  'shetenavratri-tree':        'Family tree — viewer',
+  'shetenavratri-vruksha':     'Family trees — all (कुटुंब वृक्ष)'
 };
 
 function daysBack(n) {

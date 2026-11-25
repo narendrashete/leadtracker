@@ -225,6 +225,18 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-25** — **Family trees: move a tree to the right member + choose the "माहिती" credit
+  (admin).** The विठोबा शेटे tree had been filled in under श्री. मिलिंद मुरलीधर शेटे instead
+  of श्री. योगेश मुरलीधर शेटे, and the कुटुंब वृक्ष list credited मंगेश शांताराम शेटे (his
+  earlier-row copy). Admin tree cards get **सभासद बदला** (`POST
+  /api/shete-admin/trees/:memberId/move` `{toMemberId, ownerName, replace, credit}`: the row —
+  data, published copy, status, flags — moves to the chosen member, भरणारे is set to the typed
+  name, a target's existing tree is replaced only on explicit confirm) and **माहिती म्हणून
+  दाखवा** (`POST .../credit`; new nullable column `shete_family_trees.index_credit`, set on one
+  row and cleared on the family's other copies). `GET /api/shete/trees` credits the marked row,
+  else the family's earliest row as before. Moves are logged (`moved`, labelled on Visitors).
+  Verified locally (API: refuse without replace, move + credit, credit switch; admin UI move on
+  an emulated phone).
 - **2026-11-14** — **Family trees: hide from the कुटुंब वृक्ष list + rename people (admin).**
   Each tree card in the admin कुटुंब वृक्ष tab gets **कुटुंब वृक्ष यादीतून लपवा / यादीत दाखवा**
   (new nullable column `shete_family_trees.hide_in_index`, set/cleared on every copy of the

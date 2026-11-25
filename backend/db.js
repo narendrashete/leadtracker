@@ -619,6 +619,13 @@ async function getDb() {
     _db.run(`ALTER TABLE shete_family_trees ADD COLUMN hide_in_index INTEGER`);
   } catch { /* column already exists */ }
 
+  // 1 = this row's member is the one credited ("माहिती: …") for its family on
+  // the कुटुंब वृक्ष index. At most one row per family (root id) carries it;
+  // with none, the family's earliest row is credited.
+  try {
+    _db.run(`ALTER TABLE shete_family_trees ADD COLUMN index_credit INTEGER`);
+  } catch { /* column already exists */ }
+
   // Every change to a family tree, newest last — for the Visitors screen's
   // "who is making trees" section. by_name = the name the member typed (or the
   // admin); via = 'link' (personal WhatsApp link), 'mobile' (name + mobile

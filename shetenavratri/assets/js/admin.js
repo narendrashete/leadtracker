@@ -568,7 +568,8 @@
             '<div class="rmeta">भरणारे: ' + escapeHtml(r.ownerName) + ' · ' + r.mobile + ' · ' + FamilyTree.count(r.data) + ' व्यक्ती · ' + r.updatedAt + '</div>' +
             '<div class="rmeta"><span class="ft-status ' + r.status + '">' + TREE_STATUS[r.status] + '</span>' +
               (r.status !== 'approved' && r.hasPublished ? ' (जुना मंजूर वृक्ष प्रकाशित आहे)' : '') +
-              (r.hideInIndex ? '<span class="ft-hidden-tag">कुटुंब वृक्ष यादीत लपवला</span>' : '') + '</div>' +
+              (r.hideInIndex ? '<span class="ft-hidden-tag">कुटुंब वृक्ष यादीत लपवला</span>' : '') +
+              (r.indexCredit ? '<span class="ft-credit-tag">यादीत "माहिती" म्हणून हे नाव</span>' : '') + '</div>' +
           '</div>' +
           '<div class="request-btns">' +
             '<button class="btn-save" data-act="view" data-id="' + r.memberId + '">पहा</button>' +
@@ -579,6 +580,9 @@
             (FamilyTree.siblingGroups(r.data).length
               ? '<button class="btn-save" data-act="order" data-id="' + r.memberId + '">भावंडांचा क्रम</button>' : '') +
             '<button class="btn-save" data-act="rename" data-id="' + r.memberId + '">नावे बदला</button>' +
+            '<button class="btn-save" data-act="move" data-id="' + r.memberId + '">सभासद बदला</button>' +
+            (r.hasPublished && !r.indexCredit
+              ? '<button class="btn-save" data-act="credit" data-id="' + r.memberId + '">माहिती म्हणून दाखवा</button>' : '') +
             (r.hasPublished
               ? '<button class="btn-save" data-act="hide" data-id="' + r.memberId + '">' +
                   (r.hideInIndex ? 'कुटुंब वृक्ष यादीत दाखवा' : 'कुटुंब वृक्ष यादीतून लपवा') + '</button>' : '') +
@@ -609,6 +613,11 @@
       deleteTree(row);
     } else if (btn.dataset.act === 'rename') {
       openRename(row);
+    } else if (btn.dataset.act === 'move') {
+      openMove(row);
+    } else if (btn.dataset.act === 'credit') {
+      if (!confirm('कुटुंब वृक्ष यादीत या कुटुंबासाठी "माहिती: ' + row.name + '" असे दाखवायचे?')) return;
+      api('/api/shete-admin/trees/' + id + '/credit', { method: 'POST' }).then(loadTrees);
     } else if (btn.dataset.act === 'hide') {
       const hide = !row.hideInIndex;
       if (!confirm(hide
@@ -950,6 +959,70 @@
         next(i + 1);
       }).catch(function () { failed = true; next(i + 1); });
     })(0);
+  });
+
+  // ---- Move a tree to another member (saved under the wrong member) ----
+  const moveOverlay = document.getElementById('moveOverlay');
+  const moveList = document.getElementById('moveList');
+  const moveSearch = document.getElementById('moveSearch');
+  const moveOwner = document.getElementById('moveOwner');
+  const moveMsg = document.getElementById('moveMsg');
+  let moveRow = null, moveMembers = [], moveTo = null;
+
+  function plainName(n) { return (n || '').replace(/^\s*(श्री|सौ|कु)\s*\.?\s*/, '').trim(); }
+  function renderMoveList() {
+    const q = moveSearch.value.trim().toLowerCase();
+    const withTree = new Set(treeRows.map(function (r) { return r.memberId; }));
+    moveList.innerHTML = moveMembers.filter(function (m) {
+      return m.id !== moveRow.memberId && (!q ||
+        [m.name, m.nameEn, m.village, m.villageEn, m.mobile].some(function (v) { return (v || '').toLowerCase().includes(q); }));
+    }).map(function (m) {
+      return '<label><input type="radio" name="moveTo" value="' + m.id + '"' + (moveTo === m.id ? ' checked' : '') + '>' +
+        '<span>' + escapeHtml(m.name) + '<br><small style="color:var(--text-soft);">' + escapeHtml(m.village) + ' · ' + escapeHtml(m.mobile) + '</small></span>' +
+        (withTree.has(m.id) ? '<span class="has-tree">आधीचा वृक्ष बदलेल</span>' : '') + '</label>';
+    }).join('');
+  }
+  function openMove(row) {
+    moveRow = row; moveTo = null;
+    moveSearch.value = ''; moveOwner.value = '';
+    document.getElementById('moveCredit').checked = true;
+    moveMsg.textContent = ''; moveMsg.className = 'form-msg';
+    document.getElementById('moveHint').textContent = 'हा वृक्ष सध्या "' + row.name + '" (' + row.mobile +
+      ') यांच्या नावावर आहे. योग्य सभासद निवडा — वृक्ष (मंजुरी व सर्व माहितीसह) त्यांच्या नावावर जाईल आणि "' +
+      row.name + '" यांच्याकडून निघेल.';
+    moveOverlay.classList.add('open');
+    api('/api/shete-admin/members').then(function (res) { moveMembers = res.body || []; renderMoveList(); });
+  }
+  moveSearch.addEventListener('input', renderMoveList);
+  moveList.addEventListener('change', function (e) {
+    moveTo = Number(e.target.value);
+    const m = moveMembers.find(function (x) { return x.id === moveTo; });
+    if (m) moveOwner.value = plainName(m.name);
+  });
+  document.getElementById('moveClose').addEventListener('click', function () { moveOverlay.classList.remove('open'); });
+  moveOverlay.addEventListener('click', function (e) { if (e.target === moveOverlay) moveOverlay.classList.remove('open'); });
+  document.getElementById('moveBtn').addEventListener('click', function () {
+    const btn = this;
+    const m = moveMembers.find(function (x) { return x.id === moveTo; });
+    if (!m) { moveMsg.textContent = 'ज्याच्या नावावर वृक्ष हवा तो सभासद निवडा.'; moveMsg.className = 'form-msg error'; return; }
+    const owner = moveOwner.value.trim();
+    if (!owner) { moveMsg.textContent = 'भरणाऱ्याचे नाव लिहा.'; moveMsg.className = 'form-msg error'; return; }
+    const hasTree = treeRows.some(function (r) { return r.memberId === m.id; });
+    if (!confirm('वृक्ष "' + moveRow.name + '" यांच्याकडून "' + m.name + '" (' + m.mobile + ') यांच्याकडे हलवायचा?' +
+      '\nभरणारे: ' + owner +
+      (hasTree ? '\n\nलक्ष द्या: "' + m.name + '" यांचा आधीचा वृक्ष काढून टाकला जाईल.' : ''))) return;
+    btn.disabled = true;
+    moveMsg.textContent = 'हलवत आहे...'; moveMsg.className = 'form-msg';
+    api('/api/shete-admin/trees/' + moveRow.memberId + '/move', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toMemberId: m.id, ownerName: owner, replace: hasTree, credit: document.getElementById('moveCredit').checked }),
+    }).then(function (res) {
+      btn.disabled = false;
+      if (!res.ok) { moveMsg.textContent = (res.body && res.body.error) || 'हलवता आला नाही.'; moveMsg.className = 'form-msg error'; return; }
+      moveMsg.textContent = 'वृक्ष "' + m.name + '" यांच्या नावावर गेला.'; moveMsg.className = 'form-msg success';
+      loadTrees();
+      setTimeout(function () { moveOverlay.classList.remove('open'); }, 1400);
+    }).catch(function () { btn.disabled = false; moveMsg.textContent = 'नेटवर्क समस्या.'; moveMsg.className = 'form-msg error'; });
   });
 
   // ---- Rename people (e.g. a tree typed in English → Marathi, or a typo) ----

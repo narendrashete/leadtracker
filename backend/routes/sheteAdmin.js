@@ -204,12 +204,12 @@ function logTree(memberId, action, note) {
 router.get('/trees', (req, res) => {
   const rows = query(
     `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
-            t.published IS NOT NULL AS hasPublished, t.hide_in_index AS hideInIndex,
+            t.published IS NOT NULL AS hasPublished, t.hide_in_index AS hideInIndex, t.index_credit AS indexCredit,
             t.updated_at AS updatedAt, m.name, m.mobile
      FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
      ORDER BY CASE t.status WHEN 'pending' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END, t.updated_at DESC`
   );
-  res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, hideInIndex: !!r.hideInIndex, data: JSON.parse(r.data) })));
+  res.json(rows.map(r => ({ ...r, hasPublished: !!r.hasPublished, hideInIndex: !!r.hideInIndex, indexCredit: !!r.indexCredit, data: JSON.parse(r.data) })));
 });
 
 // The member's personal tree-link key, made on first ask and then kept, so a
@@ -413,6 +413,53 @@ router.post('/trees/:memberId/index-visibility', (req, res) => {
   const hidden = req.body.hidden ? 1 : null;
   for (const r of rows) run(`UPDATE shete_family_trees SET hide_in_index = ? WHERE id = ?`, [hidden, r.id]);
   res.json({ ok: true, updated: rows.length });
+});
+
+// Credit this member as the family's "माहिती" on the कुटुंब वृक्ष index, and
+// clear it from every other copy of the family (one credited name per family).
+function setIndexCredit(memberId) {
+  const rows = familyRows(memberId);
+  if (!rows) return false;
+  for (const r of rows) {
+    run(`UPDATE shete_family_trees SET index_credit = ? WHERE id = ?`, [r.memberId === memberId ? 1 : null, r.id]);
+  }
+  return true;
+}
+router.post('/trees/:memberId/credit', (req, res) => {
+  if (!setIndexCredit(Number(req.params.memberId))) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  res.json({ ok: true });
+});
+
+// Move a tree to another member — for a tree saved under the wrong member
+// (e.g. one brother filled it in while identified as the other). The row
+// itself moves: data, published copy, status and flags all go with it, and
+// भरणारे (owner_name) becomes what the admin typed. If the target already has
+// a tree, it is replaced only when `replace` is set. `credit` also makes the
+// target the family's "माहिती" on the कुटुंब वृक्ष index.
+router.post('/trees/:memberId/move', (req, res) => {
+  const fromId = Number(req.params.memberId);
+  const toId = Number(req.body.toMemberId);
+  const ownerName = (req.body.ownerName || '').toString().trim().slice(0, 120);
+  if (!toId || toId === fromId) return res.status(400).json({ error: 'दुसरा सभासद निवडा.' });
+  if (!ownerName) return res.status(400).json({ error: 'भरणाऱ्याचे नाव आवश्यक आहे.' });
+  const src = query(`SELECT id FROM shete_family_trees WHERE member_id = ?`, [fromId])[0];
+  if (!src) return res.status(404).json({ error: 'वृक्ष सापडला नाही.' });
+  const to = query(`SELECT name FROM shete_members WHERE id = ?`, [toId])[0];
+  if (!to) return res.status(404).json({ error: 'सभासद सापडला नाही.' });
+  const existing = query(`SELECT id FROM shete_family_trees WHERE member_id = ?`, [toId])[0];
+  if (existing && !req.body.replace) {
+    return res.status(409).json({ error: 'या सभासदाचा आधीच वृक्ष आहे.', hasTree: true });
+  }
+  if (existing) {
+    run(`DELETE FROM shete_family_trees WHERE id = ?`, [existing.id]);
+    logTree(toId, 'deleted', 'replaced by a moved tree');
+  }
+  run(`UPDATE shete_family_trees SET member_id = ?, owner_name = ?, updated_at = datetime('now','localtime') WHERE id = ?`,
+    [toId, ownerName, src.id]);
+  logTree(fromId, 'moved', 'to ' + to.name);
+  logTree(toId, 'moved', 'here, भरणारे ' + ownerName);
+  if (req.body.credit) setIndexCredit(toId);
+  res.json({ ok: true });
 });
 
 // Rename people: { map: { "old name": "new name", ... } } is applied to every

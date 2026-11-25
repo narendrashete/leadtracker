@@ -307,6 +307,7 @@ const TREE_ACTION = {
   copied:    'copied a tree in',
   deleted:   'deleted the tree',
   renamed:   'renamed people',
+  moved:     'tree moved (admin)',
 };
 
 const VIA = { link: 'WhatsApp link', mobile: 'name + mobile', admin: 'admin' };

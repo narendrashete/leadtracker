@@ -144,6 +144,9 @@ shetenavratri/
                        hide a family from this list (`hide_in_index`, e.g. incomplete)
                        without unpublishing it, and rename people across a family's
                        trees ("नावे बदला", e.g. English → Marathi; paste "old = new").
+                       "सभासद बदला" moves a tree saved under the wrong member (row moves,
+                       भरणारे retyped); "माहिती म्हणून दाखवा" (`index_credit`, one per
+                       family) overrides the default first-maker credit.
   tree.html             Public viewer: published (approved) tree only, ?m=<member id>.
                        Members list shows 🌳 only when one exists. Renderer shared by
                        viewer/editor/admin: assets/js/tree-render.js (CSS org chart, no lib).

@@ -298,9 +298,10 @@ router.put('/tree', (req, res) => {
 // Public: one row per मूळपुरुष for the कुटुंब वृक्ष index page (kutumbvruksha.html).
 // Published trees only. Copies made by the admin's /copy feature keep the
 // original node ids, so trees sharing a root id are the same family: listed
-// once, showing the fullest version (most people), credited to whoever made
-// that family's tree first (lowest row id = earliest created), with their
-// village read live from the member directory.
+// once, showing the fullest version (most people), credited to the member the
+// admin marked (index_credit), else whoever made that family's tree first
+// (lowest row id = earliest created), with their village read live from the
+// member directory.
 function treeDepth(n) {
   return 1 + Math.max(0, ...(n.children || []).map(treeDepth));
 }
@@ -309,7 +310,8 @@ function treePersons(n) {
 }
 router.get('/trees', (req, res) => {
   const rows = query(
-    `SELECT t.id, t.member_id AS memberId, t.published, t.hide_in_index AS hidden, m.name AS madeBy, m.village
+    `SELECT t.id, t.member_id AS memberId, t.published, t.hide_in_index AS hidden, t.index_credit AS credit,
+            m.name AS madeBy, m.village
      FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
      WHERE t.published IS NOT NULL ORDER BY t.id`
   );
@@ -332,6 +334,9 @@ router.get('/trees', (req, res) => {
     } else if (persons > f.persons) {
       Object.assign(f, { memberId: r.memberId, rootName: tree.name, generations: treeDepth(tree), persons });
     }
+    // The admin can pick whose name is credited (index_credit); otherwise the
+    // family's earliest row stands.
+    if (r.credit) Object.assign(families.get(key), { madeBy: r.madeBy, village: r.village });
   }
   res.json([...families.values()]);
 });

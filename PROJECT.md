@@ -225,6 +225,16 @@ Unscoped, not committed to — do not build without an explicit ask:
 - Automated test coverage for route handlers.
 
 ## Change Log
+- **2026-11-26** — **Shete Parivar Navratri moved out** to its own app and private repo
+  (`narendrashete/shetenavratri`, local `D:\Claude_workspace\shetefamily navratri`) at
+  https://www.shetenavratri.in on prime-dev. Removed here: `shetenavratri/` pages,
+  `routes/shete.js`, `routes/sheteAdmin.js`, the `shete_*` schema and seed data in `db.js`, the
+  Navratri card and family-tree activity on the Visitors screen (`/api/stats/trees`), and the
+  `?from=navratri` aarti counting. `/shetenavratri/*` now 301s to the new domain and
+  `/api/shete*` returns 410. Sidebar's Shete Navratri / Admin links point at the new site.
+  `backend/scripts/export-shete.js` exported the live data (shete_* tables, admin login hashes,
+  the site's visitor rows) for the new app's importer. Production's old `shete_*` tables and
+  `shetenavratri/uploads/` were left in place, unused.
 - **2026-11-25** — **Family trees: move a tree to the right member + choose the "माहिती" credit
   (admin).** The विठोबा शेटे tree had been filled in under श्री. मिलिंद मुरलीधर शेटे instead
   of श्री. योगेश मुरलीधर शेटे, and the कुटुंब वृक्ष list credited मंगेश शांताराम शेटे (his

@@ -85,11 +85,9 @@ export default function Sidebar() {
           PrimeGem
         </a>
 
-        {/* Shete Parivar Navratri — another standalone page served by this same
-            Express process, not a React route, so it is a plain link like the
-            two above. */}
+        {/* Shete Parivar Navratri — moved to its own app and domain (2026-11-26). */}
         <a
-          href="/shetenavratri"
+          href="https://www.shetenavratri.in"
           target="_blank"
           rel="noopener noreferrer"
           style={navStyle({ isActive: false })}
@@ -110,12 +108,10 @@ export default function Sidebar() {
           Prime API Integration
         </a>
 
-        {/* Admin-only: the approval queue for Shete Navratri's public photo/
-            member submissions. A plain link (its own login screen, not a React
-            route) placed alongside the other admin-only pages below. */}
+        {/* Shete Navratri's admin page, on its own domain with its own login. */}
         {(
           <a
-            href="/shetenavratri/admin.html"
+            href="https://www.shetenavratri.in/admin.html"
             target="_blank"
             rel="noopener noreferrer"
             style={navStyle({ isActive: false })}

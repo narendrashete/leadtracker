@@ -15,8 +15,6 @@ const PAGE_LABELS = {
   'kinetic-gem':      'PrimeGem — online',
   'kinetic-gem-app':  'PrimeGem — installed app',
   calendar:           'Mokla Divas calendar',
-  shetenavratri:      'Shete Parivar Navratri',
-  'shetenavratri-app': 'Shete Parivar Navratri — installed app',
   rishta:             'Rishta Album',
   'prime-api':        'Prime API Integration demo',
   primexai:           'PrimeXAI savings dashboard',
@@ -25,22 +23,6 @@ const PAGE_LABELS = {
   nakayatra:          'Naka Family yatra poll',
   'nakayatra-list':   'Naka Family yatra — final list',
   leadtracker:        'Lead Tracker app'
-};
-
-// The Shete Navratri site's own breakdown, in the order its dashboard shows
-// them. Its sub-pages are listed here rather than in the main list above.
-// "aartisangrah" counts only clicks on the dashboard's Aarti Sangrah button,
-// which links to /aartisangrah?from=navratri (see server.js).
-const NAVRATRI_PAGES = {
-  'shetenavratri-members':     'Members List',
-  'shetenavratri-aarti':       'aartisangrah',
-  'shetenavratri-history':     'Navratri History',
-  'shetenavratri-gallery':     'gallery',
-  'shetenavratri-devbasavane': 'devbasavane',
-  'shetenavratri-upcoming':    'Upcoming Event',
-  'shetenavratri-familytree':  'Family tree — editor',
-  'shetenavratri-tree':        'Family tree — viewer',
-  'shetenavratri-vruksha':     'Family trees — all (कुटुंब वृक्ष)'
 };
 
 function daysBack(n) {
@@ -86,16 +68,11 @@ router.get('/', (req, res, next) => {
         views: (byPage[page] && byPage[page].views) || 0
       })),
       // A key recorded before it had a label still shows, under its raw name.
-      ...counted.filter(r => !PAGE_LABELS[r.page] && !NAVRATRI_PAGES[r.page])
+      // shetenavratri* rows predate that site's move to www.shetenavratri.in
+      // (2026-11-26); it counts its own visitors now, so they are left out here.
+      ...counted.filter(r => !PAGE_LABELS[r.page] && !r.page.startsWith('shetenavratri'))
         .map(r => ({ ...r, label: r.page }))
     ].sort((a, b) => b.views - a.views || a.label.localeCompare(b.label));
-
-    const navratri = Object.keys(NAVRATRI_PAGES).map(page => ({
-      page,
-      label: NAVRATRI_PAGES[page],
-      visitors: (byPage[page] && byPage[page].visitors) || 0,
-      views: (byPage[page] && byPage[page].views) || 0
-    }));
 
     const byDay = Object.fromEntries(daily.map(r => [r.day, r]));
     const todayRow = byDay[today] || { visitors: 0, views: 0 };
@@ -130,51 +107,8 @@ router.get('/', (req, res, next) => {
         first_day: allTime.first_day || null
       },
       daily: series,
-      pages,
-      navratri
+      pages
     });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Shete Navratri family trees: who has made one, how far along it is, and the
-// change log behind it (shete_tree_log, written by routes/shete.js and
-// routes/sheteAdmin.js). Not limited to the day range — trees are few.
-function countPersons(node) {
-  return 1 + (node.children || []).reduce((n, c) => n + countPersons(c), 0);
-}
-
-router.get('/trees', (req, res, next) => {
-  try {
-    const trees = query(
-      `SELECT t.member_id AS memberId, t.owner_name AS ownerName, t.status, t.data,
-              t.created_at AS createdAt, t.updated_at AS updatedAt, t.approved_at AS approvedAt,
-              m.name, m.village, m.mobile
-       FROM shete_family_trees t JOIN shete_members m ON m.id = t.member_id
-       ORDER BY t.updated_at DESC`
-    ).map(r => {
-      let data = null;
-      try { data = JSON.parse(r.data); } catch { /* unreadable tree: shown without counts */ }
-      // Admin copies are owned by "Admin (<source> यांच्या वृक्षावरून कॉपी)".
-      const copy = /^Admin \((.+) यांच्या वृक्षावरून कॉपी\)$/.exec(r.ownerName);
-      return {
-        memberId: r.memberId, name: r.name, village: r.village, mobile: r.mobile,
-        filledBy: copy ? null : r.ownerName, copiedFrom: copy ? copy[1] : null,
-        status: r.status, persons: data ? countPersons(data) : 0, root: data ? data.name : '',
-        // NULL for trees made before created_at existed (see db.js).
-        createdAt: r.createdAt, updatedAt: r.updatedAt, approvedAt: r.approvedAt
-      };
-    });
-
-    const log = query(
-      `SELECT l.member_id AS memberId, l.action, l.by_name AS byName, l.via, l.persons, l.note, l.at,
-              m.name
-       FROM shete_tree_log l LEFT JOIN shete_members m ON m.id = l.member_id
-       ORDER BY l.id DESC LIMIT 100`
-    );
-
-    res.json({ trees, log });
   } catch (err) {
     next(err);
   }

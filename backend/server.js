@@ -23,8 +23,6 @@ const GEM_DIR       = path.resolve(__dirname, '..', 'kinetic-gem');
 const RISHTA_PAGE   = path.resolve(__dirname, '..', 'rishta', 'index.html');
 const PRIME_API_PAGE = path.resolve(__dirname, '..', 'Prime_API_Integration', 'index.html');
 const PRIMEXAI_PAGE  = path.resolve(__dirname, '..', 'PrimeXAI', 'index.html');
-const SHETE_PAGE    = path.resolve(__dirname, '..', 'shetenavratri', 'index.html');
-const SHETE_DIR     = path.resolve(__dirname, '..', 'shetenavratri');
 const THIGDAM_PAGE  = path.resolve(__dirname, '..', 'thigdam', 'index.html');
 const KULGAON_PAGE  = path.resolve(__dirname, '..', 'kulgaon', 'index.html');
 const KULGAON_ADMIN = path.resolve(__dirname, '..', 'kulgaon', 'admin.html');
@@ -43,9 +41,7 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   const calendarRouter = require('./routes/calendar');
   const calendarAdminRouter = require('./routes/calendarAdmin');
   const statsRouter    = require('./routes/stats');
-  const sheteRouter      = require('./routes/shete');
   const rishtaRouter     = require('./routes/rishta');
-  const sheteAdminRouter = require('./routes/sheteAdmin');
   const thigdamRouter    = require('./routes/thigdam');
   const kulgaonRouter    = require('./routes/kulgaon');
   const kulgaonAdminRouter = require('./routes/kulgaonAdmin');
@@ -74,11 +70,12 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   app.use('/api/users',     usersRouter); // users router applies requireAuth + requireAdmin itself
   app.use('/api/stats',     statsRouter); // stats router applies requireAuth + requireAdmin itself
 
-  // Public: Shete Parivar Navratri — member directory + photo gallery, both
-  // gated by an admin queue. Unauthenticated on purpose, same as /api/calendar:
-  // the site itself is open to anyone, submissions just land in a pending
-  // table instead of going live.
-  app.use('/api/shete', sheteRouter);
+  // Shete Parivar Navratri moved to its own app at https://www.shetenavratri.in
+  // (repo narendrashete/shetenavratri) on 2026-11-26. Its old API answers 410 so a
+  // page still open from before the move can't write into this database.
+  app.use(['/api/shete', '/api/shete-admin'], (req, res) => {
+    res.status(410).json({ error: 'हे संकेतस्थळ आता https://www.shetenavratri.in वर आहे.' });
+  });
   // Public by the owner's choice (see CLAUDE.md → Rishta Album): no code, no login.
   app.use('/api/rishta', rishtaRouter);
   // Public by the owner's choice (see CLAUDE.md → Thigdam): the friends' photo album.
@@ -97,10 +94,6 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   // Mounted before /api/nakayatra so /list/... never reaches the poll router.
   app.use('/api/nakayatra/list', nakayatraListRouter);
   app.use('/api/nakayatra', nakayatraRouter);
-  // Protected: reviewing/approving those submissions. Deliberately a separate
-  // mount from /api/shete, same split as /api/calendar-admin, so the public
-  // surface can never approve its own requests.
-  app.use('/api/shete-admin', sheteAdminRouter); // applies requireAuth + requireAdmin itself
 
   // Anything under /api that matched no route above is a 404 in JSON. Without
   // this it falls through to the SPA fallback and answers 200 with React's HTML,
@@ -189,9 +182,6 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
   // private in it) and ahead of the SPA fallback, or React would swallow the URL.
   app.get('/aartisangrah', (req, res) => {
     recordVisit(req, 'aartisangrah');
-    // The Navratri dashboard's button adds ?from=navratri, so its clicks can be
-    // counted on their own as well as in the overall Aarti Sangrah figure.
-    if (req.query.from === 'navratri') recordVisit(req, 'shetenavratri-aarti');
     res.sendFile(AARTI_PAGE, (err) => {
       // A client that disconnects mid-transfer lands here with the headers
       // already sent — answering again throws ERR_HTTP_HEADERS_SENT, which is
@@ -297,69 +287,12 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     });
   });
 
-  // Shete Parivar Navratri — a public member directory + info site sharing this
-  // process the way Aarti Sangrah and PrimeGem do: no API, no tables of its own,
-  // plain static files (multiple pages + an assets/ folder, unlike those two's
-  // single-file apps). index:false AND redirect:false for the same reason as the
-  // other static mounts above — without redirect:false, serve-static treats a bare
-  // '/shetenavratri' as a directory root and 301s it to '/shetenavratri/', which
-  // breaks the plain link.
-  //
-  // The sub-pages are plain files served by the static mount below, so they are
-  // counted here, just ahead of it — each gets its own key for the Navratri
-  // breakdown on the Visitors screen (labels in routes/stats.js).
-  const SHETE_COUNTED = {
-    '/members.html':     'shetenavratri-members',
-    '/history.html':     'shetenavratri-history',
-    '/gallery.html':     'shetenavratri-gallery',
-    '/devbasavane.html': 'shetenavratri-devbasavane',
-    '/upcoming.html':    'shetenavratri-upcoming',
-    '/familytree.html':  'shetenavratri-familytree',
-    '/tree.html':        'shetenavratri-tree',
-    '/kutumbvruksha.html': 'shetenavratri-vruksha',
-  };
-  app.use('/shetenavratri', (req, res, next) => {
-    if (req.method === 'GET' && SHETE_COUNTED[req.path]) recordVisit(req, SHETE_COUNTED[req.path]);
-    next();
-  });
-  app.use('/shetenavratri', express.static(SHETE_DIR, {
-    index: false,
-    redirect: false,
-    setHeaders: (res, filePath) => {
-      // Same service-worker gotcha as the Aarti Sangrah and PrimeGem mounts:
-      // never let a stale cache delay the browser noticing a new sw.js.
-      if (filePath.endsWith('sw.js')) res.setHeader('Cache-Control', 'no-cache');
-    },
-  }));
-
-  app.get('/shetenavratri', (req, res) => {
-    recordVisit(req, 'shetenavratri');
-    res.sendFile(SHETE_PAGE, (err) => {
-      // A client that disconnects mid-transfer lands here with headers already
-      // sent — answering again would throw ERR_HTTP_HEADERS_SENT and crash the
-      // process. See the Aarti Sangrah route above for the same guard.
-      if (err && !res.headersSent) {
-        res.status(500).type('text/plain').send('Shete Parivar Navratri page missing.');
-      }
-    });
-  });
-
-  // The installable, offline-shell copy — a separate page (app.html), kept
-  // apart from the plain /shetenavratri link on purpose: that link is what
-  // families already have bookmarked and have been sharing (tinyurl, WhatsApp
-  // groups), and it must keep behaving exactly as it always has, with no
-  // service worker ever registered from it. This one is meant to be installed
-  // (Add to Home Screen) from its own link; its service worker is scoped to
-  // this path only (see app.html and sw.js), so it can never take over the
-  // plain page even on the same phone. Same split as Aarti Sangrah/PrimeGem.
-  app.get('/shetenavratri/app', (req, res) => {
-    recordVisit(req, 'shetenavratri-app');
-    const SHETE_APP_PAGE = path.resolve(__dirname, '..', 'shetenavratri', 'app.html');
-    res.sendFile(SHETE_APP_PAGE, (err) => {
-      if (err && !res.headersSent) {
-        res.status(500).type('text/plain').send('Shete Parivar Navratri (app) page missing.');
-      }
-    });
+  // Shete Parivar Navratri moved out (see the /api/shete note above). Every old
+  // link — the page, sub-pages, /app, admin, uploaded photos — goes to the same
+  // path on the new domain, so shared links and bookmarks keep working.
+  app.use('/shetenavratri', (req, res) => {
+    const rest = req.originalUrl.slice('/shetenavratri'.length);
+    res.redirect(301, 'https://www.shetenavratri.in' + (rest.startsWith('/') ? rest : '/' + rest));
   });
 
   // Rishta Album — a private marriage-profile (biodata) album. One self-contained
@@ -523,8 +456,6 @@ Promise.all([getDb(), getContactsDb()]).then(() => {
     console.log(`  Aarti Sangrah:   http://localhost:${PORT}/aartisangrah`);
     console.log(`  PrimeGem:        http://localhost:${PORT}/kinetic-gem`);
     console.log(`  PrimeGem app:    http://localhost:${PORT}/kinetic-gem/app  (installable)`);
-    console.log(`  Shete Navratri:  http://localhost:${PORT}/shetenavratri`);
-    console.log(`  Shete Navratri app: http://localhost:${PORT}/shetenavratri/app  (installable)`);
     console.log(`  Rishta Album:    http://localhost:${PORT}/rishta`);
     console.log(`  Prime API demo:  http://localhost:${PORT}/Prime_API_Integration`);
     console.log(`  PrimeXAI:        http://localhost:${PORT}/PrimeXAI`);
